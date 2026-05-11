@@ -20,6 +20,7 @@
   },
   "scripts": {
     "start": "dotenv -e .env.dev -- node ./src/server.js",
+    "dev": "dotenv -e .env.dev -- node --watch ./src/server.js",
     "seed": "dotenv -e .env.dev -- node scripts/seed.js",
     "migration:reset": "dotenv -e .env.dev -- node scripts/reset.js",
     "test:unit": "jest --testPathPatterns=__tests__/unit --silent",
