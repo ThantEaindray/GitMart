@@ -21,7 +21,7 @@
   "scripts": {
     "start": "dotenv -e .env.dev -- node ./src/server.js",
     "seed": "dotenv -e .env.dev -- node scripts/seed.js",
-    "migration:reset": "dotenv -e .env.test -- node scripts/reset.js",
+    "migration:reset": "dotenv -e .env.dev -- node scripts/reset.js",
     "test:unit": "jest --testPathPatterns=__tests__/unit --silent",
     "test:integration": "dotenv -e .env.test -- jest --testPathPatterns=__tests__/integration --globalSetup=./configs/jest-integration-setup.js --silent",
     "test:e2e": "node scripts/clean-test-results.js && dotenv -e .env.test -- playwright test --config=configs/playwright.config.js",
