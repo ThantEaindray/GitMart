@@ -6,9 +6,18 @@ const path = require('path');
 const somethingRouter = require('./routers/Something.router');
 const personRouter = require('./routers/Person.router');
 
+// Import user authentication routes
+// This handles backend API routes such as:
+// POST /api/register
+// POST /api/login
+// GET  /api/me
+const userRouter = require('./routers/User.router');
+
 const app = express();
 
-// Parse incoming JSON request bodies (e.g. from POST/PUT requests)
+// Parse incoming JSON request bodies.
+// This is needed before API routes so req.body can read JSON data
+// from Postman or frontend fetch requests.
 app.use(express.json());
 
 // Serve static files (HTML, CSS, JS, images) from the 'public' folder.
@@ -18,8 +27,16 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Browsers automatically request /favicon.ico — return 204 (no content) to avoid 404 noise.
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
+// Existing backend routes
 app.use('/somethings', somethingRouter);
 app.use('/persons', personRouter);
+
+// User authentication API routes.
+// All routes inside User.router.js will start with /api.
+// Example:
+// router.post('/login') becomes POST /api/login
+// router.post('/register') becomes POST /api/register
+app.use('/api', userRouter);
 
 // 404 handler — if no route above matched the request,
 // create a 404 error and pass it to the error handler below.
