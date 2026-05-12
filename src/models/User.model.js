@@ -1,65 +1,65 @@
+//loh kok hao
+//DIT/1B/FT/10
+//2518987
 const pool = require('./db');
 
-// Find user by username for login
-module.exports.getUserByUsername = function getUserByUsername(username) {
-  const sql = `
-    SELECT 
-      id, 
-      username, 
-      email, 
-      password, 
-      "isStaff" AS "isStaff", 
-      created_on
-    FROM users
-    WHERE username = $1
-  `;
 
-  return pool.query(sql, [username])
-    .then((result) => result.rows[0]);
+// Get user by username
+module.exports.getUserByUsername = (data, callback) => {
+    const SQLSTATEMENT = `
+        SELECT id, username, email, password, "isStaff" AS "isStaff", created_on
+        FROM users
+        WHERE username = $1
+    `;
+    const VALUES = [data.username];
+
+    pool.query(SQLSTATEMENT, VALUES, (error, result) => {
+        if (error) return callback(error, null);
+        callback(null, result.rows);
+    });
 };
 
-// Find user by email to prevent duplicate registration
-module.exports.getUserByEmail = function getUserByEmail(email) {
-  const sql = `
-    SELECT 
-      id, 
-      username, 
-      email, 
-      "isStaff" AS "isStaff", 
-      created_on
-    FROM users
-    WHERE email = $1
-  `;
+// Get user by email
+module.exports.getUserByEmail = (data, callback) => {
+    const SQLSTATEMENT = `
+        SELECT id, username, email, "isStaff" AS "isStaff", created_on
+        FROM users
+        WHERE email = $1
+    `;
+    const VALUES = [data.email];
 
-  return pool.query(sql, [email])
-    .then((result) => result.rows[0]);
+    pool.query(SQLSTATEMENT, VALUES, (error, result) => {
+        if (error) return callback(error, null);
+        callback(null, result.rows);
+    });
 };
 
 // Create new user
-module.exports.createUser = function createUser(username, email, hashedPassword) {
-  const sql = `
-    INSERT INTO users (username, email, password, "isStaff", created_on)
-    VALUES ($1, $2, $3, false, CURRENT_DATE)
-    RETURNING id, username, email, "isStaff" AS "isStaff", created_on
-  `;
+module.exports.createUser = (data, callback) => {
+    const SQLSTATEMENT = `
+        INSERT INTO users (username, email, password, "isStaff", created_on)
+        VALUES ($1, $2, $3, false, CURRENT_DATE)
+        RETURNING id, username, email, "isStaff" AS "isStaff", created_on
+    `;
+    const VALUES = [data.username, data.email, data.password];
 
-  return pool.query(sql, [username, email, hashedPassword])
-    .then((result) => result.rows[0]);
+    pool.query(SQLSTATEMENT, VALUES, (error, result) => {
+        if (error) return callback(error, null);
+        callback(null, result.rows);
+    });
 };
 
-// Get current logged-in user by id
-module.exports.getUserById = function getUserById(id) {
-  const sql = `
-    SELECT 
-      id, 
-      username, 
-      email, 
-      "isStaff" AS "isStaff", 
-      created_on
-    FROM users
-    WHERE id = $1
-  `;
+// Get user by id
+module.exports.getUserById = (data, callback) => {
+    const SQLSTATEMENT = `
+        SELECT id, username, email, "isStaff" AS "isStaff", created_on
+        FROM users
+        WHERE id = $1
+    `;
+    const VALUES = [data.id];
 
-  return pool.query(sql, [id])
-    .then((result) => result.rows[0]);
+    pool.query(SQLSTATEMENT, VALUES, (error, result) => {
+        if (error) return callback(error, null);
+        callback(null, result.rows);
+    });
 };

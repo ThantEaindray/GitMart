@@ -1,180 +1,146 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+//loh kok hao
+//DIT/1B/FT/10
+//2518987
+// Import Models
+const model = require('../models/User.model');
 
-const {
-  getUserByUsername,
-  getUserByEmail,
-  createUser,
-  getUserById
-} = require('../models/User.model');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'marketplace_secret_key';
-const SALT_ROUNDS = 10;
-
-// ===============================
-// Middleware: Verify JWT token
-// ===============================
-module.exports.verifyToken = function verifyToken(req, res, next) {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      message: 'Missing or invalid authorization token.'
-    });
-  }
-
-  const token = authHeader.split(' ')[1];
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({
-      message: 'Invalid or expired token.'
-    });
-  }
-};
-
-// ===============================
+// ==============================
 // POST /api/register
-// Register new marketplace user
-// ===============================
-module.exports.registerUser = function registerUser(req, res, next) {
-  const { username, email, password } = req.body || {};
+// Check Username or Email Exist
+// ==============================
+module.exports.checkUsernameOrEmailExist = (req, res, next) => {
 
-  if (!username || !email || !password) {
-    return res.status(400).json({
-      message: 'Username, email and password are required.'
-    });
-  }
+    // 400 Check for all expected input
+    if (req.body.username === undefined ||
+        req.body.email === undefined ||
+        req.body.password === undefined) {
+        return res.status(400).json({ message: 'Username, email or password is missing.' });
+    }
 
-  if (password.length < 6) {
-    return res.status(400).json({
-      message: 'Password must be at least 6 characters long.'
-    });
-  }
+    if (req.body.password.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters long.' });
+    }
 
-  getUserByUsername(username)
-    .then((existingUsername) => {
-      if (existingUsername) {
-        return res.status(409).json({
-          message: 'Username already exists.'
-        });
-      }
+    const data = { username: req.body.username };
 
-      return getUserByEmail(email);
-    })
-    .then((existingEmail) => {
-      if (res.headersSent) return null;
+    const callback = (error, results) => {
+        if (error) {
+            console.log(error);
+            return res.status(500).json({ message: 'Internal server error' });
+        }
 
-      if (existingEmail) {
-        return res.status(409).json({
-          message: 'Email already exists.'
-        });
-      }
+        if (results.length > 0) {
+            return res.status(409).json({ message: 'Username already exists.' });
+        }
 
-      return bcrypt.hash(password, SALT_ROUNDS);
-    })
-    .then((hashedPassword) => {
-      if (res.headersSent || !hashedPassword) return null;
+        // Username is free — now check email
+        const emailData = { email: req.body.email };
 
-      return createUser(username, email, hashedPassword);
-    })
-    .then((newUser) => {
-      if (res.headersSent || !newUser) return;
+        const emailCallback = (error, results) => {
+            if (error) {
+                console.log(error);
+                return res.status(500).json({ message: 'Internal server error' });
+            }
 
-      const token = jwt.sign(
-        {
-          userId: newUser.id,
-          username: newUser.username,
-          isStaff: newUser.isStaff
-        },
-        JWT_SECRET,
-        { expiresIn: '2h' }
-      );
+            if (results.length > 0) {
+                return res.status(409).json({ message: 'Email already exists.' });
+            }
 
-      return res.status(200).json({
-        message: 'User registered successfully.',
-        token,
-        userId: newUser.id,
-        username: newUser.username,
-        isStaff: newUser.isStaff
-      });
-    })
-    .catch(next);
+            next();
+        };
+
+        model.getUserByEmail(emailData, emailCallback);
+    };
+
+    model.getUserByUsername(data, callback);
 };
 
-// ===============================
+// ==============================
+// POST /api/register
+// Register User (Create)
+// ==============================
+module.exports.register = (req, res, next) => {
+
+    // 400 skipped — already checked in checkUsernameOrEmailExist
+
+    const data = {
+        username: req.body.username,
+        email: req.body.email,
+        password: res.locals.hash
+    };
+
+    const callback = (error, results) => {
+        if (error) {
+            console.log(error);
+            return res.status(500).json({ message: 'Internal server error' });
+        }
+
+        // For generateToken: save userId into res.locals
+        res.locals.message = `User ${data.username} created successfully.`;
+        res.locals.userId = results[0].id;
+        next();
+    };
+
+    model.createUser(data, callback);
+};
+
+// ==============================
 // POST /api/login
-// Login existing marketplace user
-// ===============================
-module.exports.loginUser = function loginUser(req, res, next) {
-  const { username, password } = req.body || {};
+// Login — Fetch User by Username
+// ==============================
+module.exports.login = (req, res, next) => {
 
-  if (!username || !password) {
-    return res.status(400).json({
-      message: 'Username and password are required.'
-    });
-  }
+    // 400 Check for all expected input
+    if (req.body.username === undefined ||
+        req.body.password === undefined) {
+        return res.status(400).json({ message: 'Username or password is missing.' });
+    }
 
-  let foundUser;
+    const data = { username: req.body.username };
 
-  getUserByUsername(username)
-    .then((user) => {
-      if (!user) {
-        return res.status(401).json({
-          message: 'Invalid username or password.'
-        });
-      }
+    const callback = (error, results) => {
+        if (error) {
+            console.log(error);
+            return res.status(500).json({ message: 'Internal server error' });
+        }
 
-      foundUser = user;
-      return bcrypt.compare(password, user.password);
-    })
-    .then((isMatch) => {
-      if (res.headersSent) return;
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
 
-      if (!isMatch) {
-        return res.status(401).json({
-          message: 'Invalid username or password.'
-        });
-      }
+        // For comparePassword: save hash into res.locals
+        res.locals.hash = results[0].password;
+        // For generateToken: save userId into res.locals
+        res.locals.userId = results[0].id;
+        res.locals.rememberMe = req.body.rememberMe || false;
+        res.locals.message = 'Login successful.';
+        next();
+    };
 
-      const token = jwt.sign(
-        {
-          userId: foundUser.id,
-          username: foundUser.username,
-          isStaff: foundUser.isStaff
-        },
-        JWT_SECRET,
-        { expiresIn: '2h' }
-      );
-
-      return res.status(200).json({
-        message: 'Login successful.',
-        token,
-        userId: foundUser.id,
-        username: foundUser.username,
-        isStaff: foundUser.isStaff
-      });
-    })
-    .catch(next);
+    model.getUserByUsername(data, callback);
 };
 
-// ===============================
+// ==============================
 // GET /api/me
-// Get current logged-in user
-// ===============================
-module.exports.getCurrentUser = function getCurrentUser(req, res, next) {
-  getUserById(req.user.userId)
-    .then((user) => {
-      if (!user) {
-        return res.status(404).json({
-          message: 'User not found.'
-        });
-      }
+// Get Current Logged-In User
+// ==============================
+module.exports.getCurrentUser = (req, res) => {
 
-      return res.status(200).json(user);
-    })
-    .catch(next);
+    const data = { id: res.locals.userId };
+
+    const callback = (error, results) => {
+        if (error) {
+            console.log(error);
+            return res.status(500).json({ message: 'Internal server error' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        return res.status(200).json(results[0]);
+    };
+
+    model.getUserById(data, callback);
 };
