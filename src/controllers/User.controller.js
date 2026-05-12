@@ -1,8 +1,5 @@
-const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-
-const router = express.Router();
 
 const {
   getUserByUsername,
@@ -17,7 +14,7 @@ const SALT_ROUNDS = 10;
 // ===============================
 // Middleware: Verify JWT token
 // ===============================
-function verifyToken(req, res, next) {
+module.exports.verifyToken = function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -37,13 +34,13 @@ function verifyToken(req, res, next) {
       message: 'Invalid or expired token.'
     });
   }
-}
+};
 
 // ===============================
 // POST /api/register
 // Register new marketplace user
 // ===============================
-router.post('/register', (req, res, next) => {
+module.exports.registerUser = function registerUser(req, res, next) {
   const { username, email, password } = req.body || {};
 
   if (!username || !email || !password) {
@@ -69,7 +66,7 @@ router.post('/register', (req, res, next) => {
       return getUserByEmail(email);
     })
     .then((existingEmail) => {
-      if (res.headersSent) return;
+      if (res.headersSent) return null;
 
       if (existingEmail) {
         return res.status(409).json({
@@ -80,7 +77,7 @@ router.post('/register', (req, res, next) => {
       return bcrypt.hash(password, SALT_ROUNDS);
     })
     .then((hashedPassword) => {
-      if (res.headersSent) return;
+      if (res.headersSent || !hashedPassword) return null;
 
       return createUser(username, email, hashedPassword);
     })
@@ -106,13 +103,13 @@ router.post('/register', (req, res, next) => {
       });
     })
     .catch(next);
-});
+};
 
 // ===============================
 // POST /api/login
 // Login existing marketplace user
 // ===============================
-router.post('/login', (req, res, next) => {
+module.exports.loginUser = function loginUser(req, res, next) {
   const { username, password } = req.body || {};
 
   if (!username || !password) {
@@ -162,13 +159,13 @@ router.post('/login', (req, res, next) => {
       });
     })
     .catch(next);
-});
+};
 
 // ===============================
 // GET /api/me
 // Get current logged-in user
 // ===============================
-router.get('/me', verifyToken, (req, res, next) => {
+module.exports.getCurrentUser = function getCurrentUser(req, res, next) {
   getUserById(req.user.userId)
     .then((user) => {
       if (!user) {
@@ -180,6 +177,4 @@ router.get('/me', verifyToken, (req, res, next) => {
       return res.status(200).json(user);
     })
     .catch(next);
-});
-
-module.exports = router;
+};
