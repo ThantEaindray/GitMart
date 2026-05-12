@@ -1,6 +1,4 @@
-//loh kok hao
-//DIT/1B/FT/10
-//2518987
+
 const express = require('express');
 const router = express.Router();
 

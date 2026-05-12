@@ -1,7 +1,4 @@
-//loh kok hao
-//DIT/1B/FT/10
-//2518987
-// Import Models
+
 const model = require('../models/User.model');
 
 
