@@ -1,11 +1,18 @@
-const app = require('./app');
+const path = require('path');
+const dotenv = require('dotenv');
 
-const port = process.env.PORT || 3000;
+// Load .env.dev normally, and .env.test only when NODE_ENV is test
+const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env.dev';
 
-const server = app.listen(port, () => {
-  console.log(`App listening on port ${port}`);
+dotenv.config({
+  path: path.join(__dirname, '..', envFile)
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => server.close(() => process.exit(0)));
-process.on('SIGINT', () => server.close(() => process.exit(0)));
+const app = require('./app');
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`App listening on port ${PORT}`);
+  console.log(`Loaded environment file: ${envFile}`);
+});
