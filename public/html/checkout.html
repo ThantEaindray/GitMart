@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Checkout</title>
+
+  <!-- Main stylesheet -->
+  <link rel="stylesheet" href="../css/noir.css" />
+</head>
+
+<body>
+    
+    <!-- Main checkout container -->
+    <main class="checkout-container">
+
+    <!-- Checkout page title -->
+    <h1>Checkout</h1>
+
+    <!-- Shipping information section -->
+    <section class="checkout-section">
+      <h2>Shipping Information</h2>
+
+      <form>
+
+        <label for="fullName">Full Name</label>
+        <input type="text" id="fullName" placeholder="Enter your full name" />
+
+        <label for="phoneNumber">Phone Number</label>
+        <input type="text" id="phoneNumber" placeholder="Enter your phone number" />
+
+        <label for="address">Address</label>
+        <input type="text" id="address" placeholder="Enter your address" />
+
+        <label for="postalCode">Postal Code</label>
+        <input type="text" id="postalCode" placeholder="Enter your postal code" />
+
+      </form>
+    </section>
+
+    <!-- Delivery method section -->
+    <section class="checkout-section">
+      <h2>Delivery Method</h2>
+
+      <label>
+        <input type="radio" name="delivery" />
+        Standard Delivery (3-5 Days) - FREE
+      </label>
+
+      <label>
+        <input type="radio" name="delivery" />
+        Express Delivery (1-2 Days) - $4.99
+      </label>
+
+      <label>
+        <input type="radio" name="delivery" />
+        Same Day Delivery - $9.99
+      </label>
+    </section>
+
+    <!-- Payment method section -->
+    <section class="checkout-section">
+
+    <h2>Payment Method</h2>
+
+    <!-- Visa / Mastercard -->
+    <label>
+        <input type="radio" name="payment" />
+        Visa / Mastercard
+    </label>
+
+    <!-- Card details form -->
+    <div class="card-details">
+
+        <label for="cardName">Name on Card</label>
+        <input
+        type="text"
+        id="cardName"
+        placeholder="Enter name on card"
+        />
+
+        <label for="cardNumber">Card Number</label>
+        <input
+        type="text"
+        id="cardNumber"
+        placeholder="1234 5678 9012 3456"
+        />
+
+        <label for="expiryDate">Expiry Date</label>
+        <input
+        type="text"
+        id="expiryDate"
+        placeholder="MM/YY"
+        />
+
+        <label for="cvv">CVV</label>
+        <input
+        type="password"
+        id="cvv"
+        placeholder="123"
+        />
+
+    </div>
+
+    <!-- Other payment methods -->
+    <label>
+        <input type="radio" name="payment" />
+        Apple Pay
+    </label>
+
+    <label>
+        <input type="radio" name="payment" />
+        Google Pay
+    </label>
+
+    <label>
+        <input type="radio" name="payment" />
+        GrabPay
+    </label>
+
+    <label>
+        <input type="radio" name="payment" />
+        PayNow
+    </label>
+
+    <label>
+        <input type="radio" name="payment" />
+        NETS
+    </label>
+
+    </section>
+
+    <!-- Order summary section -->
+    <section class="checkout-section">
+      <h2>Order Summary</h2>
+
+      <p>Subtotal: $0.00</p>
+      <p>Delivery Fee: $0.00</p>
+      <p>GST: $0.00</p>
+
+      <h3>Total: $0.00</h3>
+    </section>
+
+    <!-- Place order button -->
+    <section class="checkout-section">
+      <button type="button">
+        Place Order
+      </button>
+    </section>
+
+  </main>
+
+  <!-- Checkout JavaScript -->
+  <script src="../js/checkout.js"></script>
+
+</body>
+</html>
