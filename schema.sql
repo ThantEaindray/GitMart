@@ -93,6 +93,16 @@ CREATE TABLE chatcontent (
   textcontent  TEXT,
   imagecontent BYTEA
 );
+drop table if exists "chatcontent";
+create table "chatcontent"(
+    "id" serial not null,
+    "chat_id" integer REFERENCES chats (id),
+    "sender_id" integer REFERENCES users (id),
+    "textcontent" text,
+    "imagecontent" bytea,
+    "isRead" boolean DEFAULT false,
+    constraint "chatcontent_pkey" PRIMARY KEY ("id")
+    );
 
 -- ── Offers ────────────────────────────────────────────────
 CREATE TABLE offers (
