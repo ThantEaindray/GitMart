@@ -80,6 +80,7 @@ create table "chatcontent"(
     "sender_id" integer REFERENCES users (id),
     "textcontent" text,
     "imagecontent" bytea,
+    "isRead" boolean DEFAULT false,
     constraint "chatcontent_pkey" PRIMARY KEY ("id")
     );
 
