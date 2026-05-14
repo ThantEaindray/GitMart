@@ -1,31 +1,51 @@
-const pool = require("db.js")
-module.exports.allproducts = (data, callback) => {
-  const SQLSTATEMENT = `
-    SELECT * FROM listings
-    ORDER BY ? ?`
-  const VALUES = [data.order, data.direction]
-  pool.query(SQLSTATEMENT,VALUES,callback)
-}
+const pool = require('./db');
 
-module.exports.product = (data, callback) => {
-  const SQLSTATEMENT = `
-    SELECT * FROM listings WHERE id = ?`
-  const VALUES = [data.id]
-  pool.query(SQLSTATEMENT,VALUES,callback)
-}
 
-module.exports.owner = (data, callback) => {
-  const SQLSTATEMENT = `
-    select owner_id FROM listings WHERE id = ?`
-  const VALUES = [data.id]
-  pool.query(SQLSTATEMENT,VALUES,callback)
-}
+// Get all products
+module.exports.selectAll = (callback) => {
+    const SQLSTATEMENT = `
+        SELECT id, name, category, description, price, rating,
+               review_count AS "reviewCount", icon
+        FROM products
+        ORDER BY id ASC
+    `;
+    const VALUES = [];
 
-module.exports.updateProduct = (data, callback) => {
-  const SQLSTATEMENT = `
-    UPDATE listings
-    SET title = ?, price = ?, description = ?
-    WHERE id = ?`
-  const VALUES = [data.newName, data.newPrice, data.newDesc, data.toedit]
-  pool.query(SQLSTATEMENT, VALUES, callback)
-}
+    pool.query(SQLSTATEMENT, VALUES, (error, result) => {
+        if (error) return callback(error, null);
+        callback(null, result.rows);
+    });
+};
+
+// Get product by id
+module.exports.selectById = (data, callback) => {
+    const SQLSTATEMENT = `
+        SELECT id, name, category, description, price, rating,
+               review_count AS "reviewCount", icon
+        FROM products
+        WHERE id = $1
+    `;
+    const VALUES = [data.id];
+
+    pool.query(SQLSTATEMENT, VALUES, (error, result) => {
+        if (error) return callback(error, null);
+        callback(null, result.rows);
+    });
+};
+
+// Search products by name or category
+module.exports.searchByName = (data, callback) => {
+    const SQLSTATEMENT = `
+        SELECT id, name, category, description, price, rating,
+               review_count AS "reviewCount", icon
+        FROM products
+        WHERE name ILIKE $1 OR category ILIKE $1
+        ORDER BY id ASC
+    `;
+    const VALUES = [`%${data.search}%`];
+
+    pool.query(SQLSTATEMENT, VALUES, (error, result) => {
+        if (error) return callback(error, null);
+        callback(null, result.rows);
+    });
+};

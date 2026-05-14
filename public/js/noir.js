@@ -31,8 +31,12 @@ function createProductCard(product) {
   return card;
 }
 
-function renderProducts(products) {
+function renderProducts(products, title) {
   const grid = document.getElementById('products-grid');
+  const sectionTitle = document.getElementById('section-title');
+
+  if (title) sectionTitle.textContent = title;
+
   grid.innerHTML = '';
 
   if (products.length === 0) {
@@ -50,33 +54,55 @@ async function loadProducts() {
 
   try {
     const products = await getProducts();
-    renderProducts(products);
+    renderProducts(products, 'Featured Pieces');
   } catch (err) {
     console.error('Could not load products:', err);
     grid.innerHTML = '<p class="status-text">Failed to load products. Please try again later.</p>';
   }
 }
 
+async function handleSearch(query) {
+  const grid = document.getElementById('products-grid');
+  grid.innerHTML = '<p class="status-text">Searching…</p>';
+
+  try {
+    const products = query ? await searchProducts(query) : await getProducts();
+    const title = query ? `Results for "${query}"` : 'Featured Pieces';
+    renderProducts(products, title);
+  } catch (err) {
+    console.error('Search failed:', err);
+    grid.innerHTML = '<p class="status-text">Search failed. Please try again.</p>';
+  }
+
+  document.getElementById('products-section').scrollIntoView({ behavior: 'smooth' });
+}
+
 // ── EVENT HANDLERS ─────────────────────────────────────────────────────────
 
 function handleProductClick(productId) {
-  // TODO: navigate to product detail page or open a modal
-  console.log('Product clicked:', productId);
+  window.location.href = `product.html?id=${productId}`;
 }
 
 function handleCartClick() {
-  // TODO: open cart panel — call getCart() and render results
-  console.log('Cart clicked');
+  console.log('Cart clicked — coming soon');
 }
 
 function handleWishlistClick() {
-  // TODO: open wishlist panel — call getWishlist() and render results
-  console.log('Wishlist clicked');
+  console.log('Wishlist clicked — coming soon');
 }
 
 function handleSearchClick() {
-  // TODO: show search input, then call searchProducts(query) on submit
-  console.log('Search clicked');
+  const bar = document.getElementById('search-bar');
+  const input = document.getElementById('search-input');
+
+  bar.classList.toggle('open');
+
+  if (bar.classList.contains('open')) {
+    input.focus();
+  } else {
+    input.value = '';
+    loadProducts();
+  }
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
@@ -85,6 +111,19 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-cart').addEventListener('click', handleCartClick);
   document.getElementById('btn-wishlist').addEventListener('click', handleWishlistClick);
   document.getElementById('btn-search').addEventListener('click', handleSearchClick);
+  document.getElementById('btn-search-clear').addEventListener('click', () => {
+    document.getElementById('search-input').value = '';
+    loadProducts();
+  });
+  document.getElementById('btn-shop').addEventListener('click', () => {
+    document.getElementById('products-section').scrollIntoView({ behavior: 'smooth' });
+  });
+  document.getElementById('btn-explore').addEventListener('click', () => {
+    document.getElementById('products-section').scrollIntoView({ behavior: 'smooth' });
+  });
+  document.getElementById('search-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleSearch(e.target.value.trim());
+  });
 
   loadProducts();
 });
