@@ -108,72 +108,85 @@
     <!-- Payment method section -->
     <section class="checkout-section">
 
-    <h2>Payment Method</h2>
+      <h2>Payment Method</h2>
 
-    <!-- Visa / Mastercard -->
-    <label>
-        <input type="radio" name="payment" />
-        Visa / Mastercard
-    </label>
+      <!-- Card payment method -->
+      <div class="payment-group">
+        <h3>Card Payment</h3>
 
-    <!-- Card details form -->
-    <div class="card-details">
+        <label>
+          <input type="radio" name="payment" />
+          Visa / Mastercard
+        </label>
 
-        <label for="cardName">Name on Card</label>
-        <input
-        type="text"
-        id="cardName"
-        placeholder="Enter name on card"
-        />
+        <!-- Card details form -->
+        <div class="card-details">
 
-        <label for="cardNumber">Card Number</label>
-        <input
-        type="text"
-        id="cardNumber"
-        placeholder="1234 5678 9012 3456"
-        />
+          <label for="cardName">Name on Card</label>
+          <input
+            type="text"
+            id="cardName"
+            placeholder="Enter name on card"
+          />
 
-        <label for="expiryDate">Expiry Date</label>
-        <input
-        type="text"
-        id="expiryDate"
-        placeholder="MM/YY"
-        />
+          <label for="cardNumber">Card Number</label>
+          <input
+            type="text"
+            id="cardNumber"
+            placeholder="1234 5678 9012 3456"
+          />
 
-        <label for="cvv">CVV</label>
-        <input
-        type="password"
-        id="cvv"
-        placeholder="123"
-        />
+          <label for="expiryDate">Expiry Date</label>
+          <input
+            type="text"
+            id="expiryDate"
+            placeholder="MM/YY"
+          />
 
-    </div>
+          <label for="cvv">CVV</label>
+          <input
+            type="password"
+            id="cvv"
+            placeholder="123"
+          />
 
-    <!-- Other payment methods -->
-    <label>
-        <input type="radio" name="payment" />
-        Apple Pay
-    </label>
+        </div>
+      </div>
 
-    <label>
-        <input type="radio" name="payment" />
-        Google Pay
-    </label>
+      <!-- Digital wallet payment methods -->
+      <div class="payment-group">
+        <h3>Digital Wallets</h3>
 
-    <label>
-        <input type="radio" name="payment" />
-        GrabPay
-    </label>
+        <label>
+          <input type="radio" name="payment" />
+          Apple Pay
+        </label>
 
-    <label>
-        <input type="radio" name="payment" />
-        PayNow
-    </label>
+        <label>
+          <input type="radio" name="payment" />
+          Google Pay
+        </label>
 
-    <label>
-        <input type="radio" name="payment" />
-        NETS
-    </label>
+        <label>
+          <input type="radio" name="payment" />
+          GrabPay
+        </label>
+      </div>
+
+      <!-- Local Singapore payment methods -->
+      <div class="payment-group">
+        <h3>Local Payment Methods</h3>
+
+        <label>
+          <input type="radio" name="payment" />
+          PayNow
+        </label>
+
+        <label>
+          <input type="radio" name="payment" />
+          NETS
+        </label>
+      </div>
 
     </section>
 
