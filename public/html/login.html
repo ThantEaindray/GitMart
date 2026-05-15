@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitMart — Login</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="../css/noir.css" />
+    <link rel="stylesheet" href="../css/auth.css" />
+  </head>
+
+  <body>
+    <!-- ── NAVIGATION ── -->
+    <nav class="nav">
+      <div class="logo">GitMart</div>
+
+      <ul class="nav-links">
+        <li><a href="noir.html">New In</a></li>
+        <li><a href="noir.html">Collections</a></li>
+        <li><a href="noir.html">Brands</a></li>
+        <li><a href="noir.html">About</a></li>
+      </ul>
+
+      <div class="nav-right">
+        <a class="icon-btn" href="login.html" title="Login">
+          <i class="bi bi-person"></i>
+        </a>
+        <button class="icon-btn" id="btn-wishlist" title="Wishlist">
+          <i class="bi bi-heart"></i>
+        </button>
+        <button class="icon-btn" id="btn-cart" title="Cart">
+          <i class="bi bi-bag"></i>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ── LOGIN PAGE ── -->
+    <main class="auth-page">
+      <section class="auth-intro">
+        <div class="hero-tag">Member Access</div>
+        <h1>Welcome Back to GitMart</h1>
+        <p>
+          Log in to continue browsing marketplace listings, managing your account,
+          and keeping track of your saved items.
+        </p>
+      </section>
+
+      <section class="auth-card">
+        <h2>Login</h2>
+        <p class="auth-subtitle">Access your GitMart account securely.</p>
+
+        <div id="warningCard" class="auth-alert d-none">
+          <span id="warningText"></span>
+        </div>
+
+        <form id="loginForm" class="auth-form">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input id="username" type="text" autocomplete="username" />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input id="password" type="password" autocomplete="current-password" />
+          </div>
+
+          <label class="remember-row">
+            <input id="rememberMe" type="checkbox" />
+            <span>Remember me</span>
+          </label>
+
+          <button type="submit" class="btn-primary auth-btn">Login</button>
+        </form>
+
+        <p class="auth-switch">
+          New to GitMart?
+          <a href="register.html">Create an account</a>
+        </p>
+      </section>
+    </main>
+
+    <script src="../js/loginUser.js"></script>
+  </body>
+</html>
