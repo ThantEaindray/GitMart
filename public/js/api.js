@@ -1,5 +1,5 @@
 // Change this if the backend is hosted at a different origin (e.g. 'http://localhost:3000')
-const API_BASE = '.';
+const API_BASE = '';
 
 // ── PRODUCTS ──────────────────────────────────────────────────────────────
 

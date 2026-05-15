@@ -4,10 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AURUM — Luxury Marketplace</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="../css/noir.css" />
   </head>
@@ -31,6 +28,15 @@
       </div>
     </nav>
 
+    <!-- ── SEARCH BAR ── -->
+    <div class="search-bar" id="search-bar">
+      <div class="search-inner">
+        <i class="bi bi-search search-icon-sm"></i>
+        <input type="text" id="search-input" placeholder="Search pieces…" autocomplete="off" />
+        <button class="icon-btn" id="btn-search-clear" title="Clear"><i class="bi bi-x-lg"></i></button>
+      </div>
+    </div>
+
     <!-- ── HERO ── -->
     <section class="hero">
       <div class="hero-content">
@@ -40,8 +46,8 @@
           Discover rare finds from the world's most celebrated artisans.
           Each piece selected for its craft, its story, and its uncompromising quality.
         </p>
-        <button class="btn-primary">Shop Collection</button>
-        <button class="btn-outline">Explore</button>
+        <button class="btn-primary" id="btn-shop">Shop Collection</button>
+        <button class="btn-outline" id="btn-explore">Explore</button>
       </div>
 
       <div class="hero-img">
@@ -50,13 +56,13 @@
     </section>
 
     <!-- ── FEATURED PRODUCTS ── -->
-    <section class="section">
+    <section class="section" id="products-section">
       <div class="section-header">
-        <h2 class="section-title">Featured Pieces</h2>
+        <h2 class="section-title" id="section-title">Featured Pieces</h2>
         <a href="#" class="see-all">View All →</a>
       </div>
 
-      <!-- Product cards are injected here by noir.js -->
+      <!-- Product cards injected here by noir.js -->
       <div class="products" id="products-grid">
         <p class="status-text">Loading products…</p>
       </div>

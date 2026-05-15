@@ -5,6 +5,7 @@ const path = require('path');
 // Import route handlers
 const somethingRouter = require('./routers/Something.router');
 const personRouter = require('./routers/Person.router');
+const productRouter = require('./routers/product.router');
 
 // Import user authentication routes
 // This handles backend API routes such as:
@@ -30,6 +31,7 @@ app.get('/favicon.ico', (req, res) => res.status(204).end());
 // Existing backend routes
 app.use('/somethings', somethingRouter);
 app.use('/persons', personRouter);
+app.use('/products', productRouter);
 
 // User authentication API routes.
 // All routes inside User.router.js will start with /api.

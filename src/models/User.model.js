@@ -1,6 +1,3 @@
-//loh kok hao
-//DIT/1B/FT/10
-//2518987
 const pool = require('./db');
 
 
