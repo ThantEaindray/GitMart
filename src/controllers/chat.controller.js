@@ -17,41 +17,31 @@ module.exports.loadChats = (req, res, next) => {
       console.log("user has no chats to load")
       return res.status(204).json({message:"user has no chats to load"})
     }
+
     res.locals.userChats = results
     next()
   }
   model.loadChats(data,callback)
 }
 
-module.exports.checkUnread = (req, res, next) => {
-  //firstly we need to get a list of every chat by id only
-  // after that we check to see if theres any unread messages
-  // then we check & exclude any where the user is the sender
-
-  //making the list of chat ids
-  let longChats = res.locals.userChats
-  let cIdArr = new array 
-  longChats.forEach((e) => {
-    cIdArr.push(longChats[e].id)
-  })
-  //so now that we (in theory) have an array of all the users chats
-
+module.exports.toLoad = (req, res, next) => {
+  //alright so for this part we want to get the ids of all the users in the chat that isnt our main user
+  // we can then push that into the next function that gives us all their names and pfps and stuff
   const data = {
-    uId: res.locals.userId,
-    cId: cIdArr
+    chats: res.locals.userChats,
+    uid:res.locals.userId
   }
-
-  const callback = (err, results, fields) => {
-    if (err) {
-      console.error("problem checking for unread messages" + err)
-      return res.status(500).json(err)
+  //so we wanna check each chat, find the uid thats different and from there push it to the results array
+  let resArr = new Array
+  data.chats.foreach((e) => {
+    if (data.chats[e].user_1 == data.uid) {
+      resArr.push(data.chats[e].user_2)
+    } else {
+      resArr.push(data.chats[e].user_1)
     }
-    //so now we (hopefully) have a list of chat ids with unread messages for the user
-    //what we want now is just to send it to the next fn to be formatted nicely for the user since this ones already long enough
-    res.locals.unread = results
-    next()
-  }
-  model.checkUnread(data,callback)
+  })
+  res.locals.toLoad = resArr
+  next()
 }
 
 module.exports.formatList = (req, res, next) => {

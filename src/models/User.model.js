@@ -60,3 +60,10 @@ module.exports.getUserById = (data, callback) => {
         callback(null, result.rows);
     });
 };
+
+
+module.exports.namesPictures = (data, callback) => {
+  const SQLSTATEMENT = `
+    SELECT username, icon FROM users
+    WHERE id = `
+}
