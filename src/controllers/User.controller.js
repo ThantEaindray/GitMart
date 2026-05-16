@@ -144,3 +144,20 @@ module.exports.getCurrentUser = (req, res) => {
 
     model.getUserById(data, callback);
 };
+
+//this function is for the chats but it only really calls the users
+// get the names & pfps of every user who has an open chat with the open user (array of ids)
+module.exports.namesPictures = (req, res, next) => {
+  const data = {
+    ids : res.locals.toLoad
+  }
+  const callback = (err, results, fields) => {
+    if (err) {
+      console.error("problem getting chat user info", err)
+      return res.status(500).json(err)
+    }
+    res.locals.namesImgs = results
+    next()
+  }
+  model.namesPictures(data,callback)
+}
