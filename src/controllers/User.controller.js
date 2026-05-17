@@ -76,6 +76,8 @@ module.exports.register = (req, res, next) => {
         // For generateToken: save userId into res.locals
         res.locals.message = `User ${data.username} created successfully.`;
         res.locals.userId = results[0].id;
+        res.locals.username = results[0].username;
+        res.locals.isStaff = results[0].isStaff;
         next();
     };
 
@@ -106,10 +108,10 @@ module.exports.login = (req, res, next) => {
             return res.status(404).json({ message: 'User not found.' });
         }
 
-        // For comparePassword: save hash into res.locals
         res.locals.hash = results[0].password;
-        // For generateToken: save userId into res.locals
         res.locals.userId = results[0].id;
+        res.locals.username = results[0].username;
+        res.locals.isStaff = results[0].isStaff;
         res.locals.rememberMe = req.body.rememberMe || false;
         res.locals.message = 'Login successful.';
         next();
