@@ -46,3 +46,39 @@ placeOrderButton.addEventListener('click', () => {
     // Success message
     alert('Order placed successfully!');
 });
+
+// Get delivery options 
+const deliveryOptions = document.querySelectorAll(
+    'input[name="delivery"]'
+);
+
+// Get summary elements
+const deliveryFeeText = document.getElementById('deliveryFee');
+const totalPriceText = document.getElementById('totalPrice');
+
+// Base subtotal and GST
+const subtotal = 586.23;
+const gst = 52.76;
+
+// Add event listener to each delivery option
+deliveryOptions.forEach((option) => {
+
+    option.addEventListener('change', () => {
+
+        // Get selected delivery fee
+        const deliveryFee = parseFloat(option.value);
+
+        // Calculate total
+        const total = subtotal + gst + deliveryFee;
+
+        // Update delivery fee text
+        if (deliveryFee === 0) {
+            deliveryFeeText.textContent = `Delivery Fee: FREE`;
+        } else {
+            deliveryFeeText.textContent = `Delivery Fee: $${deliveryFee.toFixed(2)}`;
+        }
+
+        // Update total price
+        totalPriceText.textContent = `Total: $${total.toFixed(2)}`;
+    });
+});

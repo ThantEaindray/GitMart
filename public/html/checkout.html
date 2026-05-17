@@ -85,22 +85,22 @@
       <h2>Delivery Method</h2>
 
       <label>
-        <input type="radio" name="delivery" />
+        <input type="radio" name="delivery" value="0" />
         Standard Delivery (3-5 Days) - FREE
       </label>
 
       <p>Estimated Arrival: 18 Sep - 20 Sep</p>
 
       <label>
-        <input type="radio" name="delivery" />
-        Express Delivery (1-2 Days) - $4.99
+        <input type="radio" name="delivery" value="9.99" />
+        Express Delivery (1-2 Days) - $9.99
       </label>
 
       <p>Estimated Arrival: 16 Sep - 17 Sep</p>
 
       <label>
-        <input type="radio" name="delivery" />
-        Same Day Delivery - $9.99
+        <input type="radio" name="delivery" value="19.99" />
+        Same Day Delivery - $19.99
       </label>
 
       <p>Estimated Arrival: Today</p>
@@ -217,10 +217,10 @@
 
       <!-- Price summary -->
       <p>Subtotal: $586.23</p>
-      <p>Delivery Fee: FREE</p>
+      <p id="deliveryFee">Delivery Fee: FREE</p>
       <p>GST (9%): $52.76</p>
 
-      <h3>Total: $638.99</h3>
+      <h3 id="totalPrice">Total: $638.99</h3>
     </section>
 
     <!-- Place order button -->
