@@ -414,6 +414,8 @@ body {
   gap: 16px;
 }
 
+.d-none { display: none; }
+
 /* ── STATUS TEXT (loading / empty / error) ── */
 .status-text {
   color: var(--muted);

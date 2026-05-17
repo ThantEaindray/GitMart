@@ -38,6 +38,13 @@ async function searchProducts(query) {
   return res.json();
 }
 
+async function getProductsByCategory(category, excludeId) {
+  const params = new URLSearchParams({ category, exclude: excludeId });
+  const res = await fetch(`${API_BASE}/products?${params}`);
+  if (!res.ok) throw new Error(`Failed to fetch category (${res.status})`);
+  return res.json();
+}
+
 // ── CART ──────────────────────────────────────────────────────────────────
 
 /**
