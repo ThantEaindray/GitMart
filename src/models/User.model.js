@@ -1,7 +1,5 @@
 const pool = require('./db');
 
-
-// Get user by username
 module.exports.getUserByUsername = (data, callback) => {
     const SQLSTATEMENT = `
         SELECT id, username, email, password, "isStaff" AS "isStaff", created_on
@@ -9,14 +7,9 @@ module.exports.getUserByUsername = (data, callback) => {
         WHERE username = $1
     `;
     const VALUES = [data.username];
-
-    pool.query(SQLSTATEMENT, VALUES, (error, result) => {
-        if (error) return callback(error, null);
-        callback(null, result.rows);
-    });
+    pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
-// Get user by email
 module.exports.getUserByEmail = (data, callback) => {
     const SQLSTATEMENT = `
         SELECT id, username, email, "isStaff" AS "isStaff", created_on
@@ -24,14 +17,9 @@ module.exports.getUserByEmail = (data, callback) => {
         WHERE email = $1
     `;
     const VALUES = [data.email];
-
-    pool.query(SQLSTATEMENT, VALUES, (error, result) => {
-        if (error) return callback(error, null);
-        callback(null, result.rows);
-    });
+    pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
-// Create new user
 module.exports.createUser = (data, callback) => {
     const SQLSTATEMENT = `
         INSERT INTO users (username, email, password, "isStaff", created_on)
@@ -39,14 +27,9 @@ module.exports.createUser = (data, callback) => {
         RETURNING id, username, email, "isStaff" AS "isStaff", created_on
     `;
     const VALUES = [data.username, data.email, data.password];
-
-    pool.query(SQLSTATEMENT, VALUES, (error, result) => {
-        if (error) return callback(error, null);
-        callback(null, result.rows);
-    });
+    pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
-// Get user by id
 module.exports.getUserById = (data, callback) => {
     const SQLSTATEMENT = `
         SELECT id, username, email, "isStaff" AS "isStaff", created_on
@@ -54,9 +37,5 @@ module.exports.getUserById = (data, callback) => {
         WHERE id = $1
     `;
     const VALUES = [data.id];
-
-    pool.query(SQLSTATEMENT, VALUES, (error, result) => {
-        if (error) return callback(error, null);
-        callback(null, result.rows);
-    });
+    pool.query(SQLSTATEMENT, VALUES, callback);
 };
