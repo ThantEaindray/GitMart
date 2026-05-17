@@ -314,3 +314,17 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ── CHECKOUT SECTION ── */
+.checkout-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+textarea {
+  resize: none;
+  overflow-y: auto;
+  min-height: 65px;
+  width: 100%;
+}
