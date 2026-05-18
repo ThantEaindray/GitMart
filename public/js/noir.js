@@ -2,7 +2,7 @@
 
 function renderStars(rating) {
   const filled = Math.round(rating ?? 0);
-  const full  = '<i class="bi bi-star-fill"></i>';
+  const full = '<i class="bi bi-star-fill"></i>';
   const empty = '<i class="bi bi-star"></i>';
   return full.repeat(filled) + empty.repeat(5 - filled);
 }

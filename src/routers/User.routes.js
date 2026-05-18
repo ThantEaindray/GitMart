@@ -6,7 +6,7 @@ const {
   registerUser,
   loginUser,
   getCurrentUser,
-  verifyToken
+  verifyToken,
 } = require('../controllers/User.controller');
 
 // Register new marketplace user

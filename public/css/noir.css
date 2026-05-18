@@ -1,5 +1,7 @@
 /* ── RESET ── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -7,14 +9,14 @@
 
 /* ── DESIGN TOKENS ── */
 :root {
-  --bg:       #0c0c0c;
-  --surface:  #161616;
-  --card:     #1a1a1a;
-  --border:   #2a2a2a;
-  --text:     #f0ece4;
-  --muted:    #7a7570;
-  --accent:   #c9a84c;
-  --accent2:  #e8d5a3;
+  --bg: #0c0c0c;
+  --surface: #161616;
+  --card: #1a1a1a;
+  --border: #2a2a2a;
+  --text: #f0ece4;
+  --muted: #7a7570;
+  --accent: #c9a84c;
+  --accent2: #e8d5a3;
   --btn-text: #0c0c0c;
 }
 
@@ -149,7 +151,9 @@ body {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-left: 14px;
-  transition: border-color 0.2s, color 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
 }
 
 .btn-outline:hover {
@@ -285,7 +289,9 @@ body {
   border-bottom: 1px solid var(--border);
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease, padding 0.3s ease;
+  transition:
+    max-height 0.3s ease,
+    padding 0.3s ease;
   padding: 0 60px;
 }
 
@@ -414,7 +420,9 @@ body {
   gap: 16px;
 }
 
-.d-none { display: none; }
+.d-none {
+  display: none;
+}
 
 /* ── STATUS TEXT (loading / empty / error) ── */
 .status-text {

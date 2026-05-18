@@ -1,6 +1,6 @@
 function renderStars(rating) {
   const filled = Math.round(rating ?? 0);
-  const full  = '<i class="bi bi-star-fill"></i>';
+  const full = '<i class="bi bi-star-fill"></i>';
   const empty = '<i class="bi bi-star"></i>';
   return full.repeat(filled) + empty.repeat(5 - filled);
 }
@@ -39,7 +39,9 @@ function renderRelated(products) {
     return;
   }
 
-  const cards = products.map(p => `
+  const cards = products
+    .map(
+      (p) => `
     <div class="card" onclick="window.location.href='product.html?id=${p.id}'">
       <div class="card-img"><i class="bi bi-${p.icon ?? 'box-seam'}"></i></div>
       <div class="card-body">
@@ -54,7 +56,9 @@ function renderRelated(products) {
         </div>
       </div>
     </div>
-  `).join('');
+  `,
+    )
+    .join('');
 
   section.innerHTML = `
     <div class="section-header">
