@@ -12,7 +12,8 @@ const bcryptMiddleware = require('../middleware/bcryptMiddleware');
 // Register New User
 router.post(
   '/register',
-  userController.checkUsernameOrEmailExist,
+  userController.checkUsernameExists,
+  userController.checkEmailExists,
   bcryptMiddleware.hashPassword,
   userController.register,
   jwtMiddleware.generateToken,

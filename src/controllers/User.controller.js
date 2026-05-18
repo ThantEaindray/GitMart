@@ -1,6 +1,6 @@
 const model = require('../models/User.model');
 
-module.exports.checkUsernameOrEmailExist = (req, res, next) => {
+module.exports.checkUsernameExists = (req, res, next) => {
   if (
     req.body.username === undefined ||
     req.body.email === undefined ||
@@ -20,30 +20,30 @@ module.exports.checkUsernameOrEmailExist = (req, res, next) => {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
     }
-
     if (result.rows.length > 0) {
       return res.status(409).json({ message: 'Username already exists.' });
     }
-
-    const emailData = { email: req.body.email };
-
-    const emailCallback = (error, result) => {
-      if (error) {
-        console.log(error);
-        return res.status(500).json({ message: 'Internal server error' });
-      }
-
-      if (result.rows.length > 0) {
-        return res.status(409).json({ message: 'Email already exists.' });
-      }
-
-      next();
-    };
-
-    model.getUserByEmail(emailData, emailCallback);
+    next();
   };
 
   model.getUserByUsername(data, callback);
+};
+
+module.exports.checkEmailExists = (req, res, next) => {
+  const data = { email: req.body.email };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    if (result.rows.length > 0) {
+      return res.status(409).json({ message: 'Email already exists.' });
+    }
+    next();
+  };
+
+  model.getUserByEmail(data, callback);
 };
 
 module.exports.register = (req, res, next) => {
