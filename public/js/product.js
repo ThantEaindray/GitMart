@@ -7,7 +7,7 @@ function renderStars(rating) {
 
 function renderProduct(product) {
   const section = document.getElementById('product-detail');
-  document.title = `AURUM — ${product.name}`;
+  document.title = `GitMart — ${product.name}`;
 
   section.innerHTML = `
     <div class="product-img">
