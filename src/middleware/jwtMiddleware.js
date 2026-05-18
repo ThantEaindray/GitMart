@@ -40,6 +40,9 @@ module.exports.sendToken = (req, res) => {
   return res.status(200).json({
     message: res.locals.message || 'Login successful.',
     token: res.locals.token,
+    userId: res.locals.userId,
+    username: res.locals.username,
+    isStaff: res.locals.isStaff
   });
 };
 

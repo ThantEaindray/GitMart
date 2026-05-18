@@ -1,0 +1,168 @@
+/* ── AUTH PAGES: LOGIN / REGISTER / PROFILE ── */
+
+.auth-page {
+  min-height: calc(100vh - 90px);
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 3rem;
+  align-items: center;
+  padding: 4rem 7vw;
+}
+
+.auth-intro {
+  max-width: 620px;
+}
+
+.auth-intro .hero-tag {
+  margin-bottom: 1rem;
+}
+
+.auth-intro h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.6rem, 5vw, 5rem);
+  line-height: 1;
+  margin-bottom: 1.2rem;
+}
+
+.auth-intro p {
+  max-width: 520px;
+  line-height: 1.8;
+  opacity: 0.85;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 430px;
+  justify-self: end;
+  padding: 2.2rem;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: rgba(10, 10, 10, 0.72);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.auth-card h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.auth-card .auth-subtitle {
+  margin-bottom: 1.5rem;
+  opacity: 0.75;
+  line-height: 1.6;
+}
+
+.auth-form {
+  width: 100%;
+  text-align: left;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  margin-bottom: 0.4rem;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(212, 175, 55, 0.38);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  font-family: 'Jost', sans-serif;
+  font-size: 1rem;
+  outline: none;
+}
+
+.form-group input:focus {
+  border-color: #d4af37;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.remember-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0.5rem 0 1.4rem;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.remember-row input {
+  width: auto;
+  accent-color: #d4af37;
+}
+
+.auth-btn {
+  width: 100%;
+  margin-top: 0.2rem;
+}
+
+.auth-switch {
+  margin-top: 1.4rem;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.auth-switch a {
+  color: #d4af37;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+.auth-alert {
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.d-none {
+  display: none;
+}
+
+/* Profile page */
+.profile-card {
+  max-width: 520px;
+}
+
+.profile-info {
+  margin: 1.5rem 0;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(212, 175, 55, 0.25);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+}
+
+.profile-info p {
+  margin: 0.7rem 0;
+}
+
+/* Mobile responsive */
+@media (max-width: 900px) {
+  .auth-page {
+    grid-template-columns: 1fr;
+    padding: 3rem 6vw;
+  }
+
+  .auth-card {
+    justify-self: stretch;
+    max-width: 100%;
+  }
+
+  .auth-intro h1 {
+    font-size: 3rem;
+  }
+}
