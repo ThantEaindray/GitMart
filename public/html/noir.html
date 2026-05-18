@@ -20,34 +20,21 @@
       <div class="logo">GitMart</div>
 
       <ul class="nav-links">
-        <li><a href="#">New In</a></li>
-        <li><a href="#">Collections</a></li>
+        <li><a href="noir.html">Home</a></li>
+        <li><a href="products.html">New In</a></li>
+        <li><a href="products.html">Collections</a></li>
         <li><a href="#">Brands</a></li>
         <li><a href="#">About</a></li>
       </ul>
 
       <div class="nav-right">
-        <button class="icon-btn" id="btn-search" title="Search">
-          <i class="bi bi-search"></i>
-        </button>
-        <a class="icon-btn" href="login.html" title="Login"><i class="bi bi-person"></i></a>
+        <a class="icon-btn" id="btn-account" href="login.html" title="Login"><i class="bi bi-person"></i></a>
         <button class="icon-btn" id="btn-wishlist" title="Wishlist">
           <i class="bi bi-heart"></i>
         </button>
         <button class="icon-btn" id="btn-cart" title="Cart"><i class="bi bi-bag"></i></button>
       </div>
     </nav>
-
-    <!-- ── SEARCH BAR ── -->
-    <div class="search-bar" id="search-bar">
-      <div class="search-inner">
-        <i class="bi bi-search search-icon-sm"></i>
-        <input type="text" id="search-input" placeholder="Search pieces…" autocomplete="off" />
-        <button class="icon-btn" id="btn-search-clear" title="Clear">
-          <i class="bi bi-x-lg"></i>
-        </button>
-      </div>
-    </div>
 
     <!-- ── HERO ── -->
     <section class="hero">
@@ -58,8 +45,8 @@
           Discover rare finds from the world's most celebrated artisans. Each piece selected for its
           craft, its story, and its uncompromising quality.
         </p>
-        <button class="btn-primary" id="btn-shop">Shop Collection</button>
-        <button class="btn-outline" id="btn-explore">Explore</button>
+        <a class="btn-primary" href="products.html">Shop Collection</a>
+        <a class="btn-outline" href="products.html">Browse All</a>
       </div>
 
       <div class="hero-img">
@@ -71,10 +58,9 @@
     <section class="section" id="products-section">
       <div class="section-header">
         <h2 class="section-title" id="section-title">Featured Pieces</h2>
-        <a href="#" class="see-all">View All →</a>
+        <a href="products.html" class="see-all">View All →</a>
       </div>
 
-      <!-- Product cards injected here by noir.js -->
       <div class="products" id="products-grid">
         <p class="status-text">Loading products…</p>
       </div>

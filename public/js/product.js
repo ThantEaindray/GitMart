@@ -73,7 +73,7 @@ async function loadProduct() {
   const id = params.get('id');
 
   if (!id) {
-    window.location.href = 'noir.html';
+    window.location.href = 'products.html';
     return;
   }
 
@@ -88,7 +88,7 @@ async function loadProduct() {
     section.innerHTML = `
       <div class="product-error">
         <p class="status-text">Product not found.</p>
-        <a href="noir.html" class="breadcrumb-back">
+        <a href="products.html" class="breadcrumb-back">
           <i class="bi bi-arrow-left"></i> Back to Store
         </a>
       </div>

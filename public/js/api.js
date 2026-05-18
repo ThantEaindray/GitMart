@@ -114,3 +114,16 @@ async function toggleWishlist(productId) {
   if (!res.ok) throw new Error(`Failed to update wishlist (${res.status})`);
   return res.json();
 }
+
+// ── NAV AUTH ──────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  const accountBtn = document.getElementById('btn-account');
+  if (!accountBtn) return;
+
+  if (localStorage.getItem('token')) {
+    accountBtn.href = 'profile.html';
+    accountBtn.title = 'Profile';
+    accountBtn.querySelector('i').className = 'bi bi-person-circle';
+  }
+});
