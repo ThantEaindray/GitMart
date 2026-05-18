@@ -114,6 +114,7 @@ create table "chatcontent"(
     "sender_id" integer REFERENCES users (id),
     "textcontent" text,
     "imagecontent" bytea,
+    "sentOn" timestamp DEFAULT current_timestamp,
     "isRead" boolean DEFAULT false,
     constraint "chatcontent_pkey" PRIMARY KEY ("id")
     );
