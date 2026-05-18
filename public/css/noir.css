@@ -1,5 +1,7 @@
 /* ── RESET ── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -7,14 +9,14 @@
 
 /* ── DESIGN TOKENS ── */
 :root {
-  --bg:       #0c0c0c;
-  --surface:  #161616;
-  --card:     #1a1a1a;
-  --border:   #2a2a2a;
-  --text:     #f0ece4;
-  --muted:    #7a7570;
-  --accent:   #c9a84c;
-  --accent2:  #e8d5a3;
+  --bg: #0c0c0c;
+  --surface: #161616;
+  --card: #1a1a1a;
+  --border: #2a2a2a;
+  --text: #f0ece4;
+  --muted: #7a7570;
+  --accent: #c9a84c;
+  --accent2: #e8d5a3;
   --btn-text: #0c0c0c;
 }
 
@@ -149,7 +151,9 @@ body {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-left: 14px;
-  transition: border-color 0.2s, color 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
 }
 
 .btn-outline:hover {
@@ -238,6 +242,7 @@ body {
   justify-content: center;
   color: var(--muted);
   font-size: 32px;
+  overflow: hidden;
 }
 
 .card-body {
@@ -285,7 +290,9 @@ body {
   border-bottom: 1px solid var(--border);
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease, padding 0.3s ease;
+  transition:
+    max-height 0.3s ease,
+    padding 0.3s ease;
   padding: 0 60px;
 }
 
@@ -360,6 +367,15 @@ body {
   justify-content: center;
   font-size: 96px;
   color: var(--muted);
+  overflow: hidden;
+}
+
+.card-img img,
+.product-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .product-info {
@@ -412,6 +428,37 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.d-none {
+  display: none;
+}
+
+/* ── CATEGORY PILLS ── */
+.category-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.pill {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 6px 18px;
+  font-family: 'Jost', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.pill:hover,
+.pill.active {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ── STATUS TEXT (loading / empty / error) ── */

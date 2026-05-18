@@ -57,6 +57,7 @@ CREATE TABLE products (
   rating       NUMERIC(3, 2)  DEFAULT 0,
   review_count INTEGER        DEFAULT 0,
   icon         TEXT           DEFAULT 'box-seam',
+  image_url    TEXT,
   created_on   DATE           DEFAULT CURRENT_DATE
 );
 
@@ -104,12 +105,12 @@ CREATE TABLE offers (
 );
 
 -- ── Seed Data ─────────────────────────────────────────────
-INSERT INTO products (name, category, description, price, rating, review_count, icon) VALUES
-  ('Obsidian Chronograph',  'Timepieces',  'Japanese movement, sapphire crystal, 42mm case in matte black PVD.',   4800, 4.8, 124, 'watch'),
-  ('Calfskin Card Holder',  'Accessories', 'Six-card capacity, full-grain Italian calfskin, hand-stitched edges.',   285, 4.6,  89, 'credit-card-2-front'),
-  ('Silk Pocket Square',    'Accessories', 'Hand-rolled hem, pure silk twill, woven in Lyon.',                       195, 4.7,  57, 'droplet-half'),
-  ('Baltic Amber Cufflinks','Jewellery',   'Certified Baltic amber set in sterling silver with brushed finish.',     620, 4.9,  32, 'gem'),
-  ('Slim Billfold Wallet',  'Accessories', 'Six-slot slim profile, vegetable-tanned Italian leather.',               380, 4.5,  76, 'wallet2'),
-  ('Precision Titanium Pen','Writing',     'CNC machined titanium body, weighted for balance, Schmidt refill.',      240, 4.8,  45, 'pen'),
-  ('Cedar Shoe Trees',      'Footwear',    'Aromatic cedarwood, adjustable split-toe, preserves shoe shape.',        110, 4.7,  98, 'tree'),
-  ('Merino Travel Scarf',   'Apparel',     'Extra-fine 18.5-micron merino, 200cm length, hand-finished fringe.',     320, 4.6,  63, 'wind');
+INSERT INTO products (name, category, description, price, rating, review_count, icon, image_url) VALUES
+  ('Obsidian Chronograph',  'Timepieces',  'Japanese movement, sapphire crystal, 42mm case in matte black PVD.',   4800, 4.8, 124, 'watch',               'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80'),
+  ('Calfskin Card Holder',  'Accessories', 'Six-card capacity, full-grain Italian calfskin, hand-stitched edges.',   285, 4.6,  89, 'credit-card-2-front', 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&q=80'),
+  ('Silk Pocket Square',    'Accessories', 'Hand-rolled hem, pure silk twill, woven in Lyon.',                       195, 4.7,  57, 'droplet-half',        'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=80'),
+  ('Baltic Amber Cufflinks','Jewellery',   'Certified Baltic amber set in sterling silver with brushed finish.',     620, 4.9,  32, 'gem',                 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&q=80'),
+  ('Slim Billfold Wallet',  'Accessories', 'Six-slot slim profile, vegetable-tanned Italian leather.',               380, 4.5,  76, 'wallet2',             'https://images.unsplash.com/photo-1627123424574-724758594e93?w=600&q=80'),
+  ('Precision Titanium Pen','Writing',     'CNC machined titanium body, weighted for balance, Schmidt refill.',      240, 4.8,  45, 'pen',                 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=600&q=80'),
+  ('Cedar Shoe Trees',      'Footwear',    'Aromatic cedarwood, adjustable split-toe, preserves shoe shape.',        110, 4.7,  98, 'tree',                'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80'),
+  ('Merino Travel Scarf',   'Apparel',     'Extra-fine 18.5-micron merino, 200cm length, hand-finished fringe.',     320, 4.6,  63, 'wind',                'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=600&q=80');

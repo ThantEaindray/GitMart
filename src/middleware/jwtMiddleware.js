@@ -1,6 +1,6 @@
 // Import Modules
-require("dotenv").config();
-const jwt = require("jsonwebtoken");
+require('dotenv').config();
+const jwt = require('jsonwebtoken');
 
 // Import Parameters from .env
 const secretKey = process.env.JWT_SECRET_KEY;
@@ -8,12 +8,12 @@ const rememberDuration = process.env.JWT_REMEMBER_TTL;
 const noRememberDuration = process.env.JWT_NO_REMEMBER_TTL;
 const tokenAlgorithm = process.env.JWT_ALGORITHM;
 
-// Generate Token 
+// Generate Token
 // Use in Register & Login Routes, generates token with provided userId
 module.exports.generateToken = (req, res, next) => {
   const payload = {
     userId: res.locals.userId,
-    timestamp: new Date()
+    timestamp: new Date(),
   };
 
   const options = {
@@ -23,7 +23,7 @@ module.exports.generateToken = (req, res, next) => {
 
   const callback = (err, token) => {
     if (err) {
-      console.error("Error jwt:", err);
+      console.error('Error jwt:', err);
       res.status(500).json(err);
     } else {
       res.locals.token = token;
@@ -38,7 +38,7 @@ module.exports.generateToken = (req, res, next) => {
 // Sends generated token to frontend to store for future use
 module.exports.sendToken = (req, res) => {
   return res.status(200).json({
-    message: res.locals.message || "Login successful.",
+    message: res.locals.message || 'Login successful.',
     token: res.locals.token,
     userId: res.locals.userId,
     username: res.locals.username,
@@ -46,8 +46,7 @@ module.exports.sendToken = (req, res) => {
   });
 };
 
-
-// Verify Token 
+// Verify Token
 // Used at the start of most routes to get secure userId
 module.exports.verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -59,15 +58,15 @@ module.exports.verifyToken = (req, res, next) => {
   const token = authHeader.substring(7);
 
   if (!token) {
-    return res.status(401).json({ error: "No token provided" });
+    return res.status(401).json({ error: 'No token provided' });
   }
 
   const callback = (err, decoded) => {
     if (err) {
-      return res.status(401).json({ error: "Invalid token" });
+      return res.status(401).json({ error: 'Invalid token' });
     }
 
-    res.locals.userId = decoded.user_id ?? decoded.userId ?? decoded.id ?? decoded.sub
+    res.locals.userId = decoded.user_id ?? decoded.userId ?? decoded.id ?? decoded.sub;
     res.locals.tokenTimestamp = decoded.timestamp;
 
     next();

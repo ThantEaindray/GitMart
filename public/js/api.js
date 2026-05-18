@@ -38,6 +38,13 @@ async function searchProducts(query) {
   return res.json();
 }
 
+async function getProductsByCategory(category, excludeId) {
+  const params = new URLSearchParams({ category, exclude: excludeId });
+  const res = await fetch(`${API_BASE}/products?${params}`);
+  if (!res.ok) throw new Error(`Failed to fetch category (${res.status})`);
+  return res.json();
+}
+
 // ── CART ──────────────────────────────────────────────────────────────────
 
 /**
@@ -107,3 +114,16 @@ async function toggleWishlist(productId) {
   if (!res.ok) throw new Error(`Failed to update wishlist (${res.status})`);
   return res.json();
 }
+
+// ── NAV AUTH ──────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  const accountBtn = document.getElementById('btn-account');
+  if (!accountBtn) return;
+
+  if (localStorage.getItem('token')) {
+    accountBtn.href = 'profile.html';
+    accountBtn.title = 'Profile';
+    accountBtn.querySelector('i').className = 'bi bi-person-circle';
+  }
+});

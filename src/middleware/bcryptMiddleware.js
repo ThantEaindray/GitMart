@@ -1,25 +1,25 @@
 // Import Modules
-const bcrypt = require("bcrypt");
+const bcrypt = require('bcrypt');
 require('dotenv').config();
 //import Parameters from .env
-const pepper= process.env.BCRYPT_PEPPER;
+const pepper = process.env.BCRYPT_PEPPER;
 // Set Salt Rounds (Encryption Layers)
 const saltRounds = 10;
 
 // Compare Password
 // Used during Login to verify Password
-// 1 Raw Password (from req.body) + 1 Hashed Password (from DB) should be used. 
+// 1 Raw Password (from req.body) + 1 Hashed Password (from DB) should be used.
 module.exports.comparePassword = (req, res, next) => {
   const callback = (err, isMatch) => {
     if (err) {
-      console.error("Error bcrypt:", err);
+      console.error('Error bcrypt:', err);
       res.status(500).json(err);
     } else {
       if (isMatch) {
         next();
       } else {
         res.status(401).json({
-          message: "Wrong password",
+          message: 'Wrong password',
         });
       }
     }
@@ -33,7 +33,7 @@ module.exports.comparePassword = (req, res, next) => {
 module.exports.hashPassword = (req, res, next) => {
   const callback = (err, hash) => {
     if (err) {
-      console.error("Error bcrypt:", err);
+      console.error('Error bcrypt:', err);
       res.status(500).json(err);
     } else {
       res.locals.hash = hash;
