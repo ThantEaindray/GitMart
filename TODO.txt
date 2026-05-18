@@ -1,0 +1,6 @@
+just a text file for me to write down the things that i need to do still
+DELETE BEFORE MERGING 
+1. figure out how to handle image uploads and maybe cdns just for conveniences sake
+2. the formatting for the loaded content on the controller page\
+3. the rest of the endpoints 
+4. some sort of a scanner type thing that triggers when a new message is sent in the chat and tells the frontend to load the new information so you dont need to refresh between messages
