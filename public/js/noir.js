@@ -13,7 +13,7 @@ function createProductCard(product) {
   card.dataset.id = product.id;
 
   card.innerHTML = `
-    <div class="card-img"><i class="bi bi-${product.icon ?? 'box-seam'}"></i></div>
+    <div class="card-img">${product.imageUrl ? `<img src="${product.imageUrl}" alt="${product.name}" loading="lazy" />` : `<i class="bi bi-${product.icon ?? 'box-seam'}"></i>`}</div>
     <div class="card-body">
       <div class="card-cat">${product.category}</div>
       <div class="card-name">${product.name}</div>

@@ -11,7 +11,7 @@ function renderProduct(product) {
 
   section.innerHTML = `
     <div class="product-img">
-      <i class="bi bi-${product.icon ?? 'box-seam'}"></i>
+      ${product.imageUrl ? `<img src="${product.imageUrl}" alt="${product.name}" loading="lazy" />` : `<i class="bi bi-${product.icon ?? 'box-seam'}"></i>`}
     </div>
     <div class="product-info">
       <div class="card-cat">${product.category}</div>
@@ -43,7 +43,7 @@ function renderRelated(products) {
     .map(
       (p) => `
     <div class="card" onclick="window.location.href='product.html?id=${p.id}'">
-      <div class="card-img"><i class="bi bi-${p.icon ?? 'box-seam'}"></i></div>
+      <div class="card-img">${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" loading="lazy" />` : `<i class="bi bi-${p.icon ?? 'box-seam'}"></i>`}</div>
       <div class="card-body">
         <div class="card-cat">${p.category}</div>
         <div class="card-name">${p.name}</div>
