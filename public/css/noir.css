@@ -20,6 +20,55 @@
   --btn-text: #0c0c0c;
 }
 
+/* ── THEMES ── */
+:root[data-theme="light"] {
+  --bg: #faf8f4;
+  --surface: #f0ece4;
+  --card: #ffffff;
+  --border: #ddd8d0;
+  --text: #1a1a1a;
+  --muted: #8a8480;
+  --accent: #8b6914;
+  --accent2: #b8900f;
+  --btn-text: #faf8f4;
+}
+
+:root[data-theme="blush"] {
+  --bg: #180e0f;
+  --surface: #231418;
+  --card: #2a1a1c;
+  --border: #3d2428;
+  --text: #f5e8e8;
+  --muted: #9a7575;
+  --accent: #d4785a;
+  --accent2: #e8a090;
+  --btn-text: #180e0f;
+}
+
+:root[data-theme="forest"] {
+  --bg: #0a120e;
+  --surface: #111c17;
+  --card: #162018;
+  --border: #243d2c;
+  --text: #e8f0ea;
+  --muted: #6a8a70;
+  --accent: #6aab7a;
+  --accent2: #a0d0a8;
+  --btn-text: #0a120e;
+}
+
+:root[data-theme="navy"] {
+  --bg: #08101c;
+  --surface: #0e1828;
+  --card: #131f32;
+  --border: #1e3050;
+  --text: #e8f0fc;
+  --muted: #607090;
+  --accent: #5a90d0;
+  --accent2: #90c0f0;
+  --btn-text: #08101c;
+}
+
 /* ── BASE ── */
 body {
   background: var(--bg);
@@ -469,6 +518,81 @@ body {
   padding: 20px 0;
 }
 
+/* ── SETTINGS PAGE ── */
+.settings-page {
+  padding: 60px;
+  max-width: 900px;
+}
+
+.settings-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 36px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.settings-sub {
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 48px;
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+
+.theme-card {
+  border: 2px solid var(--border);
+  cursor: pointer;
+  padding: 20px 16px 16px;
+  transition: border-color 0.2s;
+  background: var(--card);
+  text-align: center;
+  position: relative;
+}
+
+.theme-card:hover {
+  border-color: var(--accent);
+}
+
+.theme-card.active {
+  border-color: var(--accent);
+}
+
+.theme-card.active::after {
+  content: '\F26E';
+  font-family: 'bootstrap-icons';
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 14px;
+  color: var(--accent);
+}
+
+.theme-swatches {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.theme-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 800px) {
   .nav {
@@ -516,5 +640,13 @@ body {
 
   .product-price {
     font-size: 24px;
+  }
+
+  .settings-page {
+    padding: 30px 20px;
+  }
+
+  .theme-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
