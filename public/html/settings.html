@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitMart — Appearance</title>
+    <script>
+      var t = localStorage.getItem('theme');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+    </script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="stylesheet" href="../css/noir.css" />
+  </head>
+  <body>
+    <!-- ── NAVIGATION ── -->
+    <nav class="nav">
+      <div class="logo">GitMart</div>
+
+      <ul class="nav-links">
+        <li><a href="noir.html">Home</a></li>
+        <li><a href="products.html">New In</a></li>
+        <li><a href="products.html">Collections</a></li>
+        <li><a href="#">Brands</a></li>
+        <li><a href="#">About</a></li>
+      </ul>
+
+      <div class="nav-right">
+        <a class="icon-btn" id="btn-account" href="login.html" title="Login"><i class="bi bi-person"></i></a>
+        <button class="icon-btn" id="btn-wishlist" title="Wishlist">
+          <i class="bi bi-heart"></i>
+        </button>
+        <button class="icon-btn" id="btn-cart" title="Cart"><i class="bi bi-bag"></i></button>
+        <a class="icon-btn active" href="settings.html" title="Appearance"><i class="bi bi-palette"></i></a>
+      </div>
+    </nav>
+
+    <!-- ── BREADCRUMB ── -->
+    <div class="breadcrumb-bar">
+      <a href="javascript:history.back()" class="breadcrumb-back">
+        <i class="bi bi-arrow-left"></i> Back
+      </a>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div class="settings-page">
+      <h1 class="settings-heading">Appearance</h1>
+      <p class="settings-sub">Choose a colour theme for your browsing experience.</p>
+
+      <div class="theme-grid" id="theme-grid">
+
+        <div class="theme-card" data-theme="">
+          <div class="theme-swatches">
+            <span class="swatch" style="background:#0c0c0c;"></span>
+            <span class="swatch" style="background:#c9a84c;"></span>
+            <span class="swatch" style="background:#f0ece4;"></span>
+          </div>
+          <div class="theme-label">Noir</div>
+        </div>
+
+        <div class="theme-card" data-theme="light">
+          <div class="theme-swatches">
+            <span class="swatch" style="background:#faf8f4;border-color:#ddd8d0;"></span>
+            <span class="swatch" style="background:#8b6914;"></span>
+            <span class="swatch" style="background:#1a1a1a;"></span>
+          </div>
+          <div class="theme-label">Light</div>
+        </div>
+
+        <div class="theme-card" data-theme="blush">
+          <div class="theme-swatches">
+            <span class="swatch" style="background:#180e0f;"></span>
+            <span class="swatch" style="background:#d4785a;"></span>
+            <span class="swatch" style="background:#f5e8e8;"></span>
+          </div>
+          <div class="theme-label">Blush</div>
+        </div>
+
+        <div class="theme-card" data-theme="forest">
+          <div class="theme-swatches">
+            <span class="swatch" style="background:#0a120e;"></span>
+            <span class="swatch" style="background:#6aab7a;"></span>
+            <span class="swatch" style="background:#e8f0ea;"></span>
+          </div>
+          <div class="theme-label">Forest</div>
+        </div>
+
+        <div class="theme-card" data-theme="navy">
+          <div class="theme-swatches">
+            <span class="swatch" style="background:#08101c;"></span>
+            <span class="swatch" style="background:#5a90d0;"></span>
+            <span class="swatch" style="background:#e8f0fc;"></span>
+          </div>
+          <div class="theme-label">Navy</div>
+        </div>
+
+      </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/settings.js"></script>
+  </body>
+</html>
