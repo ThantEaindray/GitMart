@@ -322,7 +322,7 @@ body {
   padding: 40px 20px;
 }
 
-textarea {
+.delivery-notes {
   resize: none;
   overflow-y: auto;
   min-height: 65px;

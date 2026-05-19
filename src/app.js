@@ -6,6 +6,12 @@ const path = require('path');
 const somethingRouter = require('./routers/Something.router');
 const personRouter = require('./routers/Person.router');
 
+// Import checkout order routes.
+// This handles backend checkout API routes such as:
+// POST /orders → create a new order
+// GET  /orders → retrieve all orders
+const orderRouter = require('./routers/orderRouter');
+
 // Import user authentication routes
 // This handles backend API routes such as:
 // POST /api/register
@@ -30,6 +36,13 @@ app.get('/favicon.ico', (req, res) => res.status(204).end());
 // Existing backend routes
 app.use('/somethings', somethingRouter);
 app.use('/persons', personRouter);
+
+// Checkout order API routes.
+// All routes inside orderRouter.js will start with /orders.
+// Example:
+// router.post('/') becomes POST /orders
+// router.get('/') becomes GET /orders
+app.use('/orders', orderRouter);
 
 // User authentication API routes.
 // All routes inside User.router.js will start with /api.
