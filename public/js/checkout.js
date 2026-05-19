@@ -107,8 +107,37 @@ placeOrderButton.addEventListener('click', () => {
         }
     }
 
-    // Success message
-    alert('Order placed successfully!');
+    // Create order object
+    const orderData = {
+        fullName,
+        emailAddress,
+        phoneNumber,
+        address,
+        postalCode,
+    };
+
+    // Send order data to backend
+    fetch('http://localhost:3000/orders', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then((response) => response.json())
+    .then((data) => {
+
+        // Show success message
+        alert('Order placed successfully!');
+
+        console.log(data);
+    })
+    .catch((error) => {
+
+        console.error(error);
+
+        alert('Failed to place order.');
+    });
 });
 
 
