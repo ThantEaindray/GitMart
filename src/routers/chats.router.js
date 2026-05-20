@@ -7,7 +7,8 @@ const router = express.Router();
 router.get("/", jwt.verifyToken, chatController.loadChats, chatController.toLoad ,userController.namesPictures,  chatController.formatList)
 router.get("/viewChat", jwt.verifyToken, chatController.chatExists ,chatController.hasAccess, chatController.loadMessages)
 router.post("/new", jwt.verifyToken, chatController.newChat)
-router.post("/send", jwt.verifyToken, chatController.chatExists , chatController.sendMessage)
+router.post("/send", jwt.verifyToken, chatController.chatExists, chatController.sendMessage)
+router.post("/sendImg", jwt.verifyToken, chatController.chatExists, chatController.writeImg, chatController.sendMessage)
 router.put("/{id}", jwt.verifyToken, chatController.chatExists, chatController.closeChat)
 //for saftey reasons wed want the chats to remain on the servers permanantly (prevent scams & abuse etc.)
 
