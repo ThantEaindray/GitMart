@@ -120,5 +120,7 @@ module.exports.updateUserSettings = (data, callback) => {
 module.exports.namesPictures = (data, callback) => {
   const SQLSTATEMENT = `
     SELECT username, icon FROM users
-    WHERE id = `
+    WHERE id = $1`
+  const VALUES = data
+  pool.query(SQLSTATEMENT,VALUES,callback)
 }
