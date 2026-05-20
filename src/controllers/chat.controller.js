@@ -45,6 +45,10 @@ module.exports.toLoad = (req, res, next) => {
 }
 
 module.exports.formatList = (req, res, next) => {
+  let namesicons = res.locals.namesPictures
+  // for my sake lets split these up first like i said not ideal but i can think clearer that way
+  namesicons.foreach
+  
   //so this one is fairly simple we just wanna have it formatted like this
   // [obj] chat[x]={
   // uname: [name of other user]

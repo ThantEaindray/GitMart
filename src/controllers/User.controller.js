@@ -150,13 +150,16 @@ module.exports.namesPictures = (req, res, next) => {
   const data = {
     ids : res.locals.toLoad
   }
+  res.locals.namesImgs=new Array
   const callback = (err, results, fields) => {
     if (err) {
       console.error("problem getting chat user info", err)
       return res.status(500).json(err)
     }
-    res.locals.namesImgs = results
+    res.locals.namesImgs.push(results)
     next()
   }
-  model.namesPictures(data,callback)
+  data.ids.foreach((e) => {
+      model.namesPictures(e,callback)
+  })
 }
