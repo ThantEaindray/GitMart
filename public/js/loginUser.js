@@ -65,7 +65,21 @@ document.addEventListener('DOMContentLoaded', () => {
           localStorage.setItem('username', data.username);
           localStorage.setItem('isStaff', data.isStaff);
 
-          window.location.href = '/html/profile.html';
+          fetch('/api/me/settings', {
+            headers: { 'Authorization': `Bearer ${data.token}` },
+          })
+            .then((r) => r.json())
+            .then((prefs) => {
+              if (prefs.theme) localStorage.setItem('theme', prefs.theme);
+              else localStorage.removeItem('theme');
+              if (prefs.currency) localStorage.setItem('currency', prefs.currency);
+              if (prefs.font_size) localStorage.setItem('font', prefs.font_size);
+              else localStorage.removeItem('font');
+            })
+            .catch(() => {})
+            .finally(() => {
+              window.location.href = '/html/profile.html';
+            });
         } else {
           showWarning(data.message || data.error || 'Login failed.');
         }

@@ -16,7 +16,7 @@ function renderProduct(product) {
     <div class="product-info">
       <div class="card-cat">${product.category}</div>
       <h1 class="product-name">${product.name}</h1>
-      <div class="product-price">$${Number(product.price).toLocaleString()}</div>
+      <div class="product-price" data-price="${product.price}">${formatPrice(product.price)}</div>
       <div class="product-rating">
         <span class="stars">${renderStars(product.rating)}</span>
         <span class="rating-count">${product.reviewCount ?? 0} reviews</span>
@@ -48,7 +48,7 @@ function renderRelated(products) {
         <div class="card-cat">${p.category}</div>
         <div class="card-name">${p.name}</div>
         <div class="card-footer">
-          <span class="card-price">$${Number(p.price).toLocaleString()}</span>
+          <span class="card-price" data-price="${p.price}">${formatPrice(p.price)}</span>
           <span class="card-rating">
             <span class="stars">${renderStars(p.rating)}</span>
             (${p.reviewCount ?? 0})

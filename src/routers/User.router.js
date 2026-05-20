@@ -32,4 +32,8 @@ router.post(
 // Get Current Logged-In User
 router.get('/me', jwtMiddleware.verifyToken, userController.getCurrentUser);
 
+// User Preferences
+router.get('/me/settings', jwtMiddleware.verifyToken, userController.getSettings);
+router.put('/me/settings', jwtMiddleware.verifyToken, userController.updateSettings);
+
 module.exports = router;

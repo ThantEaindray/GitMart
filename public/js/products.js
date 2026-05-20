@@ -21,7 +21,7 @@ function createProductCard(product) {
       <div class="card-cat">${product.category}</div>
       <div class="card-name">${product.name}</div>
       <div class="card-footer">
-        <span class="card-price">$${Number(product.price).toLocaleString()}</span>
+        <span class="card-price" data-price="${product.price}">${formatPrice(product.price)}</span>
         <span class="card-rating">
           <span class="stars">${renderStars(product.rating)}</span>
           (${product.reviewCount ?? 0})

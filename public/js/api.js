@@ -115,6 +115,38 @@ async function toggleWishlist(productId) {
   return res.json();
 }
 
+// ── PREFERENCES ───────────────────────────────────────────────────────────
+
+const CURRENCIES = {
+  USD: { symbol: '$',  rate: 1    },
+  SGD: { symbol: 'S$', rate: 1.35 },
+  EUR: { symbol: '€',  rate: 0.92 },
+  GBP: { symbol: '£',  rate: 0.79 },
+};
+
+function formatPrice(usdAmount) {
+  const code = localStorage.getItem('currency') || 'USD';
+  const { symbol, rate } = CURRENCIES[code] || CURRENCIES.USD;
+  return `${symbol}${(usdAmount * rate).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
+
+function applyPreferences() {
+  const theme = localStorage.getItem('theme') || '';
+  const font  = localStorage.getItem('font')  || '';
+  if (theme) document.documentElement.setAttribute('data-theme', theme);
+  else       document.documentElement.removeAttribute('data-theme');
+  if (font)  document.documentElement.setAttribute('data-font', font);
+  else       document.documentElement.removeAttribute('data-font');
+}
+
+window.addEventListener('pageshow', (e) => {
+  if (!e.persisted) return;
+  applyPreferences();
+  document.querySelectorAll('[data-price]').forEach((el) => {
+    el.textContent = formatPrice(Number(el.dataset.price));
+  });
+});
+
 // ── NAV AUTH ──────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {

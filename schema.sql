@@ -44,7 +44,10 @@ CREATE TABLE users (
   email      TEXT    UNIQUE NOT NULL,
   password   TEXT    NOT NULL,
   created_on DATE    NOT NULL DEFAULT CURRENT_DATE,
-  "isStaff"  BOOLEAN NOT NULL DEFAULT false
+  "isStaff"  BOOLEAN NOT NULL DEFAULT false,
+  theme      TEXT    DEFAULT NULL,
+  currency   TEXT    NOT NULL DEFAULT 'USD',
+  font_size  TEXT    DEFAULT NULL
 );
 
 -- ── Products (public product catalogue — no auth required) ─

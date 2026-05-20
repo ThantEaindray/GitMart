@@ -98,6 +98,42 @@ module.exports.login = (req, res, next) => {
   model.getUserByUsername(data, callback);
 };
 
+module.exports.getSettings = (req, res) => {
+  const data = { id: res.locals.userId };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    return res.status(200).json(result.rows[0]);
+  };
+
+  model.getUserSettings(data, callback);
+};
+
+module.exports.updateSettings = (req, res) => {
+  const data = {
+    id: res.locals.userId,
+    theme: req.body.theme ?? null,
+    currency: req.body.currency || 'USD',
+    fontSize: req.body.fontSize ?? null,
+  };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    return res.status(200).json(result.rows[0]);
+  };
+
+  model.updateUserSettings(data, callback);
+};
+
 module.exports.getCurrentUser = (req, res) => {
   const data = { id: res.locals.userId };
 

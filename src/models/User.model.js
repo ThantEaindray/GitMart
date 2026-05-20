@@ -39,3 +39,24 @@ module.exports.getUserById = (data, callback) => {
   const VALUES = [data.id];
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
+
+module.exports.getUserSettings = (data, callback) => {
+  const SQLSTATEMENT = `
+        SELECT theme, currency, font_size
+        FROM users
+        WHERE id = $1
+    `;
+  const VALUES = [data.id];
+  pool.query(SQLSTATEMENT, VALUES, callback);
+};
+
+module.exports.updateUserSettings = (data, callback) => {
+  const SQLSTATEMENT = `
+        UPDATE users
+        SET theme = $1, currency = $2, font_size = $3
+        WHERE id = $4
+        RETURNING theme, currency, font_size
+    `;
+  const VALUES = [data.theme, data.currency, data.fontSize, data.id];
+  pool.query(SQLSTATEMENT, VALUES, callback);
+};
