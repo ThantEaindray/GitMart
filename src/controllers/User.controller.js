@@ -134,6 +134,26 @@ module.exports.updateSettings = (req, res) => {
   model.updateUserSettings(data, callback);
 };
 
+module.exports.sendRegistered = (req, res) => {
+  return res.status(201).json({ message: 'Account created successfully. Please log in.' });
+};
+
+module.exports.logout = (req, res) => {
+  const token = req.cookies?.refreshToken;
+
+  const finish = () => {
+    res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'Strict' });
+    return res.status(200).json({ message: 'Logged out.' });
+  };
+
+  if (!token) return finish();
+
+  model.deleteRefreshToken({ token }, (error) => {
+    if (error) console.log(error);
+    finish();
+  });
+};
+
 module.exports.getCurrentUser = (req, res) => {
   const data = { id: res.locals.userId };
 

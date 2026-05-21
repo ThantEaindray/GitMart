@@ -7,13 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   logoutBtn.addEventListener('click', () => {
-    // Clear saved login session from browser
-    localStorage.removeItem('token');
-    localStorage.removeItem('loggedInUserId');
-    localStorage.removeItem('username');
-    localStorage.removeItem('isStaff');
-
-    // Send user back to login page
-    window.location.href = '/html/login.html';
+    // Tell backend to revoke the refresh token and clear the httpOnly cookie
+    fetch('/api/logout', { method: 'POST' }).finally(() => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('loggedInUserId');
+      localStorage.removeItem('username');
+      localStorage.removeItem('isStaff');
+      window.location.href = '/html/login.html';
+    });
   });
 });

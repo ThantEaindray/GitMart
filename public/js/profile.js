@@ -27,12 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Request current user details from protected backend route
-  fetch('/api/me', {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
+  authFetch('/api/me')
     .then((response) =>
       response.json().then((data) => ({
         status: response.status,

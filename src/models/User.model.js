@@ -50,6 +50,33 @@ module.exports.getUserSettings = (data, callback) => {
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
+module.exports.saveRefreshToken = (data, callback) => {
+  const SQLSTATEMENT = `
+        INSERT INTO refresh_tokens (user_id, token, expires_at)
+        VALUES ($1, $2, $3)
+    `;
+  pool.query(SQLSTATEMENT, [data.userId, data.token, data.expiresAt], callback);
+};
+
+module.exports.getRefreshToken = (data, callback) => {
+  const SQLSTATEMENT = `
+        SELECT id, user_id, expires_at
+        FROM refresh_tokens
+        WHERE token = $1
+    `;
+  pool.query(SQLSTATEMENT, [data.token], callback);
+};
+
+module.exports.deleteRefreshToken = (data, callback) => {
+  const SQLSTATEMENT = `DELETE FROM refresh_tokens WHERE token = $1`;
+  pool.query(SQLSTATEMENT, [data.token], callback);
+};
+
+module.exports.deleteAllRefreshTokensForUser = (data, callback) => {
+  const SQLSTATEMENT = `DELETE FROM refresh_tokens WHERE user_id = $1`;
+  pool.query(SQLSTATEMENT, [data.userId], callback);
+};
+
 module.exports.updateUserSettings = (data, callback) => {
   const SQLSTATEMENT = `
         UPDATE users

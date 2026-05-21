@@ -46,27 +46,24 @@
     </div>
   </nav>
 
-  <!-- ── BREADCRUMB ── -->
-  <div class="breadcrumb-bar">
-    <a href="noir.html" class="breadcrumb-back">
-      <i class="bi bi-arrow-left"></i> Back to Store
-    </a>
-  </div>
-
   <!-- ── PROFILE SECTION ── -->
-  <section class="product-detail">
-    <div class="hero-content">
+  <main class="auth-page">
+    <section class="auth-intro">
       <div class="hero-tag">Account Profile</div>
       <h1>My GitMart Profile</h1>
       <p>
         View your account details and manage your current login session.
       </p>
+    </section>
 
-      <div id="warningCard" class="status-text d-none">
+    <section class="auth-card profile-card">
+      <h2>Account</h2>
+
+      <div id="warningCard" class="auth-alert d-none">
         <span id="warningText"></span>
       </div>
 
-      <div class="status-text">
+      <div class="profile-info">
         <p><strong>Username:</strong> <span id="profileUsername">Loading...</span></p>
         <p><strong>Email:</strong> <span id="profileEmail">Loading...</span></p>
         <p><strong>Role:</strong> <span id="profileStaff">Loading...</span></p>
@@ -74,9 +71,10 @@
       </div>
 
       <button id="logoutBtn" class="btn-outline">Logout</button>
-    </div>
-  </section>
+    </section>
+  </main>
 
+  <script src="../js/api.js"></script>
   <script src="../js/profile.js"></script>
   <script src="../js/logout.js"></script>
 </body>

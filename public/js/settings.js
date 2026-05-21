@@ -1,12 +1,7 @@
 function syncToBackend() {
-  const token = localStorage.getItem('token');
-  if (!token) return;
-  fetch('/api/me/settings', {
+  if (!localStorage.getItem('token')) return;
+  authFetch('/api/me/settings', {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
     body: JSON.stringify({
       theme: localStorage.getItem('theme') || null,
       currency: localStorage.getItem('currency') || 'USD',
@@ -22,6 +17,22 @@ function showToast(msg) {
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove('show'), 2000);
 }
+
+window.addEventListener('pageshow', (e) => {
+  if (!e.persisted) return;
+  const theme = localStorage.getItem('theme') || '';
+  document.querySelectorAll('.theme-card').forEach((c) => {
+    c.classList.toggle('active', c.dataset.theme === theme);
+  });
+  const currency = localStorage.getItem('currency') || 'USD';
+  document.querySelectorAll('.currency-chip').forEach((c) => {
+    c.classList.toggle('active', c.dataset.currency === currency);
+  });
+  const font = localStorage.getItem('font') || '';
+  document.querySelectorAll('.font-chip').forEach((c) => {
+    c.classList.toggle('active', c.dataset.font === font);
+  });
+});
 
 document.addEventListener('DOMContentLoaded', () => {
   // ── Theme ──
