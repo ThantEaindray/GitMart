@@ -52,7 +52,7 @@ module.exports.sendToken = (req, res) => {
 module.exports.generateRefreshToken = (req, res, next) => {
   const rememberMe = res.locals.rememberMe || false;
   const ttlString  = rememberMe ? refreshRemember : refreshNoRemember;
-  const payload    = { userId: res.locals.userId };
+  const payload    = { userId: res.locals.userId, rememberMe };
   const options    = { algorithm, expiresIn: ttlString };
 
   jwt.sign(payload, refreshSecret, options, (err, token) => {
@@ -70,13 +70,12 @@ module.exports.generateRefreshToken = (req, res, next) => {
     model.saveRefreshToken(data, (error) => {
       if (error) return res.status(500).json({ message: 'Internal server error' });
 
-      // httpOnly cookie — JS cannot read this (XSS-safe)
-      res.cookie('refreshToken', token, {
-        httpOnly: true,
-        sameSite: 'Strict',
-        maxAge: expiresAt.getTime() - Date.now(),
-      });
+      // rememberMe = true → persistent cookie (survives browser close)
+      // rememberMe = false → session cookie (cleared when browser closes)
+      const cookieOptions = { httpOnly: true, sameSite: 'Strict' };
+      if (rememberMe) cookieOptions.maxAge = expiresAt.getTime() - Date.now();
 
+      res.cookie('refreshToken', token, cookieOptions);
       next();
     });
   });
@@ -100,13 +99,14 @@ module.exports.verifyRefreshToken = (req, res, next) => {
       }
 
       res.locals.userId       = decoded.userId;
+      res.locals.rememberMe   = decoded.rememberMe || false;
       res.locals.refreshToken = token;
       next();
     });
   });
 };
 
-// Rotate: delete the old refresh token and issue a fresh one
+// Rotate: delete the old refresh token and issue a fresh one1
 module.exports.rotateRefreshToken = (req, res, next) => {
   model.deleteRefreshToken({ token: res.locals.refreshToken }, (err) => {
     if (err) return res.status(500).json({ message: 'Internal server error' });
