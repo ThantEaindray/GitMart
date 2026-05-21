@@ -35,9 +35,9 @@
   max-width: 430px;
   justify-self: end;
   padding: 2.2rem;
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  background: rgba(10, 10, 10, 0.72);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
 }
 
 .auth-card h2 {
@@ -74,8 +74,8 @@
 .form-group input {
   width: 100%;
   padding: 0.9rem 1rem;
-  border: 1px solid rgba(212, 175, 55, 0.38);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  background: var(--surface);
   color: inherit;
   font-family: 'Jost', sans-serif;
   font-size: 1rem;
@@ -83,8 +83,8 @@
 }
 
 .form-group input:focus {
-  border-color: #d4af37;
-  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--accent);
+  background: var(--surface);
 }
 
 .remember-row {
@@ -99,7 +99,7 @@
 
 .remember-row input {
   width: auto;
-  accent-color: #d4af37;
+  accent-color: var(--accent);
 }
 
 .auth-btn {
@@ -114,7 +114,7 @@
 }
 
 .auth-switch a {
-  color: #d4af37;
+  color: var(--accent);
   text-decoration: none;
   font-weight: 600;
 }
@@ -126,8 +126,8 @@
 .auth-alert {
   margin-bottom: 1rem;
   padding: 0.8rem 1rem;
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .d-none {
@@ -142,8 +142,8 @@
 .profile-info {
   margin: 1.5rem 0;
   padding: 1rem 0;
-  border-top: 1px solid rgba(212, 175, 55, 0.25);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 .profile-info p {
@@ -170,8 +170,8 @@
 .password-reqs {
   margin-top: 0.5rem;
   padding: 0.55rem 0.75rem;
-  border: 1px solid rgba(212, 175, 55, 0.18);
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .password-req {
@@ -181,7 +181,7 @@
   padding: 0.15rem 0;
   font-family: 'Jost', sans-serif;
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--muted);
   transition: color 0.2s;
 }
 

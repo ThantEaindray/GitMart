@@ -23,15 +23,15 @@
 
 /* ── THEMES ── */
 :root[data-theme="light"] {
-  --bg: #faf8f4;
-  --surface: #f0ece4;
-  --card: #ffffff;
-  --border: #ddd8d0;
+  --bg: #e8e2d8;
+  --surface: #d8d0c4;
+  --card: #f0ebe0;
+  --border: #c0b8a8;
   --text: #1a1a1a;
-  --muted: #8a8480;
+  --muted: #6a6258;
   --accent: #8b6914;
   --accent2: #b8900f;
-  --btn-text: #faf8f4;
+  --btn-text: #f0ebe0;
 }
 
 :root[data-theme="blush"] {
@@ -68,6 +68,30 @@
   --accent: #5a90d0;
   --accent2: #90c0f0;
   --btn-text: #08101c;
+}
+
+:root[data-theme="ember"] {
+  --bg: #0e0904;
+  --surface: #1a1408;
+  --card: #221b0c;
+  --border: #3d3018;
+  --text: #f5eed8;
+  --muted: #8a7650;
+  --accent: #e07820;
+  --accent2: #f0a040;
+  --btn-text: #0e0904;
+}
+
+:root[data-theme="dusk"] {
+  --bg: #0f0a14;
+  --surface: #1a1228;
+  --card: #201838;
+  --border: #382450;
+  --text: #f0e8fc;
+  --muted: #7868a0;
+  --accent: #c090e8;
+  --accent2: #d8b0f8;
+  --btn-text: #0f0a14;
 }
 
 :root[data-font="small"] { --font-scale: 0.875; }
@@ -599,7 +623,7 @@ body {
 
 .theme-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 16px;
 }
 
@@ -706,6 +730,6 @@ body {
   }
 
   .theme-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   }
 }
