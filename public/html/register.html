@@ -12,6 +12,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="../css/noir.css" />
     <link rel="stylesheet" href="../css/auth.css" />
+    <script>
+      var t = localStorage.getItem('theme');
+      var f = localStorage.getItem('font');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+      if (f) document.documentElement.setAttribute('data-font', f);
+    </script>
 </head>
 
 <body>
@@ -36,6 +42,9 @@
             <button class="icon-btn" id="btn-cart" title="Cart">
                 <i class="bi bi-bag"></i>
             </button>
+            <a class="icon-btn" href="settings.html" title="Appearance">
+                <i class="bi bi-palette"></i>
+            </a>
         </div>
     </nav>
 
