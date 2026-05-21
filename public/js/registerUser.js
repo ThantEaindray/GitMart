@@ -1,89 +1,146 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Get the register form and warning message elements
   const registerForm = document.getElementById('registerForm');
-  const warningCard = document.getElementById('warningCard');
-  const warningText = document.getElementById('warningText');
+  const warningCard  = document.getElementById('warningCard');
+  const warningText  = document.getElementById('warningText');
 
-  // Display error messages to the user
-  const showWarning = (message) => {
-    warningText.textContent = message;
+  const showWarning = (msg) => {
+    warningText.textContent = msg;
     warningCard.classList.remove('d-none');
   };
 
-  // Clear old warning messages
   const hideWarning = () => {
     warningText.textContent = '';
     warningCard.classList.add('d-none');
   };
 
-  // Stop the script if the register form is not found
+  // ── Inline field errors ────────────────────────────────────────────────
+
+  const showFieldError = (fieldId, msg) => {
+    const input = document.getElementById(fieldId);
+    if (!input) return;
+    input.classList.add('input-error');
+    input.classList.remove('input-valid');
+    let err = input.parentElement.querySelector('.field-error');
+    if (!err) {
+      err = document.createElement('span');
+      err.className = 'field-error';
+      input.parentElement.appendChild(err);
+    }
+    err.textContent = msg;
+  };
+
+  const clearFieldError = (fieldId) => {
+    const input = document.getElementById(fieldId);
+    if (!input) return;
+    input.classList.remove('input-error');
+    const err = input.parentElement.querySelector('.field-error');
+    if (err) err.textContent = '';
+  };
+
+  const clearAllErrors = () => {
+    ['username', 'email', 'password', 'confirmPassword'].forEach(clearFieldError);
+    hideWarning();
+  };
+
+  // Clear field error as soon as user types in it
+  ['username', 'email', 'password', 'confirmPassword'].forEach((id) => {
+    document.getElementById(id)?.addEventListener('input', () => clearFieldError(id));
+  });
+
+  // ── Live password requirements ─────────────────────────────────────────
+
+  const updateReq = (id, met) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('met', met);
+    el.querySelector('i').className = `bi bi-${met ? 'check-circle-fill' : 'x-circle'}`;
+  };
+
+  document.getElementById('password')?.addEventListener('input', (e) => {
+    const val = e.target.value;
+    updateReq('req-length', val.length >= 8);
+    updateReq('req-number', /\d/.test(val));
+    updateReq('req-upper',  /[A-Z]/.test(val));
+  });
+
   if (!registerForm) {
-    console.error('registerForm not found. Check register.html.');
+    console.error('registerForm not found.');
     return;
   }
 
+  // ── Submit ─────────────────────────────────────────────────────────────
+
   registerForm.addEventListener('submit', (event) => {
     event.preventDefault();
-    hideWarning();
+    clearAllErrors();
 
-    // Read values from the register form
-    const username = document.getElementById('username').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
+    const username        = document.getElementById('username').value.trim();
+    const email           = document.getElementById('email').value.trim();
+    const password        = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
 
-    // Basic frontend validation before sending to backend
-    if (!username || !email || !password || !confirmPassword) {
-      showWarning('Please fill in all fields.');
-      return;
+    let valid = true;
+
+    if (!username) {
+      showFieldError('username', 'Username is required.');
+      valid = false;
+    } else if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+      showFieldError('username', 'Username must be 3–20 characters (letters, numbers, underscores only).');
+      valid = false;
     }
 
-    if (password.length < 6) {
-      showWarning('Password must be at least 6 characters long.');
-      return;
+    if (!email) {
+      showFieldError('email', 'Email is required.');
+      valid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showFieldError('email', 'Please enter a valid email address.');
+      valid = false;
     }
 
-    if (password !== confirmPassword) {
-      showWarning('Passwords do not match.');
-      return;
+    if (!password) {
+      showFieldError('password', 'Password is required.');
+      valid = false;
+    } else if (password.length < 8 || !/\d/.test(password) || !/[A-Z]/.test(password)) {
+      showFieldError('password', 'Password does not meet all requirements below.');
+      valid = false;
     }
 
-    // Send registration details to backend
+    if (!confirmPassword) {
+      showFieldError('confirmPassword', 'Please confirm your password.');
+      valid = false;
+    } else if (password && password !== confirmPassword) {
+      showFieldError('confirmPassword', 'Passwords do not match.');
+      valid = false;
+    }
+
+    if (!valid) return;
+
     fetch('/api/register', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username,
-        email,
-        password,
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password }),
     })
       .then((response) =>
-        response.json().then((data) => ({
-          status: response.status,
-          data,
-        }))
+        response.json().then((data) => ({ status: response.status, data }))
       )
       .then(({ status, data }) => {
-        console.log('Register response:', status, data);
-
-        // Auto-login the user after successful registration
-        if (status === 200 && data.token) {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('loggedInUserId', data.userId);
-          localStorage.setItem('username', data.username);
-          localStorage.setItem('isStaff', data.isStaff);
-
-          window.location.href = '/html/profile.html';
+        if (status === 201) {
+          // Redirect to login with a success flag — user logs in manually
+          window.location.href = '/html/login.html?registered=1';
+        } else if (status === 409) {
+          // Duplicate username or email — show on the relevant field
+          const msg = data.message || '';
+          if (msg.toLowerCase().includes('username')) {
+            showFieldError('username', 'This username is already taken.');
+          } else if (msg.toLowerCase().includes('email')) {
+            showFieldError('email', 'An account with this email already exists.');
+          } else {
+            showWarning(msg);
+          }
         } else {
           showWarning(data.message || data.error || 'Registration failed.');
         }
       })
-      .catch((error) => {
-        console.error('Register error:', error);
-        showWarning('Something went wrong. Please try again.');
-      });
+      .catch(() => showWarning('Something went wrong. Please try again.'));
   });
 });

@@ -150,6 +150,62 @@
   margin: 0.7rem 0;
 }
 
+/* ── Inline field validation ── */
+
+.form-group input.input-error {
+  border-color: #c0392b;
+  background: rgba(192, 57, 43, 0.05);
+}
+
+.field-error {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.78rem;
+  color: #c0392b;
+}
+
+/* ── Password requirements checklist ── */
+
+.password-reqs {
+  margin-top: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.password-req {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.38);
+  transition: color 0.2s;
+}
+
+.password-req.met {
+  color: #5a9e6a;
+}
+
+.password-req i {
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+
+/* ── Post-registration success banner ── */
+
+.auth-success {
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgba(90, 158, 106, 0.45);
+  background: rgba(90, 158, 106, 0.08);
+  font-family: 'Jost', sans-serif;
+  font-size: 0.9rem;
+  color: #5a9e6a;
+}
+
 /* Mobile responsive */
 @media (max-width: 900px) {
   .auth-page {

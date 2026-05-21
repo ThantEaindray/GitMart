@@ -12,6 +12,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="../css/noir.css" />
     <link rel="stylesheet" href="../css/auth.css" />
+    <script>
+      var t = localStorage.getItem('theme');
+      var f = localStorage.getItem('font');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+      if (f) document.documentElement.setAttribute('data-font', f);
+    </script>
 </head>
 
 <body>
@@ -72,6 +78,11 @@
                 <div class="form-group">
                     <label for="password">Password</label>
                     <input id="password" type="password" autocomplete="new-password" />
+                    <div class="password-reqs" id="password-reqs">
+                      <div class="password-req" id="req-length"><i class="bi bi-x-circle"></i> At least 8 characters</div>
+                      <div class="password-req" id="req-number"><i class="bi bi-x-circle"></i> Contains a number</div>
+                      <div class="password-req" id="req-upper"><i class="bi bi-x-circle"></i> Contains an uppercase letter</div>
+                    </div>
                 </div>
 
                 <div class="form-group">
