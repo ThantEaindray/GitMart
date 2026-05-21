@@ -107,13 +107,45 @@ placeOrderButton.addEventListener('click', () => {
         }
     }
 
+    // Get optional shipping values
+    const unitNumber = document.getElementById('unitNumber').value.trim();
+    const deliveryNotes = document.getElementById('deliveryNotes').value.trim();
+
+    // Get selected delivery method
+    const selectedDelivery =
+        document.querySelector('input[name="delivery"]:checked');
+
+    // Check if delivery method is selected
+    if (!selectedDelivery) {
+        alert('Please select a delivery method.');
+        return;
+    }
+
+    // Get delivery and payment details
+    const deliveryFee = parseFloat(selectedDelivery.value);
+    const deliveryMethod =
+        selectedDelivery.parentElement.textContent.trim();
+
+    const paymentMethod =
+        selectedPayment.parentElement.textContent.trim();
+
+    const totalAmount = subtotal + gst + deliveryFee;
+
     // Create order object
     const orderData = {
         fullName,
         emailAddress,
         phoneNumber,
         address,
+        unitNumber,
         postalCode,
+        deliveryNotes,
+        deliveryMethod,
+        paymentMethod,
+        subtotal,
+        deliveryFee,
+        gst,
+        totalAmount,
     };
 
     // Send order data to backend
@@ -124,14 +156,22 @@ placeOrderButton.addEventListener('click', () => {
         },
         body: JSON.stringify(orderData)
     })
-    .then((response) => response.json())
-    .then((data) => {
+    .then((response) =>
+        response.json().then((data) => {
 
-        // Show success message
-        alert('Order placed successfully!');
+            // Show backend error message
+            if (!response.ok) {
+                alert(data.message);
+                return;
+            }
+            
+            // Success message
+            alert('Order placed successfully!');
 
-        console.log(data);
-    })
+            console.log(data);
+        })
+    )
+    
     .catch((error) => {
 
         console.error(error);

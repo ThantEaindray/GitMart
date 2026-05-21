@@ -5,10 +5,18 @@ const { createOrder, getAllOrders } = require('../models/orderModel');
 
 router.post('/', (req, res, next) => {
   const orderData = req.body;
-
-  if (!orderData.fullName || !orderData.emailAddress || !orderData.phoneNumber) {
+  
+  if (
+    !orderData.fullName ||
+    !orderData.emailAddress ||
+    !orderData.phoneNumber ||
+    !orderData.address ||
+    !orderData.postalCode ||
+    !orderData.deliveryMethod ||
+    !orderData.paymentMethod
+  ) {
     return res.status(400).json({
-      message: 'Full name, email address and phone number are required.',
+      message: 'Required checkout order details are missing.',
     });
   }
 
