@@ -1,6 +1,7 @@
 const express = require('express');
 const createError = require('http-errors');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 
 // Import route handlers
 const somethingRouter = require('./routers/Something.router');
@@ -20,6 +21,7 @@ const app = express();
 // This is needed before API routes so req.body can read JSON data
 // from Postman or frontend fetch requests.
 app.use(express.json());
+app.use(cookieParser());
 
 // Serve static files (HTML, CSS, JS, images) from the 'public' folder.
 // e.g. src/public/index.html is accessible at http://localhost:<port>/
