@@ -5,48 +5,47 @@ function renderStars(rating) {
   return full.repeat(filled) + empty.repeat(5 - filled);
 }
 
-function createProductCard(product) {
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.dataset.id = product.id;
-
-  card.innerHTML = `
-    <div class="card-img">${product.imageUrl ? `<img src="${product.imageUrl}" alt="${product.name}" loading="lazy" />` : `<i class="bi bi-${product.icon ?? 'box-seam'}"></i>`}</div>
-    <div class="card-body">
-      <div class="card-cat">${product.category}</div>
-      <div class="card-name">${product.name}</div>
-      <div class="card-footer">
-        <span class="card-price">$${Number(product.price).toLocaleString()}</span>
-        <span class="card-rating">
-          <span class="stars">${renderStars(product.rating)}</span>
-          (${product.reviewCount ?? 0})
-        </span>
-      </div>
-    </div>
-  `;
-
-  card.addEventListener('click', () => {
-    window.location.href = `product.html?id=${product.id}`;
-  });
-  return card;
-}
-
-async function loadFeatured() {
+function loadFeatured() {
   const grid = document.getElementById('products-grid');
 
-  try {
-    const products = await getProducts();
-    const featured = products.slice(0, 4);
-    grid.innerHTML = '';
-    featured.forEach((p) => grid.appendChild(createProductCard(p)));
-  } catch (err) {
-    console.error('Could not load products:', err);
-    grid.innerHTML = '<p class="status-text">Failed to load products. Please try again later.</p>';
-  }
+  getProducts()
+    .then((products) => {
+      grid.innerHTML = '';
+      if (products.length === 0) {
+        grid.innerHTML = '<p class="status-text">No products found.</p>';
+        return;
+      }
+      products.forEach((p) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-img">${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" loading="lazy" />` : `<i class="bi bi-${p.icon ?? 'box-seam'}"></i>`}</div>
+          <div class="card-body">
+            <div class="card-cat">${p.category}</div>
+            <div class="card-name">${p.name}</div>
+            <div class="card-footer">
+              <span class="card-price" data-price="${p.price}">${formatPrice(p.price)}</span>
+              <span class="card-rating">
+                <span class="stars">${renderStars(p.rating)}</span>
+                (${p.reviewCount ?? 0})
+              </span>
+            </div>
+          </div>
+        `;
+        card.addEventListener('click', () => {
+          window.location.href = `product.html?id=${p.id}`;
+        });
+        grid.appendChild(card);
+      });
+    })
+    .catch((err) => {
+      console.error('Could not load products:', err);
+      grid.innerHTML = '<p class="status-text">Failed to load products. Please try again later.</p>';
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('btn-cart').addEventListener('click', () => console.log('Cart — coming soon'));
-  document.getElementById('btn-wishlist').addEventListener('click', () => console.log('Wishlist — coming soon'));
+  document.getElementById('btn-cart')?.addEventListener('click', () => console.log('Cart — coming soon'));
+  document.getElementById('btn-wishlist')?.addEventListener('click', () => console.log('Wishlist — coming soon'));
   loadFeatured();
 });

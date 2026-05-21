@@ -6,7 +6,9 @@
     <title>GitMart — Appearance</title>
     <script>
       var t = localStorage.getItem('theme');
+      var f = localStorage.getItem('font');
       if (t) document.documentElement.setAttribute('data-theme', t);
+      if (f) document.documentElement.setAttribute('data-font', f);
     </script>
     <link
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
@@ -51,8 +53,11 @@
     <!-- ── SETTINGS ── -->
     <div class="settings-page">
       <h1 class="settings-heading">Appearance</h1>
-      <p class="settings-sub">Choose a colour theme for your browsing experience.</p>
+      <p class="settings-sub">Preferences are saved to your account when logged in.</p>
 
+      <!-- ── Theme ── -->
+      <h2 class="settings-section-title">Colour Theme</h2>
+      <p class="settings-sub">Choose how the store looks.</p>
       <div class="theme-grid" id="theme-grid">
 
         <div class="theme-card" data-theme="">
@@ -101,7 +106,29 @@
         </div>
 
       </div>
+
+      <!-- ── Currency ── -->
+      <h2 class="settings-section-title">Currency</h2>
+      <p class="settings-sub">Prices are stored in USD and converted at display time.</p>
+      <div class="settings-row">
+        <div class="settings-chip currency-chip" data-currency="USD">USD — $</div>
+        <div class="settings-chip currency-chip" data-currency="SGD">SGD — S$</div>
+        <div class="settings-chip currency-chip" data-currency="EUR">EUR — €</div>
+        <div class="settings-chip currency-chip" data-currency="GBP">GBP — £</div>
+      </div>
+
+      <!-- ── Font Size ── -->
+      <h2 class="settings-section-title">Text Size</h2>
+      <p class="settings-sub">Adjust the size of body text across the store.</p>
+      <div class="settings-row">
+        <div class="settings-chip font-chip" data-font="small">Small</div>
+        <div class="settings-chip font-chip" data-font="">Medium</div>
+        <div class="settings-chip font-chip" data-font="large">Large</div>
+      </div>
+
     </div>
+
+    <div class="toast" id="toast"></div>
 
     <script src="../js/api.js"></script>
     <script src="../js/settings.js"></script>

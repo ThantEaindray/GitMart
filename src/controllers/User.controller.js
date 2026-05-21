@@ -98,6 +98,62 @@ module.exports.login = (req, res, next) => {
   model.getUserByUsername(data, callback);
 };
 
+module.exports.getSettings = (req, res) => {
+  const data = { id: res.locals.userId };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    return res.status(200).json(result.rows[0]);
+  };
+
+  model.getUserSettings(data, callback);
+};
+
+module.exports.updateSettings = (req, res) => {
+  const data = {
+    id: res.locals.userId,
+    theme: req.body.theme ?? null,
+    currency: req.body.currency || 'USD',
+    fontSize: req.body.fontSize ?? null,
+  };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    return res.status(200).json(result.rows[0]);
+  };
+
+  model.updateUserSettings(data, callback);
+};
+
+module.exports.sendRegistered = (req, res) => {
+  return res.status(201).json({ message: 'Account created successfully. Please log in.' });
+};
+
+module.exports.logout = (req, res) => {
+  const token = req.cookies?.refreshToken;
+
+  const finish = () => {
+    res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'Strict' });
+    return res.status(200).json({ message: 'Logged out.' });
+  };
+
+  if (!token) return finish();
+
+  model.deleteRefreshToken({ token }, (error) => {
+    if (error) console.log(error);
+    finish();
+  });
+};
+
 module.exports.getCurrentUser = (req, res) => {
   const data = { id: res.locals.userId };
 

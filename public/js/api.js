@@ -115,6 +115,81 @@ async function toggleWishlist(productId) {
   return res.json();
 }
 
+// ── PREFERENCES ───────────────────────────────────────────────────────────
+
+const CURRENCIES = {
+  USD: { symbol: '$',  rate: 1    },
+  SGD: { symbol: 'S$', rate: 1.35 },
+  EUR: { symbol: '€',  rate: 0.92 },
+  GBP: { symbol: '£',  rate: 0.79 },
+};
+
+function formatPrice(usdAmount) {
+  const code = localStorage.getItem('currency') || 'USD';
+  const { symbol, rate } = CURRENCIES[code] || CURRENCIES.USD;
+  return `${symbol}${(usdAmount * rate).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
+
+function applyPreferences() {
+  const theme = localStorage.getItem('theme') || '';
+  const font  = localStorage.getItem('font')  || '';
+  if (theme) document.documentElement.setAttribute('data-theme', theme);
+  else       document.documentElement.removeAttribute('data-theme');
+  if (font)  document.documentElement.setAttribute('data-font', font);
+  else       document.documentElement.removeAttribute('data-font');
+}
+
+window.addEventListener('pageshow', (e) => {
+  if (!e.persisted) return;
+  applyPreferences();
+  document.querySelectorAll('[data-price]').forEach((el) => {
+    el.textContent = formatPrice(Number(el.dataset.price));
+  });
+});
+
+// ── AUTH FETCH ────────────────────────────────────────────────────────────
+// Drop-in replacement for fetch() on authenticated endpoints.
+// If the server returns 401 (expired access token), silently calls
+// POST /api/refresh (the httpOnly refresh cookie is sent automatically),
+// stores the new access token, then retries the original request once.
+// If the refresh also fails, clears localStorage and redirects to login.
+
+async function authFetch(url, options = {}) {
+  const token = localStorage.getItem('token');
+  const opts = {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  };
+
+  let response = await fetch(url, opts);
+
+  if (response.status !== 401) return response;
+
+  // Access token expired — try to refresh
+  const refreshRes = await fetch('/api/refresh', { method: 'POST' });
+
+  if (!refreshRes.ok) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('loggedInUserId');
+    localStorage.removeItem('username');
+    localStorage.removeItem('isStaff');
+    window.location.href = '/html/login.html';
+    return refreshRes;
+  }
+
+  const { token: newToken } = await refreshRes.json();
+  localStorage.setItem('token', newToken);
+
+  // Retry original request with the new token
+  opts.headers.Authorization = `Bearer ${newToken}`;
+  response = await fetch(url, opts);
+  return response;
+}
+
 // ── NAV AUTH ──────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {

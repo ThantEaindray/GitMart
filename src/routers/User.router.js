@@ -9,15 +9,14 @@ const bcryptMiddleware = require('../middleware/bcryptMiddleware');
 // USER AUTH ROUTES
 // ==============================
 
-// Register New User
+// Register New User — redirects to login, so no token is issued here
 router.post(
   '/register',
   userController.checkUsernameExists,
   userController.checkEmailExists,
   bcryptMiddleware.hashPassword,
   userController.register,
-  jwtMiddleware.generateToken,
-  jwtMiddleware.sendToken,
+  userController.sendRegistered,
 );
 
 // Login Existing User
@@ -26,10 +25,28 @@ router.post(
   userController.login,
   bcryptMiddleware.comparePassword,
   jwtMiddleware.generateToken,
+  jwtMiddleware.generateRefreshToken,
   jwtMiddleware.sendToken,
 );
 
 // Get Current Logged-In User
 router.get('/me', jwtMiddleware.verifyToken, userController.getCurrentUser);
+
+// User Preferences
+router.get('/me/settings', jwtMiddleware.verifyToken, userController.getSettings);
+router.put('/me/settings', jwtMiddleware.verifyToken, userController.updateSettings);
+
+// Refresh Token — issue a new access token using the httpOnly refresh cookie
+router.post(
+  '/refresh',
+  jwtMiddleware.verifyRefreshToken,
+  jwtMiddleware.rotateRefreshToken,
+  jwtMiddleware.generateRefreshToken,
+  jwtMiddleware.generateToken,
+  jwtMiddleware.sendToken,
+);
+
+// Logout — revoke refresh token from DB and clear cookie
+router.post('/logout', userController.logout);
 
 module.exports = router;

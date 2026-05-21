@@ -9,14 +9,15 @@
 -- ─────────────────────────────────────────────────────────
 
 -- Drop existing tables (children before parents to avoid FK errors)
-DROP TABLE IF EXISTS chatcontent CASCADE;
-DROP TABLE IF EXISTS offers     CASCADE;
-DROP TABLE IF EXISTS chats      CASCADE;
-DROP TABLE IF EXISTS listings   CASCADE;
-DROP TABLE IF EXISTS products   CASCADE;
-DROP TABLE IF EXISTS users      CASCADE;
-DROP TABLE IF EXISTS "Something" CASCADE;
-DROP TABLE IF EXISTS "Person"   CASCADE;
+DROP TABLE IF EXISTS chatcontent     CASCADE;
+DROP TABLE IF EXISTS offers          CASCADE;
+DROP TABLE IF EXISTS chats           CASCADE;
+DROP TABLE IF EXISTS listings        CASCADE;
+DROP TABLE IF EXISTS products        CASCADE;
+DROP TABLE IF EXISTS refresh_tokens  CASCADE;
+DROP TABLE IF EXISTS users           CASCADE;
+DROP TABLE IF EXISTS "Something"     CASCADE;
+DROP TABLE IF EXISTS "Person"        CASCADE;
 
 -- ── Something ─────────────────────────────────────────────
 CREATE TABLE "Something" (
@@ -44,7 +45,19 @@ CREATE TABLE users (
   email      TEXT    UNIQUE NOT NULL,
   password   TEXT    NOT NULL,
   created_on DATE    NOT NULL DEFAULT CURRENT_DATE,
-  "isStaff"  BOOLEAN NOT NULL DEFAULT false
+  "isStaff"  BOOLEAN NOT NULL DEFAULT false,
+  theme      TEXT    DEFAULT NULL,
+  currency   TEXT    NOT NULL DEFAULT 'USD',
+  font_size  TEXT    DEFAULT NULL
+);
+
+-- ── Refresh Tokens ────────────────────────────────────────
+CREATE TABLE refresh_tokens (
+  id         SERIAL    PRIMARY KEY,
+  user_id    INTEGER   NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token      TEXT      NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  created_on TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- ── Products (public product catalogue — no auth required) ─
@@ -114,3 +127,10 @@ INSERT INTO products (name, category, description, price, rating, review_count, 
   ('Precision Titanium Pen','Writing',     'CNC machined titanium body, weighted for balance, Schmidt refill.',      240, 4.8,  45, 'pen',                 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=600&q=80'),
   ('Cedar Shoe Trees',      'Footwear',    'Aromatic cedarwood, adjustable split-toe, preserves shoe shape.',        110, 4.7,  98, 'tree',                'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80'),
   ('Merino Travel Scarf',   'Apparel',     'Extra-fine 18.5-micron merino, 200cm length, hand-finished fringe.',     320, 4.6,  63, 'wind',                'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=600&q=80');
+
+INSERT INTO listings (owner_id, price, title, description, image1, "isSold", "isClosed") VALUES
+  (NULL, 3200, 'Vintage Rolex Submariner', 'Circa 1987, ref. 5513. Original dial, tritium plots, 40mm case. Minor patina consistent with age. No box or papers.', decode('', 'hex'), false, false),
+  (NULL, 480,  'Hermès Silk Scarf — Brides de Gala', 'Classic equestrian print, 90cm × 90cm. Light wear to one corner, otherwise excellent. Original box included.', decode('', 'hex'), false, false),
+  (NULL, 1150, 'Montblanc Meisterstück 149 Fountain Pen', '18k gold nib, piston filler. Professionally serviced 2024. Comes with original case and two ink bottles.', decode('', 'hex'), false, false),
+  (NULL, 620,  'Berluti Alessandro Derby Shoes — UK 9', 'Venezia leather, burnished by hand. Light scuffs to toe, resoled once. Cedar shoe trees included.', decode('', 'hex'), true,  false),
+  (NULL, 290,  'Omega Speedmaster Bracelet — 20mm', 'Stainless steel, brushed and polished, unused. Removed from new watch. Fits 20mm lug width.', decode('', 'hex'), false, false);
