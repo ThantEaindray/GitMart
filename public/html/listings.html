@@ -1,59 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GitMart — Listings</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-    <link rel="stylesheet" href="../css/noir.css" />
-    <link rel="stylesheet" href="../css/auth.css" />
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitMart — Listings</title>
 
-  <body>
-    <nav class="nav">
-      <div class="logo">GitMart</div>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="../css/noir.css" />
+  <link rel="stylesheet" href="../css/auth.css" />
+</head>
 
-      <ul class="nav-links">
-        <li><a href="noir.html">Home</a></li>
-        <li><a href="listings.html">Listings</a></li>
-        <li><a href="listing-create.html">Create Listing</a></li>
-        <li><a href="profile.html">Profile</a></li>
-      </ul>
+<body>
+  <nav class="nav">
+    <div class="logo">GitMart</div>
 
-      <div class="nav-right">
-        <a class="icon-btn" href="profile.html" title="Profile">
-          <i class="bi bi-person-circle"></i>
-        </a>
-        <button class="icon-btn" title="Wishlist">
-          <i class="bi bi-heart"></i>
-        </button>
-        <button class="icon-btn" title="Cart">
-          <i class="bi bi-bag"></i>
-        </button>
-      </div>
-    </nav>
+    <ul class="nav-links">
+      <li><a href="noir.html">Home</a></li>
+      <li><a href="products.html">Products</a></li>
+      <li><a href="listings.html">Listings</a></li>
+      <li><a href="listing-create.html">Create Listing</a></li>
+      <li><a href="profile.html">Profile</a></li>
+    </ul>
 
-    <section class="section">
-      <div class="section-header">
-        <div>
-          <div class="hero-tag">Marketplace</div>
-          <h2 class="section-title">User Listings</h2>
-        </div>
+    <div class="nav-right">
+      <a class="icon-btn" href="profile.html" title="Profile">
+        <i class="bi bi-person-circle"></i>
+      </a>
+      <button class="icon-btn" title="Wishlist">
+        <i class="bi bi-heart"></i>
+      </button>
+      <button class="icon-btn" title="Cart">
+        <i class="bi bi-bag"></i>
+      </button>
+    </div>
+  </nav>
 
-        <a href="listing-create.html" class="see-all">Create Listing →</a>
-      </div>
-
-      <div id="warningCard" class="auth-alert d-none">
-        <span id="warningText"></span>
+  <section class="section">
+    <div class="section-header">
+      <div>
+        <div class="hero-tag">Marketplace</div>
+        <h2 class="section-title">User Listings</h2>
       </div>
 
-      <div class="products" id="listingsGrid">
-        <p class="status-text">Loading listings...</p>
-      </div>
-    </section>
+      <a href="listing-create.html" class="see-all">Create Listing →</a>
+    </div>
 
-    <script src="../js/listings.js"></script>
-  </body>
+    <div id="warningCard" class="auth-alert d-none">
+      <span id="warningText"></span>
+    </div>
+
+    <div class="products" id="listingsGrid">
+      <p class="status-text">Loading listings...</p>
+    </div>
+  </section>
+
+  <script src="../js/listings.js"></script>
+</body>
+
 </html>
