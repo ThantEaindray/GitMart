@@ -16,9 +16,9 @@ webSocket.onmessage = (event) => {
   if (event.data.textcontent !== undefined)
   document.getElementById("messages").innerHTML += `
     <div class="row">
-      <div class="col-3">
+      <div class="col-3 align-self-start">
         <div class="card">
-        
+          <p>
         </div>
       </div>
     </div>
