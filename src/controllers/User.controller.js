@@ -134,6 +134,92 @@ module.exports.updateSettings = (req, res) => {
   model.updateUserSettings(data, callback);
 };
 
+module.exports.updateDisplayName = (req, res) => {
+  const data = { id: res.locals.userId, displayName: req.body.displayName ?? null };
+
+  const callback = (error) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    return res.status(200).json({ message: 'Display name updated.' });
+  };
+
+  model.updateDisplayName(data, callback);
+};
+
+module.exports.updateNotifications = (req, res) => {
+  const data = {
+    id: res.locals.userId,
+    notifyOrders: req.body.notifyOrders !== false,
+    notifyPromotions: req.body.notifyPromotions === true,
+  };
+
+  const callback = (error) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    return res.status(200).json({ message: 'Notification preferences updated.' });
+  };
+
+  model.updateNotifications(data, callback);
+};
+
+module.exports.deleteAccount = (req, res) => {
+  const data = { id: res.locals.userId };
+
+  const callback = (error) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'Strict' });
+    return res.status(200).json({ message: 'Account deleted.' });
+  };
+
+  model.deleteUser(data, callback);
+};
+
+module.exports.getPasswordHash = (req, res, next) => {
+  if (!req.body.currentPassword || !req.body.newPassword) {
+    return res.status(400).json({ message: 'Current password and new password are required.' });
+  }
+  if (req.body.newPassword.length < 6) {
+    return res.status(400).json({ message: 'New password must be at least 6 characters.' });
+  }
+
+  const data = { id: res.locals.userId };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    res.locals.hash = result.rows[0].password;
+    next();
+  };
+
+  model.getUserPasswordById(data, callback);
+};
+
+module.exports.updatePassword = (req, res) => {
+  const data = { id: res.locals.userId, password: res.locals.hash };
+
+  const callback = (error) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    return res.status(200).json({ message: 'Password updated successfully.' });
+  };
+
+  model.updateUserPassword(data, callback);
+};
+
 module.exports.sendRegistered = (req, res) => {
   return res.status(201).json({ message: 'Account created successfully. Please log in.' });
 };

@@ -46,9 +46,12 @@ CREATE TABLE users (
   password   TEXT    NOT NULL,
   created_on DATE    NOT NULL DEFAULT CURRENT_DATE,
   "isStaff"  BOOLEAN NOT NULL DEFAULT false,
-  theme      TEXT    DEFAULT NULL,
-  currency   TEXT    NOT NULL DEFAULT 'USD',
-  font_size  TEXT    DEFAULT NULL
+  theme              TEXT    DEFAULT NULL,
+  currency           TEXT    NOT NULL DEFAULT 'USD',
+  font_size          TEXT    DEFAULT NULL,
+  display_name       TEXT    DEFAULT NULL,
+  notify_orders      BOOLEAN NOT NULL DEFAULT true,
+  notify_promotions  BOOLEAN NOT NULL DEFAULT false
 );
 
 -- ── Refresh Tokens ────────────────────────────────────────

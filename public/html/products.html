@@ -16,8 +16,10 @@
     <script>
       var t = localStorage.getItem('theme');
       var f = localStorage.getItem('font');
+      var m = localStorage.getItem('motion');
       if (t) document.documentElement.setAttribute('data-theme', t);
       if (f) document.documentElement.setAttribute('data-font', f);
+      if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
     </script>
   </head>
   <body>
@@ -42,7 +44,7 @@
           <i class="bi bi-heart"></i>
         </button>
         <button class="icon-btn" id="btn-cart" title="Cart"><i class="bi bi-bag"></i></button>
-        <a class="icon-btn" href="settings.html" title="Appearance"><i class="bi bi-palette"></i></a>
+        <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
       </div>
     </nav>
 
@@ -85,6 +87,7 @@
       </div>
     </section>
 
+    <script src="../js/prefs.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/products.js"></script>
   </body>

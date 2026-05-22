@@ -42,7 +42,7 @@ module.exports.getUserById = (data, callback) => {
 
 module.exports.getUserSettings = (data, callback) => {
   const SQLSTATEMENT = `
-        SELECT theme, currency, font_size
+        SELECT theme, currency, font_size, display_name, notify_orders, notify_promotions
         FROM users
         WHERE id = $1
     `;
@@ -75,6 +75,34 @@ module.exports.deleteRefreshToken = (data, callback) => {
 module.exports.deleteAllRefreshTokensForUser = (data, callback) => {
   const SQLSTATEMENT = `DELETE FROM refresh_tokens WHERE user_id = $1`;
   pool.query(SQLSTATEMENT, [data.userId], callback);
+};
+
+module.exports.updateDisplayName = (data, callback) => {
+  const SQLSTATEMENT = `UPDATE users SET display_name = $2 WHERE id = $1`;
+  pool.query(SQLSTATEMENT, [data.id, data.displayName || null], callback);
+};
+
+module.exports.updateNotifications = (data, callback) => {
+  const SQLSTATEMENT = `
+        UPDATE users SET notify_orders = $2, notify_promotions = $3
+        WHERE id = $1
+    `;
+  pool.query(SQLSTATEMENT, [data.id, data.notifyOrders, data.notifyPromotions], callback);
+};
+
+module.exports.deleteUser = (data, callback) => {
+  const SQLSTATEMENT = `DELETE FROM users WHERE id = $1`;
+  pool.query(SQLSTATEMENT, [data.id], callback);
+};
+
+module.exports.getUserPasswordById = (data, callback) => {
+  const SQLSTATEMENT = `SELECT password FROM users WHERE id = $1`;
+  pool.query(SQLSTATEMENT, [data.id], callback);
+};
+
+module.exports.updateUserPassword = (data, callback) => {
+  const SQLSTATEMENT = `UPDATE users SET password = $2 WHERE id = $1`;
+  pool.query(SQLSTATEMENT, [data.id, data.password], callback);
 };
 
 module.exports.updateUserSettings = (data, callback) => {
