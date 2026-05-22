@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", ()=> {
                 <img src="${e.pfp}">
             </div>
             <div class="col-10">
-                <h4>${e.username}</h4>
+                <h4 id="${e.chat + 'name'}">${e.username}</h4>
             </div>
         </div>
         <hr>
@@ -44,8 +44,44 @@ document.addEventListener("DOMContentLoaded", ()=> {
   // so the chat id will be pulled from the request in the function and then we get the users id from inside of the thing itself
     
     
-   loadChat()
-  
+    function loadChat(data) {
+      //so for this all we need to do is read the incoming data and then 
+      // check which user for L/R positioning
+      data.forEach((e) => {
+        let position=new String
+        if (e.sender_id == uId) {
+          position="align-self-end"
+        } else {
+          position="align-self-start"
+        }
+        //now that we have the positions its just a matter of copying over the card and stuff 
+        if (e.textcontent !== undefined) {
+          document.getElementById("messages").innerHTML += `
+            <div class="row">
+              <div class="col-3 ${position}">
+                <div class="card">
+                  <p>${e.textcontent}</p>
+                </div>
+              </div>
+            </div>
+        `
+        } else {
+          //since theres no text it has to be an image so we can do the image code
+          document.getElementById("messages").innerHTML += `
+            <div class="row">
+              <div class="col-3 ${position}">
+                <div class="card">
+                  <img href="${e.imagecontent}">
+                </div>
+              </div>
+            </div>
+          `
+        }
+      })
+    }
+
+    
+    
     fetchmethod("/api/chats/viewChat", (stat, data) => {
       if (stat == 200) {
         loadChat(data)
