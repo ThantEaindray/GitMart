@@ -22,3 +22,10 @@ module.exports.loadMessages = (data, callback) => {
   pool.query(SQLSATEMENT,VALUES,callback)
 }
 
+module.exports.sendText = (data, callback) => {
+  const SQLSATEMENT = `
+    INSERT INTO chatcontent (chat_id, sender_id, textcontent)
+    VALUES ($1, $2, $3)`
+  const VALUES = [data.chat, data.user, data.textcontent]
+  pool.query(SQLSATEMENT, VALUES, callback)
+}

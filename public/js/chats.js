@@ -1,5 +1,4 @@
-const { loadChats } = require("../../src/controllers/chat.controller")
-document.addEventListener("DOMContentLoaded", ()=> {
+ document.addEventListener("DOMContentLoaded", ()=> {
   //so first things first we need to do the most basic of calling the api to get the users chats to load in, first things first\
   //check for a logged in user
   const token = localStorage.getItem(token)

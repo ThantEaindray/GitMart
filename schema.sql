@@ -91,7 +91,8 @@ CREATE TABLE chatcontent (
   chat_id      INTEGER REFERENCES chats(id),
   sender_id    INTEGER REFERENCES users(id),
   textcontent  TEXT,
-  imagecontent TEXT
+  imagecontent TEXT,
+  sentOn       DATE    DEFAULT CURRENT_DATE
 );
 
 -- ── Offers ────────────────────────────────────────────────

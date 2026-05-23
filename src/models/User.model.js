@@ -66,6 +66,6 @@ module.exports.namesPictures = (data, callback) => {
   const SQLSTATEMENT = `
     SELECT username, icon FROM users
     WHERE id = $1`
-  const VALUES = data
+  const VALUES = [data]
   pool.query(SQLSTATEMENT,VALUES,callback)
 }
