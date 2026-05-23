@@ -46,9 +46,12 @@ CREATE TABLE users (
   password   TEXT    NOT NULL,
   created_on DATE    NOT NULL DEFAULT CURRENT_DATE,
   "isStaff"  BOOLEAN NOT NULL DEFAULT false,
-  theme      TEXT    DEFAULT NULL,
-  currency   TEXT    NOT NULL DEFAULT 'USD',
-  font_size  TEXT    DEFAULT NULL
+  theme              TEXT    DEFAULT NULL,
+  currency           TEXT    NOT NULL DEFAULT 'USD',
+  font_size          TEXT    DEFAULT NULL,
+  display_name       TEXT    DEFAULT NULL,
+  notify_orders      BOOLEAN NOT NULL DEFAULT true,
+  notify_promotions  BOOLEAN NOT NULL DEFAULT false
 );
 
 -- ── Refresh Tokens ────────────────────────────────────────
@@ -76,17 +79,14 @@ CREATE TABLE products (
 
 -- ── Listings (user-created marketplace listings) ───────────
 CREATE TABLE listings (
-  id          SERIAL  PRIMARY KEY,
-  owner_id    INTEGER REFERENCES users(id),
-  price       INTEGER NOT NULL CHECK (price > 0),
-  created_on  DATE    NOT NULL DEFAULT CURRENT_DATE,
-  title       TEXT    NOT NULL,
-  description TEXT    NOT NULL,
-  image1      BYTEA   NOT NULL,
-  image2      BYTEA,
-  image3      BYTEA,
-  "isSold"    BOOLEAN DEFAULT false,
-  "isClosed"  BOOLEAN DEFAULT false
+  id          SERIAL         PRIMARY KEY,
+  owner_id    INTEGER        REFERENCES users(id),
+  price       NUMERIC(10,2)  NOT NULL CHECK (price > 0),
+  created_on  DATE           NOT NULL DEFAULT CURRENT_DATE,
+  title       TEXT           NOT NULL,
+  description TEXT           NOT NULL,
+  "isSold"    BOOLEAN        DEFAULT false,
+  "isClosed"  BOOLEAN        DEFAULT false
 );
 
 -- ── Chats ─────────────────────────────────────────────────
@@ -110,11 +110,11 @@ CREATE TABLE chatcontent (
 
 -- ── Offers ────────────────────────────────────────────────
 CREATE TABLE offers (
-  id           SERIAL  PRIMARY KEY,
-  product_id   INTEGER REFERENCES listings(id),
-  buyer_id     INTEGER REFERENCES users(id),
-  price        INTEGER NOT NULL CHECK (price > 0),
-  "isAccepted" BOOLEAN DEFAULT false
+  id           SERIAL         PRIMARY KEY,
+  product_id   INTEGER        REFERENCES listings(id),
+  buyer_id     INTEGER        REFERENCES users(id),
+  price        NUMERIC(10,2)  NOT NULL CHECK (price > 0),
+  "isAccepted" BOOLEAN        DEFAULT false
 );
 
 -- ── Seed Data ─────────────────────────────────────────────
@@ -128,9 +128,9 @@ INSERT INTO products (name, category, description, price, rating, review_count, 
   ('Cedar Shoe Trees',      'Footwear',    'Aromatic cedarwood, adjustable split-toe, preserves shoe shape.',        110, 4.7,  98, 'tree',                'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80'),
   ('Merino Travel Scarf',   'Apparel',     'Extra-fine 18.5-micron merino, 200cm length, hand-finished fringe.',     320, 4.6,  63, 'wind',                'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=600&q=80');
 
-INSERT INTO listings (owner_id, price, title, description, image1, "isSold", "isClosed") VALUES
-  (NULL, 3200, 'Vintage Rolex Submariner', 'Circa 1987, ref. 5513. Original dial, tritium plots, 40mm case. Minor patina consistent with age. No box or papers.', decode('', 'hex'), false, false),
-  (NULL, 480,  'Hermès Silk Scarf — Brides de Gala', 'Classic equestrian print, 90cm × 90cm. Light wear to one corner, otherwise excellent. Original box included.', decode('', 'hex'), false, false),
-  (NULL, 1150, 'Montblanc Meisterstück 149 Fountain Pen', '18k gold nib, piston filler. Professionally serviced 2024. Comes with original case and two ink bottles.', decode('', 'hex'), false, false),
-  (NULL, 620,  'Berluti Alessandro Derby Shoes — UK 9', 'Venezia leather, burnished by hand. Light scuffs to toe, resoled once. Cedar shoe trees included.', decode('', 'hex'), true,  false),
-  (NULL, 290,  'Omega Speedmaster Bracelet — 20mm', 'Stainless steel, brushed and polished, unused. Removed from new watch. Fits 20mm lug width.', decode('', 'hex'), false, false);
+INSERT INTO listings (owner_id, price, title, description, "isSold", "isClosed") VALUES
+  (NULL, 3200.00, 'Vintage Rolex Submariner', 'Circa 1987, ref. 5513. Original dial, tritium plots, 40mm case. Minor patina consistent with age. No box or papers.', false, false),
+  (NULL, 480.00,  'Hermès Silk Scarf — Brides de Gala', 'Classic equestrian print, 90cm × 90cm. Light wear to one corner, otherwise excellent. Original box included.', false, false),
+  (NULL, 1150.00, 'Montblanc Meisterstück 149 Fountain Pen', '18k gold nib, piston filler. Professionally serviced 2024. Comes with original case and two ink bottles.', false, false),
+  (NULL, 620.00,  'Berluti Alessandro Derby Shoes — UK 9', 'Venezia leather, burnished by hand. Light scuffs to toe, resoled once. Cedar shoe trees included.', true,  false),
+  (NULL, 290.00,  'Omega Speedmaster Bracelet — 20mm', 'Stainless steel, brushed and polished, unused. Removed from new watch. Fits 20mm lug width.', false, false);

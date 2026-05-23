@@ -130,18 +130,8 @@ function formatPrice(usdAmount) {
   return `${symbol}${(usdAmount * rate).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
-function applyPreferences() {
-  const theme = localStorage.getItem('theme') || '';
-  const font  = localStorage.getItem('font')  || '';
-  if (theme) document.documentElement.setAttribute('data-theme', theme);
-  else       document.documentElement.removeAttribute('data-theme');
-  if (font)  document.documentElement.setAttribute('data-font', font);
-  else       document.documentElement.removeAttribute('data-font');
-}
-
 window.addEventListener('pageshow', (e) => {
   if (!e.persisted) return;
-  applyPreferences();
   document.querySelectorAll('[data-price]').forEach((el) => {
     el.textContent = formatPrice(Number(el.dataset.price));
   });
@@ -190,9 +180,55 @@ async function authFetch(url, options = {}) {
   return response;
 }
 
+// ── SESSION TIMER ─────────────────────────────────────────────────────────
+// Reads the access token expiry, sets a timer to refresh just before it
+// expires. If the refresh fails (refresh token gone/expired), logs out.
+
+function scheduleTokenRefresh() {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  let payload;
+  try {
+    const base64url = token.split('.')[1];
+    const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+    payload = JSON.parse(atob(base64));
+  } catch {
+    return;
+  }
+
+  const msUntilExpiry = payload.exp * 1000 - Date.now() - 1000;
+
+  if (msUntilExpiry <= 0) {
+    handleTokenExpiry();
+    return;
+  }
+
+  setTimeout(handleTokenExpiry, msUntilExpiry);
+}
+
+async function handleTokenExpiry() {
+  const refreshRes = await fetch('/api/refresh', { method: 'POST' });
+
+  if (!refreshRes.ok) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('loggedInUserId');
+    localStorage.removeItem('username');
+    localStorage.removeItem('isStaff');
+    window.location.href = '/html/login.html';
+    return;
+  }
+
+  const { token: newToken } = await refreshRes.json();
+  localStorage.setItem('token', newToken);
+  scheduleTokenRefresh();
+}
+
 // ── NAV AUTH ──────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+  scheduleTokenRefresh();
+
   const accountBtn = document.getElementById('btn-account');
   if (!accountBtn) return;
 

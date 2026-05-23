@@ -15,8 +15,10 @@
   <script>
     var t = localStorage.getItem('theme');
     var f = localStorage.getItem('font');
+    var m = localStorage.getItem('motion');
     if (t) document.documentElement.setAttribute('data-theme', t);
     if (f) document.documentElement.setAttribute('data-font', f);
+    if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
   </script>
 </head>
 
@@ -30,20 +32,13 @@
       <li><a href="products.html">Products</a></li>
       <li><a href="listings.html">Listings</a></li>
       <li><a href="listing-create.html">Create Listing</a></li>
-      <li><a href="profile.html">Profile</a></li>
     </ul>
 
     <div class="nav-right">
-      <a class="icon-btn" href="profile.html" title="Profile">
-        <i class="bi bi-person-circle"></i>
-      </a>
-      <button class="icon-btn" id="btn-wishlist" title="Wishlist">
-        <i class="bi bi-heart"></i>
-      </button>
-      <button class="icon-btn" id="btn-cart" title="Cart">
-        <i class="bi bi-bag"></i>
-      </button>
-      <a class="icon-btn" href="settings.html" title="Appearance"><i class="bi bi-palette"></i></a>
+      <a class="icon-btn" id="btn-account" href="login.html" title="Login"><i class="bi bi-person"></i></a>
+      <button class="icon-btn" id="btn-wishlist" title="Wishlist"><i class="bi bi-heart"></i></button>
+      <button class="icon-btn" id="btn-cart" title="Cart"><i class="bi bi-bag"></i></button>
+      <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
     </div>
   </nav>
 
@@ -75,6 +70,7 @@
     </section>
   </main>
 
+  <script src="../js/prefs.js"></script>
   <script src="../js/api.js"></script>
   <script src="../js/profile.js"></script>
   <script src="../js/logout.js"></script>

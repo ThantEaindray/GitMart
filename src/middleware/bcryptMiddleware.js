@@ -44,6 +44,33 @@ module.exports.comparePassword = (req, res, next) => {
   bcrypt.compare(req.body.password + pepper, res.locals.hash, callback);
 };
 
+module.exports.compareCurrentPassword = (req, res, next) => {
+  const callback = (err, isMatch) => {
+    if (err) {
+      console.error('Error bcrypt:', err);
+      return res.status(500).json(err);
+    }
+    if (isMatch) {
+      next();
+    } else {
+      res.status(401).json({ message: 'Current password is incorrect.' });
+    }
+  };
+  bcrypt.compare(req.body.currentPassword + pepper, res.locals.hash, callback);
+};
+
+module.exports.hashNewPassword = (req, res, next) => {
+  const callback = (err, hash) => {
+    if (err) {
+      console.error('Error bcrypt:', err);
+      return res.status(500).json(err);
+    }
+    res.locals.hash = hash;
+    next();
+  };
+  bcrypt.hash(req.body.newPassword + pepper, saltRounds, callback);
+};
+
 // Hash (Encrypt) Password
 // Used during Register to encrypt Password
 // Make sure this encrypted password is stored in DB instead of raw.

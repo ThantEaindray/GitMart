@@ -3,8 +3,8 @@ const pool = require('./db');
 // Create a new listing
 module.exports.createListing = (data, callback) => {
   const SQLSTATEMENT = `
-    INSERT INTO listings (owner_id, price, title, description, image1, image2, image3)
-    VALUES ($1, $2, $3, $4, decode('', 'hex'), NULL, NULL)
+    INSERT INTO listings (owner_id, price, title, description)
+    VALUES ($1, $2, $3, $4)
     RETURNING id, owner_id, price, created_on, title, description, "isSold", "isClosed"
   `;
 

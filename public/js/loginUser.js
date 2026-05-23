@@ -89,10 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .then((r) => r.json())
             .then((prefs) => {
               if (prefs.theme) localStorage.setItem('theme', prefs.theme);
-              else localStorage.removeItem('theme');
               if (prefs.currency) localStorage.setItem('currency', prefs.currency);
               if (prefs.font_size) localStorage.setItem('font', prefs.font_size);
-              else localStorage.removeItem('font');
             })
             .catch(() => {})
             .finally(() => {
