@@ -23,10 +23,35 @@ fetch('http://localhost:3000/orders')
                 <p>Customer: ${order.fullName}</p>
                 <p>Email: ${order.emailAddress}</p>
                 <p>Phone: ${order.phoneNumber}</p>
+                <p>Address: ${order.address} ${order.unitNumber}</p>
+                <p>Postal Code: ${order.postalCode}</p>
                 <p>Delivery: ${order.deliveryMethod}</p>
                 <p>Payment: ${order.paymentMethod}</p>
                 <p>Total: $${Number(order.totalAmount).toFixed(2)}</p>
-                <p>Status: ${order.status}</p>
+                <p>
+                Status:
+                <select class="statusDropdown" data-id="${order.id}">
+                    <option value="Pending"
+                        ${order.status === 'Pending' ? 'selected' : ''}>
+                        Pending
+                    </option>
+
+                    <option value="Processing"
+                        ${order.status === 'Processing' ? 'selected' : ''}>
+                        Processing
+                    </option>
+
+                    <option value="Delivered"
+                        ${order.status === 'Delivered' ? 'selected' : ''}>
+                        Delivered
+                    </option>
+
+                    <option value="Cancelled"
+                        ${order.status === 'Cancelled' ? 'selected' : ''}>
+                        Cancelled
+                    </option>
+                </select>
+                </p>
                 <p>Created At: ${order.createdAt}</p>
             `;
 
