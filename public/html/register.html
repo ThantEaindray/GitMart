@@ -13,10 +13,10 @@
     <link rel="stylesheet" href="../css/noir.css" />
     <link rel="stylesheet" href="../css/auth.css" />
     <script>
-      var t = localStorage.getItem('theme');
-      var f = localStorage.getItem('font');
-      if (t) document.documentElement.setAttribute('data-theme', t);
-      if (f) document.documentElement.setAttribute('data-font', f);
+        var t = localStorage.getItem('theme');
+        var f = localStorage.getItem('font');
+        if (t) document.documentElement.setAttribute('data-theme', t);
+        if (f) document.documentElement.setAttribute('data-font', f);
     </script>
 </head>
 
@@ -26,10 +26,11 @@
         <div class="logo">GitMart</div>
 
         <ul class="nav-links">
-            <li><a href="noir.html">New In</a></li>
-            <li><a href="noir.html">Collections</a></li>
-            <li><a href="noir.html">Brands</a></li>
-            <li><a href="noir.html">About</a></li>
+            <li><a href="noir.html">Home</a></li>
+            <li><a href="products.html">Products</a></li>
+            <li><a href="listings.html">Listings</a></li>
+            <li><a href="listing-create.html">Create Listing</a></li>
+            <li><a href="profile.html">Profile</a></li>
         </ul>
 
         <div class="nav-right">
@@ -82,9 +83,11 @@
                     <label for="password">Password</label>
                     <input id="password" type="password" autocomplete="new-password" />
                     <div class="password-reqs" id="password-reqs">
-                      <div class="password-req" id="req-length"><i class="bi bi-x-circle"></i> At least 8 characters</div>
-                      <div class="password-req" id="req-number"><i class="bi bi-x-circle"></i> Contains a number</div>
-                      <div class="password-req" id="req-upper"><i class="bi bi-x-circle"></i> Contains an uppercase letter</div>
+                        <div class="password-req" id="req-length"><i class="bi bi-x-circle"></i> At least 8 characters
+                        </div>
+                        <div class="password-req" id="req-number"><i class="bi bi-x-circle"></i> Contains a number</div>
+                        <div class="password-req" id="req-upper"><i class="bi bi-x-circle"></i> Contains an uppercase
+                            letter</div>
                     </div>
                 </div>
 

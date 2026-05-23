@@ -14,6 +14,7 @@ const productRouter = require('./routers/product.router');
 // POST /api/login
 // GET  /api/me
 const userRouter = require('./routers/User.router');
+const listingRouter = require('./routers/Listing.router');
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use('/products', productRouter);
 // router.post('/login') becomes POST /api/login
 // router.post('/register') becomes POST /api/register
 app.use('/api', userRouter);
+app.use('/api', listingRouter);
 
 // 404 handler — if no route above matched the request,
 // create a 404 error and pass it to the error handler below.
