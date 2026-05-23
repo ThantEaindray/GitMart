@@ -80,7 +80,6 @@ CREATE TABLE chats (
   id         SERIAL  PRIMARY KEY,
   user_1     INTEGER REFERENCES users(id),
   user_2     INTEGER REFERENCES users(id),
-  product    INTEGER REFERENCES listings(id),
   "isClosed" BOOLEAN DEFAULT false,
   CHECK (user_1 != user_2)
 );

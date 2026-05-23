@@ -1,7 +1,7 @@
 //so this one will solely be for handling websocket stuff since the chats page will probably end up a bit too chaotic if i let it have everything in there
-const token = localStorage.getItem(token)
-const uId = localStorage.getItem(loggedInUserId)
-const openChat = localStorage.getItem(openChat)
+const token = localStorage.getItem('token')
+const uId = localStorage.getItem('loggedInUserId')
+const openChat = localStorage.getItem('openChat')
 const webSocket = new WebSocket('ws://localhost:443/');
 
 webSocket.onmessage = (event) => {
@@ -60,7 +60,7 @@ function sendTxt(content) {
       //if its not a 201, its gotta be an error so we just hit it whith the classic standard browser alert box :P
       alert("error sending message, please try again later.")
     }
-  })
+  }, "POST", cont, token)
 
 
   

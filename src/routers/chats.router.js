@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get("/", jwt.verifyToken, chatController.loadChats, chatController.toLoad ,userController.namesPictures,  chatController.formatList)
 router.get("/viewChat", chatController.loadMessages)
-router.post("/new", jwt.verifyToken, chatController.newChat)
+router.post("/new", jwt.verifyToken, chatController.hasChat ,chatController.newChat)
 router.post("/send", chatController.sendText)
 //router.post("/sendImg", jwt.verifyToken, chatController.chatExists, chatController.writeImg, chatController.sendMessage)
 //router.put("/{id}", jwt.verifyToken, chatController.chatExists, chatController.closeChat)
