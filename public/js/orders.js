@@ -56,6 +56,36 @@ fetch('http://localhost:3000/orders')
             `;
 
             ordersList.appendChild(orderCard);
+
+            const statusDropdown =
+            orderCard.querySelector('.statusDropdown');
+            
+            statusDropdown.addEventListener('change', () => {
+                
+                fetch(`http://localhost:3000/orders/${order.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        status: statusDropdown.value,
+                    }),
+                })
+                
+                .then((response) => response.json())
+                .then((updatedOrder) => {
+                    console.log(updatedOrder);
+                    
+                    alert('Order status updated successfully!');
+                })
+                
+                .catch((error) => {
+
+                    console.error(error);
+                    
+                    alert('Failed to update order status.');
+                });
+            });
         });
     })
     .catch((error) => {
