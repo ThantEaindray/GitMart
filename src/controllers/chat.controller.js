@@ -1,4 +1,4 @@
-const model = require("../models/chat.model.js")
+const model = require("../models/chats.model.js")
 
 module.exports.loadChats = (req, res, next) => {
   const data = {
@@ -17,8 +17,14 @@ module.exports.loadChats = (req, res, next) => {
       console.log("user has no chats to load")
       return res.status(204).json({message:"user has no chats to load"})
     }
-
+    
     res.locals.userChats = results
+    //we also wanna get a list of just the chat ids to bring back later
+    res.locals.chatIds = new Array
+    results.foreach((e) => {
+      res.locals.chatIds.push(e.id)
+    })
+    //so that will come back up once we have to format the results 
     next()
   }
   model.loadChats(data,callback)
@@ -39,7 +45,7 @@ module.exports.toLoad = (req, res, next) => {
     } else {
       resArr.push(data.chats[e].user_1)
     }
-  })
+  
   res.locals.toLoad = resArr
   next()
 }
@@ -47,20 +53,17 @@ module.exports.toLoad = (req, res, next) => {
 module.exports.formatList = (req, res, next) => {
   let namesicons = res.locals.namesPictures
   // for my sake lets split these up first like i said not ideal but i can think clearer that way
-  namesicons.foreach
-  
-  //so this one is fairly simple we just wanna have it formatted like this
-  // [obj] chat[x]={
-  // uname: [name of other user]
-  // uicon: [pfp of other user]
-  // }
-  
+  //ok so basically were trying to do an array of objects type deal here
+  // ok so how fun were all bringing back for loops in 2026
+  let chatIds = res.locals.chatIds
+  //basically we do a for loop so that way we can get a counter for our thing to make it easier to use across multiple arrays
+  for()
 }
 //idk this ones kinda a lot of work lets circle back to it later
 
 module.exports.chatExists = (req, res, next) => {
   const data = {
-    chat:req.body.id
+    chat:req.body.data.
   }
 
   const callback = (err, results, fields) => {
@@ -114,24 +117,21 @@ module.exports.loadMessages = (req, res, next) => {
 
 //now comes the next big chunk of endpoints yippee yahooo
 //so for now it will just send the image file to a folder in the local area but on actual deployment youd want a cdn bear this in mind when going forward
-module.exports.sendMessage = (req, res, next) => {
-  //so we need to take all the inputs from the thing and then send them through to the model for uploading
-  const data = {
-    chatId: res.locals.openChat,
-    uid: res.locals.userId,
-    content: req.body.text,
-    image: req.body.image
-  }
-  //so we need to set up a thing to write the image into the cdn (local folder currently) storage and then have the link be referenced inside of the db just as a string alright thats way easier than doing all this binaryslop
-  //so we need to push it back through to the backend and from there we need to figure out how to write it to the thing but like fuck thats a lot of effort
-  //ouh this one is a lot of work i really dont feel like doing this 
-  // we still need to make the handling for if the user is still in the thing in the chat
+
+
+module.exports.sendText = (req, res, next) => {
+  const data = req.body.cont
+  //since cont is already an object why go to all that effort to redeclare everything
+  // just renaming it for consistencies sake
   const callback = (err, results, fields) => {
     if (err) {
-      console.error("problem sending message", err)
-      return res.status(500).json(err)
+      console.error("problem sending text", err)
+      return res.status(500).json(err)      
     }
-    //well the next thing that would need to happen is it will trigger some sort of listener that queries globally if the message is for the open chat and will refresh it/add the message somehow
-    res.status()
+    //we dont really even need to return anything for this one like all we need to do is just make it return a 201 the ws will do the rest
+    res.status(201).json()
+    //and its literally that easy crazy i agree
   }
+  model.sendText(data,callback)
 }
+
