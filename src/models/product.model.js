@@ -1,51 +1,48 @@
 const pool = require('./db');
 
-
-// Get all products
 module.exports.selectAll = (callback) => {
-    const SQLSTATEMENT = `
+  const SQLSTATEMENT = `
         SELECT id, name, category, description, price, rating,
-               review_count AS "reviewCount", icon
+               review_count AS "reviewCount", icon, image_url AS "imageUrl"
         FROM products
         ORDER BY id ASC
     `;
-    const VALUES = [];
-
-    pool.query(SQLSTATEMENT, VALUES, (error, result) => {
-        if (error) return callback(error, null);
-        callback(null, result.rows);
-    });
+  const VALUES = [];
+  pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
-// Get product by id
 module.exports.selectById = (data, callback) => {
-    const SQLSTATEMENT = `
+  const SQLSTATEMENT = `
         SELECT id, name, category, description, price, rating,
-               review_count AS "reviewCount", icon
+               review_count AS "reviewCount", icon, image_url AS "imageUrl"
         FROM products
         WHERE id = $1
     `;
-    const VALUES = [data.id];
-
-    pool.query(SQLSTATEMENT, VALUES, (error, result) => {
-        if (error) return callback(error, null);
-        callback(null, result.rows);
-    });
+  const VALUES = [data.id];
+  pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
-// Search products by name or category
 module.exports.searchByName = (data, callback) => {
-    const SQLSTATEMENT = `
+  const SQLSTATEMENT = `
         SELECT id, name, category, description, price, rating,
-               review_count AS "reviewCount", icon
+               review_count AS "reviewCount", icon, image_url AS "imageUrl"
         FROM products
         WHERE name ILIKE $1 OR category ILIKE $1
         ORDER BY id ASC
     `;
-    const VALUES = [`%${data.search}%`];
+  const VALUES = [`%${data.search}%`];
+  pool.query(SQLSTATEMENT, VALUES, callback);
+};
 
-    pool.query(SQLSTATEMENT, VALUES, (error, result) => {
-        if (error) return callback(error, null);
-        callback(null, result.rows);
-    });
+module.exports.selectByCategory = (data, callback) => {
+  const SQLSTATEMENT = `
+        SELECT id, name, category, description, price, rating,
+               review_count AS "reviewCount", icon, image_url AS "imageUrl"
+        FROM products
+        WHERE category = $1 AND id != $2
+        ORDER BY id ASC
+        LIMIT 4
+    `;
+  const VALUES = [data.category, data.excludeId];
+  pool.query(SQLSTATEMENT, VALUES, callback);
 };

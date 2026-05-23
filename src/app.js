@@ -1,6 +1,7 @@
 const express = require('express');
 const createError = require('http-errors');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 
 // Import route handlers
 const somethingRouter = require('./routers/Something.router');
@@ -13,6 +14,7 @@ const productRouter = require('./routers/product.router');
 // POST /api/login
 // GET  /api/me
 const userRouter = require('./routers/User.router');
+const listingRouter = require('./routers/Listing.router');
 
 const app = express();
 
@@ -20,6 +22,7 @@ const app = express();
 // This is needed before API routes so req.body can read JSON data
 // from Postman or frontend fetch requests.
 app.use(express.json());
+app.use(cookieParser());
 
 // Serve static files (HTML, CSS, JS, images) from the 'public' folder.
 // e.g. src/public/index.html is accessible at http://localhost:<port>/
@@ -39,6 +42,7 @@ app.use('/products', productRouter);
 // router.post('/login') becomes POST /api/login
 // router.post('/register') becomes POST /api/register
 app.use('/api', userRouter);
+app.use('/api', listingRouter);
 
 // 404 handler — if no route above matched the request,
 // create a 404 error and pass it to the error handler below.

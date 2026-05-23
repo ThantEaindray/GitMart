@@ -8,15 +8,9 @@ const productController = require('../controllers/product.controller');
 // ==============================
 
 // Read All Products (supports ?search=query)
-router.get('/',
-    productController.readProducts,
-    productController.sendResponse
-);
+router.get('/', productController.readProducts, productController.sendResponse);
 
 // Read Product By ID
-router.get('/:id',
-    productController.readProductById,
-    productController.sendResponse
-);
+router.get('/:id', productController.readProductById, productController.sendResponse);
 
 module.exports = router;

@@ -1,41 +1,48 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AURUM — Luxury Marketplace</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <title>GitMart — Luxury Marketplace</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
     <link rel="stylesheet" href="../css/noir.css" />
+    <script>
+      var t = localStorage.getItem('theme');
+      var f = localStorage.getItem('font');
+      var m = localStorage.getItem('motion');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+      if (f) document.documentElement.setAttribute('data-font', f);
+      if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
+    </script>
   </head>
   <body>
-
     <!-- ── NAVIGATION ── -->
     <nav class="nav">
-      <div class="logo">AURUM</div>
+      <div class="logo">GitMart</div>
 
       <ul class="nav-links">
-        <li><a href="#">New In</a></li>
-        <li><a href="#">Collections</a></li>
-        <li><a href="#">Brands</a></li>
-        <li><a href="#">About</a></li>
+        <li><a href="noir.html">Home</a></li>
+        <li><a href="products.html">Products</a></li>
+        <li><a href="listings.html">Listings</a></li>
+        <li><a href="listing-create.html">Create Listing</a></li>
       </ul>
 
       <div class="nav-right">
-        <button class="icon-btn" id="btn-search" title="Search"><i class="bi bi-search"></i></button>
-        <button class="icon-btn" id="btn-wishlist" title="Wishlist"><i class="bi bi-heart"></i></button>
+        <a class="icon-btn" id="btn-account" href="login.html" title="Login"><i class="bi bi-person"></i></a>
+        <button class="icon-btn" id="btn-wishlist" title="Wishlist">
+          <i class="bi bi-heart"></i>
+        </button>
         <button class="icon-btn" id="btn-cart" title="Cart"><i class="bi bi-bag"></i></button>
+        <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
       </div>
     </nav>
-
-    <!-- ── SEARCH BAR ── -->
-    <div class="search-bar" id="search-bar">
-      <div class="search-inner">
-        <i class="bi bi-search search-icon-sm"></i>
-        <input type="text" id="search-input" placeholder="Search pieces…" autocomplete="off" />
-        <button class="icon-btn" id="btn-search-clear" title="Clear"><i class="bi bi-x-lg"></i></button>
-      </div>
-    </div>
 
     <!-- ── HERO ── -->
     <section class="hero">
@@ -43,11 +50,11 @@
         <div class="hero-tag">New Collection 2025</div>
         <h1>Curated For the Discerning Eye</h1>
         <p>
-          Discover rare finds from the world's most celebrated artisans.
-          Each piece selected for its craft, its story, and its uncompromising quality.
+          Discover rare finds from the world's most celebrated artisans. Each piece selected for its
+          craft, its story, and its uncompromising quality.
         </p>
-        <button class="btn-primary" id="btn-shop">Shop Collection</button>
-        <button class="btn-outline" id="btn-explore">Explore</button>
+        <a class="btn-primary" href="products.html">Shop Collection</a>
+        <a class="btn-outline" href="products.html">Browse All</a>
       </div>
 
       <div class="hero-img">
@@ -59,15 +66,15 @@
     <section class="section" id="products-section">
       <div class="section-header">
         <h2 class="section-title" id="section-title">Featured Pieces</h2>
-        <a href="#" class="see-all">View All →</a>
+        <a href="products.html" class="see-all">View All →</a>
       </div>
 
-      <!-- Product cards injected here by noir.js -->
       <div class="products" id="products-grid">
         <p class="status-text">Loading products…</p>
       </div>
     </section>
 
+    <script src="../js/prefs.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/noir.js"></script>
   </body>

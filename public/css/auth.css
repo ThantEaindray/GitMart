@@ -35,9 +35,9 @@
   max-width: 430px;
   justify-self: end;
   padding: 2.2rem;
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  background: rgba(10, 10, 10, 0.72);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
 }
 
 .auth-card h2 {
@@ -74,8 +74,8 @@
 .form-group input {
   width: 100%;
   padding: 0.9rem 1rem;
-  border: 1px solid rgba(212, 175, 55, 0.38);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  background: var(--surface);
   color: inherit;
   font-family: 'Jost', sans-serif;
   font-size: 1rem;
@@ -83,8 +83,8 @@
 }
 
 .form-group input:focus {
-  border-color: #d4af37;
-  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--accent);
+  background: var(--surface);
 }
 
 .remember-row {
@@ -99,7 +99,7 @@
 
 .remember-row input {
   width: auto;
-  accent-color: #d4af37;
+  accent-color: var(--accent);
 }
 
 .auth-btn {
@@ -114,7 +114,7 @@
 }
 
 .auth-switch a {
-  color: #d4af37;
+  color: var(--accent);
   text-decoration: none;
   font-weight: 600;
 }
@@ -126,8 +126,8 @@
 .auth-alert {
   margin-bottom: 1rem;
   padding: 0.8rem 1rem;
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .d-none {
@@ -142,12 +142,68 @@
 .profile-info {
   margin: 1.5rem 0;
   padding: 1rem 0;
-  border-top: 1px solid rgba(212, 175, 55, 0.25);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 .profile-info p {
   margin: 0.7rem 0;
+}
+
+/* ── Inline field validation ── */
+
+.form-group input.input-error {
+  border-color: #c0392b;
+  background: rgba(192, 57, 43, 0.05);
+}
+
+.field-error {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.78rem;
+  color: #c0392b;
+}
+
+/* ── Password requirements checklist ── */
+
+.password-reqs {
+  margin-top: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.password-req {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.78rem;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+
+.password-req.met {
+  color: #5a9e6a;
+}
+
+.password-req i {
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+
+/* ── Post-registration success banner ── */
+
+.auth-success {
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgba(90, 158, 106, 0.45);
+  background: rgba(90, 158, 106, 0.08);
+  font-family: 'Jost', sans-serif;
+  font-size: 0.9rem;
+  color: #5a9e6a;
 }
 
 /* Mobile responsive */

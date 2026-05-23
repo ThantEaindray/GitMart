@@ -1,44 +1,97 @@
 // Import Modules
-const bcrypt = require("bcrypt");
-require('dotenv').config();
-//import Parameters from .env
-const pepper= process.env.BCRYPT_PEPPER;
+const bcrypt = require('bcrypt');
+
+// Get pepper from .env.dev loaded by npm script
+const pepper = process.env.BCRYPT_PEPPER;
 // Set Salt Rounds (Encryption Layers)
 const saltRounds = 10;
 
 // Compare Password
 // Used during Login to verify Password
-// 1 Raw Password (from req.body) + 1 Hashed Password (from DB) should be used. 
+// 1 Raw Password (from req.body) + 1 Hashed Password (from DB) should be used.
 module.exports.comparePassword = (req, res, next) => {
+  if (!pepper) {
+    console.error('BCRYPT_PEPPER is missing.');
+    return res.status(500).json({
+      message: 'Server configuration error.'
+    });
+  }
+
+  if (!res.locals.hash) {
+    console.error('Password hash is missing before bcrypt compare.');
+    return res.status(500).json({
+      message: 'Password hash missing during login.'
+    });
+  }
+
   const callback = (err, isMatch) => {
     if (err) {
-      console.error("Error bcrypt:", err);
-      res.status(500).json(err);
+      console.error('Error bcrypt:', err);
+      return res.status(500).json({
+        message: 'Password comparison failed.'
+      });
+    }
+
+    if (!isMatch) {
+      return res.status(401).json({
+        message: 'Wrong password',
+      });
+    }
+
+    next();
+  };
+
+  bcrypt.compare(req.body.password + pepper, res.locals.hash, callback);
+};
+
+module.exports.compareCurrentPassword = (req, res, next) => {
+  const callback = (err, isMatch) => {
+    if (err) {
+      console.error('Error bcrypt:', err);
+      return res.status(500).json(err);
+    }
+    if (isMatch) {
+      next();
     } else {
-      if (isMatch) {
-        next();
-      } else {
-        res.status(401).json({
-          message: "Wrong password",
-        });
-      }
+      res.status(401).json({ message: 'Current password is incorrect.' });
     }
   };
-  bcrypt.compare(req.body.password + pepper, res.locals.hash, callback);
+  bcrypt.compare(req.body.currentPassword + pepper, res.locals.hash, callback);
+};
+
+module.exports.hashNewPassword = (req, res, next) => {
+  const callback = (err, hash) => {
+    if (err) {
+      console.error('Error bcrypt:', err);
+      return res.status(500).json(err);
+    }
+    res.locals.hash = hash;
+    next();
+  };
+  bcrypt.hash(req.body.newPassword + pepper, saltRounds, callback);
 };
 
 // Hash (Encrypt) Password
 // Used during Register to encrypt Password
 // Make sure this encrypted password is stored in DB instead of raw.
 module.exports.hashPassword = (req, res, next) => {
+  if (!pepper) {
+    console.error('BCRYPT_PEPPER is missing.');
+    return res.status(500).json({
+      message: 'Server configuration error.'
+    });
+  }
+
   const callback = (err, hash) => {
     if (err) {
-      console.error("Error bcrypt:", err);
-      res.status(500).json(err);
-    } else {
-      res.locals.hash = hash;
-      next();
+      console.error('Error bcrypt:', err);
+      return res.status(500).json({
+        message: 'Password hashing failed.'
+      });
     }
+
+    res.locals.hash = hash;
+    next();
   };
 
   bcrypt.hash(req.body.password + pepper, saltRounds, callback);

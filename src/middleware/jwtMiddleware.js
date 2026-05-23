@@ -1,77 +1,115 @@
-// Import Modules
-require("dotenv").config();
-const jwt = require("jsonwebtoken");
+require('dotenv').config();
+const jwt = require('jsonwebtoken');
+const model = require('../models/User.model');
 
-// Import Parameters from .env
-const secretKey = process.env.JWT_SECRET_KEY;
-const rememberDuration = process.env.JWT_REMEMBER_TTL;
-const noRememberDuration = process.env.JWT_NO_REMEMBER_TTL;
-const tokenAlgorithm = process.env.JWT_ALGORITHM;
+const accessSecret   = process.env.JWT_SECRET_KEY;
+const refreshSecret  = process.env.JWT_REFRESH_SECRET;
+const accessTTL      = process.env.JWT_ACCESS_TTL      || '15m';
+const refreshRemember    = process.env.JWT_REFRESH_REMEMBER_TTL    || '7d';
+const refreshNoRemember  = process.env.JWT_REFRESH_NO_REMEMBER_TTL || '1d';
+const algorithm      = process.env.JWT_ALGORITHM        || 'HS256';
 
-// Generate Token 
-// Use in Register & Login Routes, generates token with provided userId
+// ── Access token ───────────────────────────────────────────────────────────
+
 module.exports.generateToken = (req, res, next) => {
-  const payload = {
-    userId: res.locals.userId,
-    timestamp: new Date()
-  };
+  const payload = { userId: res.locals.userId, timestamp: new Date() };
+  const options = { algorithm, expiresIn: accessTTL };
 
-  const options = {
-    algorithm: tokenAlgorithm,
-    expiresIn: res.locals.rememberMe ? rememberDuration : noRememberDuration,
-  };
-
-  const callback = (err, token) => {
-    if (err) {
-      console.error("Error jwt:", err);
-      res.status(500).json(err);
-    } else {
-      res.locals.token = token;
-      next();
-    }
-  };
-
-  const token = jwt.sign(payload, secretKey, options, callback);
-};
-
-// Send Token
-// Sends generated token to frontend to store for future use
-module.exports.sendToken = (req, res) => {
-  return res.status(200).json({
-    message: res.locals.message || "Login successful.",
-    token: res.locals.token,
-    userId: res.locals.userId,
-    username: res.locals.username,
-    isStaff: res.locals.isStaff
+  jwt.sign(payload, accessSecret, options, (err, token) => {
+    if (err) return res.status(500).json(err);
+    res.locals.token = token;
+    next();
   });
 };
 
-
-// Verify Token 
-// Used at the start of most routes to get secure userId
 module.exports.verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
-
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token provided' });
   }
 
   const token = authHeader.substring(7);
-
-  if (!token) {
-    return res.status(401).json({ error: "No token provided" });
-  }
-
-  const callback = (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ error: "Invalid token" });
-    }
-
-    res.locals.userId = decoded.user_id ?? decoded.userId ?? decoded.id ?? decoded.sub
+  jwt.verify(token, accessSecret, (err, decoded) => {
+    if (err) return res.status(401).json({ error: 'Invalid token' });
+    res.locals.userId = decoded.user_id ?? decoded.userId ?? decoded.id ?? decoded.sub;
     res.locals.tokenTimestamp = decoded.timestamp;
-
     next();
-  };
+  });
+};
 
-  jwt.verify(token, secretKey, callback);
+module.exports.sendToken = (req, res) => {
+  return res.status(200).json({
+    message:  res.locals.message || 'Login successful.',
+    token:    res.locals.token,
+    userId:   res.locals.userId,
+    username: res.locals.username,
+    isStaff:  res.locals.isStaff,
+  });
+};
+
+// ── Refresh token ──────────────────────────────────────────────────────────
+
+module.exports.generateRefreshToken = (req, res, next) => {
+  const rememberMe = res.locals.rememberMe || false;
+  const ttlString  = rememberMe ? refreshRemember : refreshNoRemember;
+  const payload    = { userId: res.locals.userId, rememberMe };
+  const options    = { algorithm, expiresIn: ttlString };
+
+  jwt.sign(payload, refreshSecret, options, (err, token) => {
+    if (err) return res.status(500).json(err);
+
+    // Work out expiry as a Date for storing in DB
+    const msMap = { d: 86400000, h: 3600000, m: 60000 };
+    const match = ttlString.match(/^(\d+)([dhm])$/);
+    const expiresAt = match
+      ? new Date(Date.now() + parseInt(match[1]) * msMap[match[2]])
+      : new Date(Date.now() + 86400000);
+
+    const data = { userId: res.locals.userId, token, expiresAt };
+
+    model.saveRefreshToken(data, (error) => {
+      if (error) return res.status(500).json({ message: 'Internal server error' });
+
+      // rememberMe = true → persistent cookie (survives browser close)
+      // rememberMe = false → session cookie (cleared when browser closes)
+      const cookieOptions = { httpOnly: true, sameSite: 'Strict' };
+      if (rememberMe) cookieOptions.maxAge = expiresAt.getTime() - Date.now();
+
+      res.cookie('refreshToken', token, cookieOptions);
+      next();
+    });
+  });
+};
+
+module.exports.verifyRefreshToken = (req, res, next) => {
+  const token = req.cookies?.refreshToken;
+  if (!token) return res.status(401).json({ error: 'No refresh token' });
+
+  jwt.verify(token, refreshSecret, (err, decoded) => {
+    if (err) return res.status(401).json({ error: 'Invalid refresh token' });
+
+    // Check token exists in DB (not yet revoked)
+    model.getRefreshToken({ token }, (dbErr, result) => {
+      if (dbErr) return res.status(500).json({ message: 'Internal server error' });
+      if (result.rows.length === 0) return res.status(401).json({ error: 'Refresh token revoked' });
+
+      const row = result.rows[0];
+      if (new Date(row.expires_at) < new Date()) {
+        return res.status(401).json({ error: 'Refresh token expired' });
+      }
+
+      res.locals.userId       = decoded.userId;
+      res.locals.rememberMe   = decoded.rememberMe || false;
+      res.locals.refreshToken = token;
+      next();
+    });
+  });
+};
+
+// Rotate: delete the old refresh token and issue a fresh one1
+module.exports.rotateRefreshToken = (req, res, next) => {
+  model.deleteRefreshToken({ token: res.locals.refreshToken }, (err) => {
+    if (err) return res.status(500).json({ message: 'Internal server error' });
+    next();
+  });
 };

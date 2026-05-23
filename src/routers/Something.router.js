@@ -8,33 +8,18 @@ const somethingController = require('../controllers/Something.controller');
 // ==============================
 
 // Read All Somethings
-router.get('/',
-    somethingController.readAllSomethings,
-    somethingController.sendResponse
-);
+router.get('/', somethingController.readAllSomethings, somethingController.sendResponse);
 
 // Read Something By ID
-router.get('/:id',
-    somethingController.readSomethingById,
-    somethingController.sendResponse
-);
+router.get('/:id', somethingController.readSomethingById, somethingController.sendResponse);
 
 // Create Something
-router.post('/',
-    somethingController.createSomething,
-    somethingController.sendResponse
-);
+router.post('/', somethingController.createSomething, somethingController.sendResponse);
 
 // Update Something By ID
-router.put('/:id',
-    somethingController.updateSomethingById,
-    somethingController.sendResponse
-);
+router.put('/:id', somethingController.updateSomethingById, somethingController.sendResponse);
 
 // Delete Something By ID
-router.delete('/:id',
-    somethingController.deleteSomethingById,
-    somethingController.sendResponse
-);
+router.delete('/:id', somethingController.deleteSomethingById, somethingController.sendResponse);
 
 module.exports = router;

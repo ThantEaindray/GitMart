@@ -1,0 +1,230 @@
+/* ── PRODUCTS SECTION ── */
+.section {
+  padding: 60px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 16px;
+  margin-bottom: 36px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  color: var(--text);
+}
+
+.see-all {
+  font-size: 0.8em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.see-all:hover {
+  opacity: 0.7;
+}
+
+.products {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+/* ── PRODUCT CARD ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+
+.card:hover {
+  border-color: var(--accent);
+}
+
+.card-img {
+  aspect-ratio: 1;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 32px;
+  overflow: hidden;
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.card-cat {
+  font-size: 0.67em;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.card-name {
+  font-size: 0.93em;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-price {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  color: var(--accent);
+}
+
+.card-rating {
+  font-size: 0.73em;
+  color: var(--muted);
+}
+
+.card-rating .stars {
+  color: var(--accent);
+}
+
+/* ── CATEGORY PILLS ── */
+.category-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.pill {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 6px 18px;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.73em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.pill:hover,
+.pill.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── BREADCRUMB ── */
+.breadcrumb-bar {
+  padding: 20px 60px 0;
+}
+
+.breadcrumb-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.8em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+
+.breadcrumb-back:hover {
+  color: var(--accent);
+}
+
+/* ── PRODUCT DETAIL ── */
+.product-detail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  padding: 40px 60px 80px;
+  align-items: start;
+}
+
+.product-img {
+  aspect-ratio: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 96px;
+  color: var(--muted);
+  overflow: hidden;
+}
+
+.card-img img,
+.product-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.product-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 40px;
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.product-price {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  color: var(--accent);
+}
+
+.product-rating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.87em;
+  color: var(--muted);
+}
+
+.product-rating .stars {
+  color: var(--accent);
+}
+
+.product-description {
+  color: var(--muted);
+  font-size: 0.93em;
+  line-height: 1.8;
+  font-weight: 300;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+
+.product-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.product-error {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

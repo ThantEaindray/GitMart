@@ -1,0 +1,82 @@
+/* ── RESET ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── BASE ── */
+body {
+  background: var(--bg);
+  font-family: 'Jost', sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  font-size: calc(15px * var(--font-scale));
+}
+
+/* ── BUTTONS ── */
+.btn-primary {
+  padding: 14px 36px;
+  background: var(--accent);
+  color: var(--btn-text);
+  border: none;
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.87em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--accent2);
+}
+
+.btn-outline {
+  padding: 14px 36px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.87em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-left: 14px;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.btn-outline:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 18px;
+  transition: color 0.2s;
+}
+
+.icon-btn:hover {
+  color: var(--accent);
+}
+
+/* ── UTILITIES ── */
+.d-none {
+  display: none;
+}
+
+.status-text {
+  color: var(--muted);
+  font-size: 0.87em;
+  letter-spacing: 0.08em;
+  padding: 20px 0;
+}
