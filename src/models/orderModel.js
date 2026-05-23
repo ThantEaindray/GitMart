@@ -15,3 +15,14 @@ module.exports.createOrder = function createOrder(orderData) {
 module.exports.getAllOrders = function getAllOrders() {
   return Promise.resolve(orders);
 };
+
+module.exports.updateOrderStatus = function updateOrderStatus(id, status) {
+  const order = orders.find((item) => item.id === Number(id));
+
+  if (!order) {
+    return Promise.resolve(null);
+  }
+
+  order.status = status;
+  return Promise.resolve(order);
+};

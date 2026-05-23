@@ -164,11 +164,11 @@ placeOrderButton.addEventListener('click', () => {
                 alert(data.message);
                 return;
             }
-            
-            // Success message
-            alert('Order placed successfully!');
 
             console.log(data);
+
+            // Redirect to order page
+            window.location.href = '/html/orders.html';
         })
     )
     
