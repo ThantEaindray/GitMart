@@ -20,11 +20,13 @@ router.post(
 );
 
 // Login Existing User
-router.post('/login',
+router.post(
+  '/login',
   userController.login,
   bcryptMiddleware.comparePassword,
   jwtMiddleware.generateToken,
-  jwtMiddleware.sendToken
+  jwtMiddleware.generateRefreshToken,
+  jwtMiddleware.sendToken,
 );
 
 // Get Current Logged-In User
