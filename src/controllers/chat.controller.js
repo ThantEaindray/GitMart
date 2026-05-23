@@ -35,7 +35,7 @@ module.exports.toLoad = (req, res, next) => {
   // we can then push that into the next function that gives us all their names and pfps and stuff
   const data = {
     chats: res.locals.userChats,
-    uid:res.locals.userId
+    uid: res.locals.userId
   }
   //so we wanna check each chat, find the uid thats different and from there push it to the results array
   let resArr = new Array
@@ -45,10 +45,12 @@ module.exports.toLoad = (req, res, next) => {
     } else {
       resArr.push(data.chats[e].user_1)
     }
+  }) 
   
   res.locals.toLoad = resArr
   next()
 }
+  
 
 module.exports.formatList = (req, res, next) => {
   let namesicons = res.locals.namesPictures
@@ -56,11 +58,23 @@ module.exports.formatList = (req, res, next) => {
   //ok so basically were trying to do an array of objects type deal here
   // ok so how fun were all bringing back for loops in 2026
   let chatIds = res.locals.chatIds
+  let chatlist=new array
   //basically we do a for loop so that way we can get a counter for our thing to make it easier to use across multiple arrays
-  for()
-}
-//idk this ones kinda a lot of work lets circle back to it later
+  for (x = 0; x < chatIds.length; x++) { 
+    //so we wanna create a new object
+    let data = {
+      chat: chatIds[x],
+      pfp: namesicons[x].icon,
+      username: namesicons[x].username
+    }
+    chatlist.push(data)
+  }
 
+  res.status(200).json(chatlist)
+}
+
+//commented out since we arent using this one right now
+/* 
 module.exports.chatExists = (req, res, next) => {
   const data = {
     chat:req.body.data.
@@ -84,6 +98,7 @@ module.exports.chatExists = (req, res, next) => {
   }
   model.checkExists(data,callback)
 }
+*/
 
 module.exports.checkAccess = (req, res, next) => {
   const data = {
@@ -135,3 +150,41 @@ module.exports.sendText = (req, res, next) => {
   model.sendText(data,callback)
 }
 
+module.exports.hasChat = (req, res, next) => {
+  const data = {
+    id1: res.locals.userId,
+    id2: req.body.id
+  }
+
+  const callback = (err, results, fields) => {
+    if (err) {
+      console.error("problem checking for duplicate chat", err)
+      return res.status(500).json(err)
+    }
+    // if the results length is <0 then we know that the chat exists 
+    if (results.length > 0) {
+      console.log("chat already exists")
+      res.locals.chatid = results.id
+      return res.status(409).json()
+    }
+    //and finally we can call a next yippeee
+    next()
+  }
+  model.hasChat(data,callback)
+}
+
+module.exports.newChat = (req,res,next) => {
+  const data = {
+    initId: res.locals.userId,
+    recipId: req.body.id
+  }
+
+  const callback = (err, results, fields) => {
+    if(err) {
+      console.error("problem creating chat", err)
+      return res.status(500).json(err)
+    }
+    res.status(201).json()
+  }
+  model.newChat(data,callback)
+}

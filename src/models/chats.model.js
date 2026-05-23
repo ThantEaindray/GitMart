@@ -29,3 +29,18 @@ module.exports.sendText = (data, callback) => {
   const VALUES = [data.chat, data.user, data.textcontent]
   pool.query(SQLSATEMENT, VALUES, callback)
 }
+
+module.exports.hasChat = (data, callback) => {
+  const SQLSATEMENT = `
+    SELECT * FROM chats WHERE (user_1 = $1 AND user_2= $2) OR (user_1 = $2 AND user_2=$1)`
+  const VALUES = [data.id1, data.id2]
+  pool.query(SQLSATEMENT,VALUES,callback)
+}
+
+module.exports.newChat = (data, callback) => {
+  const SQLSTATEMENT = `
+    INSERT INTO chats (user_1, user_2)
+    VALUES ($1, $2)`
+  const VALUES = [data.initId, data.recipId]
+  pool.query(SQLSTATEMENT, VALUES,callback)
+}
