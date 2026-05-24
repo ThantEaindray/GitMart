@@ -18,10 +18,10 @@ module.exports.loadChats = (req, res, next) => {
       return res.status(204).json({message:"user has no chats to load"})
     }
     
-    res.locals.userChats = results
+    res.locals.userChats = results.rows
     //we also wanna get a list of just the chat ids to bring back later
     res.locals.chatIds = new Array
-    results.foreach((e) => {
+    results.rows.forEach((e) => {
       res.locals.chatIds.push(e.id)
     })
     //so that will come back up once we have to format the results 
@@ -39,11 +39,11 @@ module.exports.toLoad = (req, res, next) => {
   }
   //so we wanna check each chat, find the uid thats different and from there push it to the results array
   let resArr = new Array
-  data.chats.foreach((e) => {
-    if (data.chats[e].user_1 == data.uid) {
-      resArr.push(data.chats[e].user_2)
+  data.chats.forEach((e) => {
+    if (e.user_1 == data.uid) {
+      resArr.push(e.user_2)
     } else {
-      resArr.push(data.chats[e].user_1)
+      resArr.push(e.user_1)
     }
   }) 
   
@@ -53,23 +53,25 @@ module.exports.toLoad = (req, res, next) => {
   
 
 module.exports.formatList = (req, res, next) => {
-  let namesicons = res.locals.namesPictures
+  let namesicons = res.locals.namesImgs
+  console.log("format", namesicons)
   // for my sake lets split these up first like i said not ideal but i can think clearer that way
   //ok so basically were trying to do an array of objects type deal here
   // ok so how fun were all bringing back for loops in 2026
   let chatIds = res.locals.chatIds
-  let chatlist=new array
+  let chatlist=new Array
   //basically we do a for loop so that way we can get a counter for our thing to make it easier to use across multiple arrays
   for (x = 0; x < chatIds.length; x++) { 
     //so we wanna create a new object
     let data = {
       chat: chatIds[x],
-      pfp: namesicons[x].icon,
-      username: namesicons[x].username
+      pfp: namesicons[0][x].icon,
+      username: namesicons[0]
+      [x].username
     }
     chatlist.push(data)
   }
-
+  console.log(chatlist)
   res.status(200).json(chatlist)
 }
 
@@ -116,7 +118,7 @@ module.exports.checkAccess = (req, res, next) => {
 
 module.exports.loadMessages = (req, res, next) => {
   const data = {
-    chatId: res.locals.openChat,
+    chatId: req.params.id
   }
   
   const callback = (err, results, fields) => {
@@ -124,8 +126,8 @@ module.exports.loadMessages = (req, res, next) => {
       console.error("problem loading messages", err)
       return res.status(500).json(err)
     }
-    //so for this we just push out all the results for the chat 
-    res.status(200).json(results)
+    //so for this we just push out all the results for the chat
+    res.status(200).json(results.rows)
   }
   model.loadMessages(data,callback)
 }
@@ -135,7 +137,7 @@ module.exports.loadMessages = (req, res, next) => {
 
 
 module.exports.sendText = (req, res, next) => {
-  const data = req.body.cont
+  let data =req.body  
   //since cont is already an object why go to all that effort to redeclare everything
   // just renaming it for consistencies sake
   const callback = (err, results, fields) => {
@@ -144,7 +146,7 @@ module.exports.sendText = (req, res, next) => {
       return res.status(500).json(err)      
     }
     //we dont really even need to return anything for this one like all we need to do is just make it return a 201 the ws will do the rest
-    res.status(201).json()
+    res.status(201).json({})
     //and its literally that easy crazy i agree
   }
   model.sendText(data,callback)

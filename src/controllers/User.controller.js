@@ -70,6 +70,7 @@ module.exports.register = (req, res, next) => {
 };
 
 module.exports.login = (req, res, next) => {
+  console.log('login')
   if (req.body.username === undefined || req.body.password === undefined) {
     return res.status(400).json({ message: 'Username or password is missing.' });
   }
@@ -77,6 +78,7 @@ module.exports.login = (req, res, next) => {
   const data = { username: req.body.username };
 
   const callback = (error, result) => {
+    console.log('callback')
     if (error) {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
@@ -267,14 +269,15 @@ module.exports.namesPictures = (req, res, next) => {
   }
   res.locals.namesImgs=new Array
   const callback = (err, results, fields) => {
+    console.log(results.rows[0])
     if (err) {
       console.error("problem getting chat user info", err)
       return res.status(500).json(err)
     }
-    res.locals.namesImgs.push(results)
+    res.locals.namesImgs.push(results.rows)
     next()
   }
-  data.ids.foreach((e) => {
+  data.ids.forEach((e) => {
       model.namesPictures(e,callback)
   })
 }

@@ -23,11 +23,11 @@ const webS= new WebSocketServer({port:443})
 //now we tell it what to do upon a new connection
 webS.on('connection', ws => {
   console.log('new client connected')
-  ws.send("connection established")
   ws.on('close', () => console.log('client disconnected'))
   ws.on('message', data => {
     webS.clients.forEach(client => {
-      console.log(`new message: ${data}`)
+      console.log(`new message:`, JSON.parse(data))
+      client.send(JSON.stringify(data))
     })
   })
   ws.onerror = function () {
