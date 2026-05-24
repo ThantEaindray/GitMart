@@ -9,6 +9,7 @@ router.post('/listings/analyse-image', jwtMiddleware.verifyToken, listingControl
 
 // Public listing routes
 router.get('/listings', listingController.getAllListings);
+router.get('/listings/category/:category', listingController.getListingsByCategory);
 router.get('/listings/owner/:owner_id', listingController.getListingsByOwner);
 router.get('/listings/:id', listingController.getListingById);
 

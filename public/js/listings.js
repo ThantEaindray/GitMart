@@ -8,6 +8,29 @@ function showToast(message) {
   setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
+// ── FIELD VALIDATION ──────────────────────────────────────────────────────
+
+function showFieldError(id, message) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('input-error');
+  const existing = el.parentElement.querySelector('.field-error');
+  if (existing) existing.remove();
+  const err = document.createElement('span');
+  err.className = 'field-error';
+  err.textContent = message;
+  el.parentElement.appendChild(err);
+}
+
+function clearFieldErrors() {
+  document.querySelectorAll('.input-error').forEach(function (el) {
+    el.classList.remove('input-error');
+  });
+  document.querySelectorAll('.field-error').forEach(function (el) {
+    el.remove();
+  });
+}
+
 // ── WARNING CARD ──────────────────────────────────────────────────────────
 
 function showWarning(message) {
@@ -104,7 +127,19 @@ function initListingsPage() {
   const listingsGrid = document.getElementById('listingsGrid');
   if (!listingsGrid) return;
 
-  fetch('/api/listings').then(parseResponse).then(renderListings).catch(onListingsError);
+  const params = new URLSearchParams(window.location.search);
+  const category = params.get('category');
+
+  if (category) {
+    const title = document.querySelector('.section-title');
+    if (title) title.textContent = category + ' Listings';
+    fetch('/api/listings/category/' + encodeURIComponent(category))
+      .then(parseResponse)
+      .then(renderListings)
+      .catch(onListingsError);
+  } else {
+    fetch('/api/listings').then(parseResponse).then(renderListings).catch(onListingsError);
+  }
 }
 
 // ── CREATE LISTING PAGE ───────────────────────────────────────────────────
@@ -124,13 +159,17 @@ function onCreateListingSuccess(result) {
 }
 
 function onCreateListingError() {
+  if (!localStorage.getItem('token')) {
+    showToast('You must be logged in to create a listing.');
+    return;
+  }
   showWarning('Something went wrong while creating listing.');
 }
 
-function submitListing(title, description, priceUsd) {
+function submitListing(title, description, category, priceUsd) {
   authFetch('/api/listings', {
     method: 'POST',
-    body: JSON.stringify({ title, description, price: priceUsd }),
+    body: JSON.stringify({ title, description, category, price: priceUsd }),
   })
     .then(parseResponse)
     .then(onCreateListingSuccess)
@@ -140,6 +179,7 @@ function submitListing(title, description, priceUsd) {
 function handleCreateListingSubmit(event) {
   event.preventDefault();
   hideWarning();
+  clearFieldErrors();
 
   if (!localStorage.getItem('token')) {
     showToast('You must be logged in to create a listing.');
@@ -148,22 +188,34 @@ function handleCreateListingSubmit(event) {
 
   const title = document.getElementById('title').value.trim();
   const description = document.getElementById('description').value.trim();
+  const category = document.getElementById('category').value;
   const price = document.getElementById('price').value;
 
-  if (!title || !description || !price) {
-    showWarning('Title, description and price are required.');
-    return;
+  let hasError = false;
+
+  if (!title) {
+    showFieldError('title', 'Title is required.');
+    hasError = true;
+  }
+  if (!description) {
+    showFieldError('description', 'Description is required.');
+    hasError = true;
+  }
+  if (!category) {
+    showFieldError('category', 'Please select a category.');
+    hasError = true;
+  }
+  if (!price || Number(price) <= 0) {
+    showFieldError('price', 'Enter a valid price greater than 0.');
+    hasError = true;
   }
 
-  if (Number(price) <= 0) {
-    showWarning('Price must be more than 0.');
-    return;
-  }
+  if (hasError) return;
 
   const code = localStorage.getItem('currency') || 'USD';
   const { rate } = CURRENCIES[code] || CURRENCIES.USD;
 
-  submitListing(title, description, Number(price) / rate);
+  submitListing(title, description, category, Number(price) / rate);
 }
 
 // ── AI IMAGE ANALYSIS ─────────────────────────────────────────────────────
@@ -254,6 +306,15 @@ function initCreateListingPage() {
   if (priceLabel) priceLabel.textContent = 'Price (' + code + ' ' + symbol + ')';
 
   listingCreateForm.addEventListener('submit', handleCreateListingSubmit);
+
+  ['title', 'description', 'category', 'price'].forEach(function (id) {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', function () {
+      el.classList.remove('input-error');
+      const err = el.parentElement.querySelector('.field-error');
+      if (err) err.remove();
+    });
+  });
 
   const analyseBtn = document.getElementById('btn-analyse');
   if (analyseBtn) analyseBtn.addEventListener('click', handleAnalyseImage);

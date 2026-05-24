@@ -87,6 +87,22 @@
   background: var(--surface);
 }
 
+.form-group select {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: inherit;
+  font-family: 'Jost', sans-serif;
+  font-size: 1rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.form-group select:focus {
+  border-color: var(--accent);
+}
+
 .remember-row {
   display: flex;
   align-items: center;

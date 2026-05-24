@@ -38,6 +38,21 @@ module.exports.analyseImage = function (req, res) {
     .catch(onError);
 };
 
+// GET /api/listings/category/:category
+module.exports.getListingsByCategory = (req, res) => {
+  const data = { category: req.params.category };
+
+  const callback = (error, results) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    return res.status(200).json(results);
+  };
+
+  model.getListingsByCategory(data, callback);
+};
+
 // GET /api/listings
 module.exports.getAllListings = (req, res) => {
   const callback = (error, results) => {
@@ -112,7 +127,8 @@ module.exports.createListing = (req, res) => {
     owner_id: res.locals.userId,
     title,
     description,
-    price
+    price,
+    category: req.body.category || 'Others'
   };
 
   const callback = (error, results) => {
