@@ -4,7 +4,11 @@ const model = require('../models/Listing.model');
 // ── Gemini helper ─────────────────────────────────────────────────────────
 
 function extractGeminiText(result) {
-  return result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  return result.response
+    .text()
+    .replace(/```json\n?/g, '')
+    .replace(/```\n?/g, '')
+    .trim();
 }
 
 // POST /api/listings/analyse-image
@@ -70,7 +74,7 @@ module.exports.getAllListings = (req, res) => {
 // GET /api/listings/:id
 module.exports.getListingById = (req, res) => {
   const data = {
-    id: req.params.id
+    id: req.params.id,
   };
 
   const callback = (error, results) => {
@@ -92,7 +96,7 @@ module.exports.getListingById = (req, res) => {
 // GET /api/listings/owner/:owner_id
 module.exports.getListingsByOwner = (req, res) => {
   const data = {
-    owner_id: req.params.owner_id
+    owner_id: req.params.owner_id,
   };
 
   const callback = (error, results) => {
@@ -113,13 +117,13 @@ module.exports.createListing = (req, res) => {
 
   if (!title || !description || price === undefined) {
     return res.status(400).json({
-      message: 'Title, description and price are required.'
+      message: 'Title, description and price are required.',
     });
   }
 
   if (Number(price) <= 0) {
     return res.status(400).json({
-      message: 'Price must be more than 0.'
+      message: 'Price must be more than 0.',
     });
   }
 
@@ -128,7 +132,7 @@ module.exports.createListing = (req, res) => {
     title,
     description,
     price,
-    category: req.body.category || 'Others'
+    category: req.body.category || 'Others',
   };
 
   const callback = (error, results) => {
@@ -139,7 +143,7 @@ module.exports.createListing = (req, res) => {
 
     return res.status(201).json({
       message: 'Listing created successfully.',
-      listing: results[0]
+      listing: results[0],
     });
   };
 
@@ -152,13 +156,13 @@ module.exports.updateListing = (req, res) => {
 
   if (!title || !description || price === undefined) {
     return res.status(400).json({
-      message: 'Title, description and price are required.'
+      message: 'Title, description and price are required.',
     });
   }
 
   if (Number(price) <= 0) {
     return res.status(400).json({
-      message: 'Price must be more than 0.'
+      message: 'Price must be more than 0.',
     });
   }
 
@@ -167,7 +171,7 @@ module.exports.updateListing = (req, res) => {
     owner_id: res.locals.userId,
     title,
     description,
-    price
+    price,
   };
 
   const callback = (error, results) => {
@@ -178,13 +182,13 @@ module.exports.updateListing = (req, res) => {
 
     if (results.length === 0) {
       return res.status(404).json({
-        message: 'Listing not found or you are not the owner.'
+        message: 'Listing not found or you are not the owner.',
       });
     }
 
     return res.status(200).json({
       message: 'Listing updated successfully.',
-      listing: results[0]
+      listing: results[0],
     });
   };
 
@@ -195,7 +199,7 @@ module.exports.updateListing = (req, res) => {
 module.exports.deleteListing = (req, res) => {
   const data = {
     id: req.params.id,
-    owner_id: res.locals.userId
+    owner_id: res.locals.userId,
   };
 
   const callback = (error, results) => {
@@ -206,12 +210,12 @@ module.exports.deleteListing = (req, res) => {
 
     if (results.length === 0) {
       return res.status(404).json({
-        message: 'Listing not found or you are not the owner.'
+        message: 'Listing not found or you are not the owner.',
       });
     }
 
     return res.status(200).json({
-      message: 'Listing deleted successfully.'
+      message: 'Listing deleted successfully.',
     });
   };
 

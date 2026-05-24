@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const loginForm   = document.getElementById('loginForm');
+  const loginForm = document.getElementById('loginForm');
   const warningCard = document.getElementById('warningCard');
   const warningText = document.getElementById('warningText');
   const successCard = document.getElementById('successCard');
@@ -59,13 +59,19 @@ document.addEventListener('DOMContentLoaded', () => {
     hideWarning();
     ['username', 'password'].forEach(clearFieldError);
 
-    const username   = document.getElementById('username').value.trim();
-    const password   = document.getElementById('password').value;
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
     const rememberMe = document.getElementById('rememberMe')?.checked || false;
 
     let valid = true;
-    if (!username) { showFieldError('username', 'Username is required.'); valid = false; }
-    if (!password) { showFieldError('password', 'Password is required.'); valid = false; }
+    if (!username) {
+      showFieldError('username', 'Username is required.');
+      valid = false;
+    }
+    if (!password) {
+      showFieldError('password', 'Password is required.');
+      valid = false;
+    }
     if (!valid) return;
 
     fetch('/api/login', {
@@ -73,9 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password, rememberMe }),
     })
-      .then((response) =>
-        response.json().then((data) => ({ status: response.status, data }))
-      )
+      .then((response) => response.json().then((data) => ({ status: response.status, data })))
       .then(({ status, data }) => {
         if (status === 200 && data.token) {
           localStorage.setItem('token', data.token);
@@ -107,4 +111,3 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(() => showWarning('Something went wrong. Please try again.'));
   });
 });
-
