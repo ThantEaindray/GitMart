@@ -1,0 +1,165 @@
+const model = require('../models/Listing.model');
+
+// GET /api/listings
+module.exports.getAllListings = (req, res) => {
+  const callback = (error, results) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+
+    return res.status(200).json(results);
+  };
+
+  model.getAllListings(callback);
+};
+
+// GET /api/listings/:id
+module.exports.getListingById = (req, res) => {
+  const data = {
+    id: req.params.id
+  };
+
+  const callback = (error, results) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Listing not found.' });
+    }
+
+    return res.status(200).json(results[0]);
+  };
+
+  model.getListingById(data, callback);
+};
+
+// GET /api/listings/owner/:owner_id
+module.exports.getListingsByOwner = (req, res) => {
+  const data = {
+    owner_id: req.params.owner_id
+  };
+
+  const callback = (error, results) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+
+    return res.status(200).json(results);
+  };
+
+  model.getListingsByOwner(data, callback);
+};
+
+// POST /api/listings
+module.exports.createListing = (req, res) => {
+  const { title, description, price } = req.body || {};
+
+  if (!title || !description || price === undefined) {
+    return res.status(400).json({
+      message: 'Title, description and price are required.'
+    });
+  }
+
+  if (Number(price) <= 0) {
+    return res.status(400).json({
+      message: 'Price must be more than 0.'
+    });
+  }
+
+  const data = {
+    owner_id: res.locals.userId,
+    title,
+    description,
+    price
+  };
+
+  const callback = (error, results) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+
+    return res.status(201).json({
+      message: 'Listing created successfully.',
+      listing: results[0]
+    });
+  };
+
+  model.createListing(data, callback);
+};
+
+// PATCH /api/listings/:id
+module.exports.updateListing = (req, res) => {
+  const { title, description, price } = req.body || {};
+
+  if (!title || !description || price === undefined) {
+    return res.status(400).json({
+      message: 'Title, description and price are required.'
+    });
+  }
+
+  if (Number(price) <= 0) {
+    return res.status(400).json({
+      message: 'Price must be more than 0.'
+    });
+  }
+
+  const data = {
+    id: req.params.id,
+    owner_id: res.locals.userId,
+    title,
+    description,
+    price
+  };
+
+  const callback = (error, results) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        message: 'Listing not found or you are not the owner.'
+      });
+    }
+
+    return res.status(200).json({
+      message: 'Listing updated successfully.',
+      listing: results[0]
+    });
+  };
+
+  model.updateListing(data, callback);
+};
+
+// DELETE /api/listings/:id
+module.exports.deleteListing = (req, res) => {
+  const data = {
+    id: req.params.id,
+    owner_id: res.locals.userId
+  };
+
+  const callback = (error, results) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        message: 'Listing not found or you are not the owner.'
+      });
+    }
+
+    return res.status(200).json({
+      message: 'Listing deleted successfully.'
+    });
+  };
+
+  model.deleteListing(data, callback);
+};

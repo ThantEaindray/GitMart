@@ -301,10 +301,10 @@ Push / PR to main
 
 Set these in **Settings → Secrets and variables → Actions**:
 
-| Secret         | Example Value                                                          |
-| -------------- | ---------------------------------------------------------------------- |
+| Secret         | Example Value                                            |
+| -------------- | -------------------------------------------------------- |
 | `DATABASE_URL` | `postgresql://user:password@host/dbname?sslmode=require` |
-| `APP_PORT`     | `3001`                                                                 |
+| `APP_PORT`     | `3001`                                                   |
 
 ### GitHub Pages Setup
 

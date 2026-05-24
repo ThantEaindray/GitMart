@@ -1,0 +1,66 @@
+/* ── RESPONSIVE ── */
+@media (max-width: 800px) {
+  .nav {
+    padding: 16px 20px;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+    padding: 40px 20px;
+  }
+
+  .hero h1 {
+    font-size: 36px;
+  }
+
+  .section {
+    padding: 30px 20px;
+  }
+
+  .products {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .search-bar.open {
+    padding: 12px 20px;
+  }
+
+  .breadcrumb-bar {
+    padding: 16px 20px 0;
+  }
+
+  .product-detail {
+    grid-template-columns: 1fr;
+    padding: 20px 20px 60px;
+    gap: 30px;
+  }
+
+  .product-name {
+    font-size: 28px;
+  }
+
+  .product-price {
+    font-size: 24px;
+  }
+
+  .settings-page {
+    padding: 30px 20px;
+  }
+
+  .theme-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+
+  .settings-tabs {
+    overflow-x: auto;
+  }
+
+  .tab-btn {
+    padding: 10px 16px;
+    white-space: nowrap;
+  }
+}

@@ -1,31 +1,48 @@
-const pool = require("db.js")
-module.exports.allproducts = (data, callback) => {
-  const SQLSTATEMENT = `
-    SELECT * FROM listings
-    ORDER BY ? ?`
-  const VALUES = [data.order, data.direction]
-  pool.query(SQLSTATEMENT,VALUES,callback)
-}
+const pool = require('./db');
 
-module.exports.product = (data, callback) => {
+module.exports.selectAll = (callback) => {
   const SQLSTATEMENT = `
-    SELECT * FROM listings WHERE id = ?`
-  const VALUES = [data.id]
-  pool.query(SQLSTATEMENT,VALUES,callback)
-}
+        SELECT id, name, category, description, price, rating,
+               review_count AS "reviewCount", icon, image_url AS "imageUrl"
+        FROM products
+        ORDER BY id ASC
+    `;
+  const VALUES = [];
+  pool.query(SQLSTATEMENT, VALUES, callback);
+};
 
-module.exports.owner = (data, callback) => {
+module.exports.selectById = (data, callback) => {
   const SQLSTATEMENT = `
-    select owner_id FROM listings WHERE id = ?`
-  const VALUES = [data.id]
-  pool.query(SQLSTATEMENT,VALUES,callback)
-}
+        SELECT id, name, category, description, price, rating,
+               review_count AS "reviewCount", icon, image_url AS "imageUrl"
+        FROM products
+        WHERE id = $1
+    `;
+  const VALUES = [data.id];
+  pool.query(SQLSTATEMENT, VALUES, callback);
+};
 
-module.exports.updateProduct = (data, callback) => {
+module.exports.searchByName = (data, callback) => {
   const SQLSTATEMENT = `
-    UPDATE listings
-    SET title = ?, price = ?, description = ?
-    WHERE id = ?`
-  const VALUES = [data.newName, data.newPrice, data.newDesc, data.toedit]
-  pool.query(SQLSTATEMENT, VALUES, callback)
-}
+        SELECT id, name, category, description, price, rating,
+               review_count AS "reviewCount", icon, image_url AS "imageUrl"
+        FROM products
+        WHERE name ILIKE $1 OR category ILIKE $1
+        ORDER BY id ASC
+    `;
+  const VALUES = [`%${data.search}%`];
+  pool.query(SQLSTATEMENT, VALUES, callback);
+};
+
+module.exports.selectByCategory = (data, callback) => {
+  const SQLSTATEMENT = `
+        SELECT id, name, category, description, price, rating,
+               review_count AS "reviewCount", icon, image_url AS "imageUrl"
+        FROM products
+        WHERE category = $1 AND id != $2
+        ORDER BY id ASC
+        LIMIT 4
+    `;
+  const VALUES = [data.category, data.excludeId];
+  pool.query(SQLSTATEMENT, VALUES, callback);
+};
