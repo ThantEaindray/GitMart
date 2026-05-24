@@ -3,16 +3,17 @@ const pool = require('./db');
 // Create a new listing
 module.exports.createListing = (data, callback) => {
   const SQLSTATEMENT = `
-    INSERT INTO listings (owner_id, price, title, description)
-    VALUES ($1, $2, $3, $4)
-    RETURNING id, owner_id, price, created_on, title, description, "isSold", "isClosed"
+    INSERT INTO listings (owner_id, price, title, description, category)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING id, owner_id, price, created_on, title, description, category, "isSold", "isClosed"
   `;
 
   const VALUES = [
     data.owner_id,
     data.price,
     data.title,
-    data.description
+    data.description,
+    data.category || 'Others'
   ];
 
   pool.query(SQLSTATEMENT, VALUES, (error, result) => {
@@ -24,12 +25,27 @@ module.exports.createListing = (data, callback) => {
 // Get all listings
 module.exports.getAllListings = (callback) => {
   const SQLSTATEMENT = `
-    SELECT id, owner_id, price, created_on, title, description, "isSold", "isClosed"
+    SELECT id, owner_id, price, created_on, title, description, category, "isSold", "isClosed"
     FROM listings
     ORDER BY id DESC
   `;
 
   pool.query(SQLSTATEMENT, (error, result) => {
+    if (error) return callback(error, null);
+    callback(null, result.rows);
+  });
+};
+
+// Get listings by category
+module.exports.getListingsByCategory = (data, callback) => {
+  const SQLSTATEMENT = `
+    SELECT id, owner_id, price, created_on, title, description, category, "isSold", "isClosed"
+    FROM listings
+    WHERE category = $1
+    ORDER BY id DESC
+  `;
+
+  pool.query(SQLSTATEMENT, [data.category], (error, result) => {
     if (error) return callback(error, null);
     callback(null, result.rows);
   });

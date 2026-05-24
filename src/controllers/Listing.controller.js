@@ -1,4 +1,57 @@
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const model = require('../models/Listing.model');
+
+// ── Gemini helper ─────────────────────────────────────────────────────────
+
+function extractGeminiText(result) {
+  return result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+}
+
+// POST /api/listings/analyse-image
+module.exports.analyseImage = function (req, res) {
+  const { imageBase64, mimeType } = req.body || {};
+
+  if (!imageBase64 || !mimeType) {
+    return res.status(400).json({ message: 'imageBase64 and mimeType are required.' });
+  }
+
+  function onSuccess(parsed) {
+    return res.status(200).json({ title: parsed.title, description: parsed.description });
+  }
+
+  function onError(err) {
+    console.log(err);
+    return res.status(500).json({ message: 'Failed to analyse image.' });
+  }
+
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const gemini = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+  const prompt =
+    'Look at this image and suggest a listing title (max 60 characters) and a short description (2-3 sentences) for selling this item on a luxury marketplace. Respond ONLY with valid JSON, no markdown: {"title": "...", "description": "..."}';
+
+  gemini
+    .generateContent([{ inlineData: { data: imageBase64, mimeType } }, prompt])
+    .then(extractGeminiText)
+    .then(JSON.parse)
+    .then(onSuccess)
+    .catch(onError);
+};
+
+// GET /api/listings/category/:category
+module.exports.getListingsByCategory = (req, res) => {
+  const data = { category: req.params.category };
+
+  const callback = (error, results) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    return res.status(200).json(results);
+  };
+
+  model.getListingsByCategory(data, callback);
+};
 
 // GET /api/listings
 module.exports.getAllListings = (req, res) => {
@@ -74,7 +127,8 @@ module.exports.createListing = (req, res) => {
     owner_id: res.locals.userId,
     title,
     description,
-    price
+    price,
+    category: req.body.category || 'Others'
   };
 
   const callback = (error, results) => {

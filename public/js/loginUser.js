@@ -107,3 +107,4 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(() => showWarning('Something went wrong. Please try again.'));
   });
 });
+

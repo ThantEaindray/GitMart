@@ -1,3 +1,5 @@
+/* global formatPrice, getProducts, searchProducts */
+
 let allProducts = [];
 let activeCategory = '';
 
@@ -123,7 +125,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-cart').addEventListener('click', () => {
     window.location.href = 'checkout.html';
   });
-  document.getElementById('btn-wishlist').addEventListener('click', () => console.log('Wishlist — coming soon'));
+  document
+    .getElementById('btn-wishlist')
+    .addEventListener('click', () => console.log('Wishlist — coming soon'));
 
   document.getElementById('category-pills').addEventListener('click', (e) => {
     const pill = e.target.closest('.pill');

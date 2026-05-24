@@ -27,7 +27,7 @@ const app = express();
 // Parse incoming JSON request bodies.
 // This is needed before API routes so req.body can read JSON data
 // from Postman or frontend fetch requests.
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
 // Serve static files (HTML, CSS, JS, images) from the 'public' folder.
