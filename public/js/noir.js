@@ -51,7 +51,5 @@ function loadFeatured() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  document.getElementById('btn-cart')?.addEventListener('click', function () { console.log('Cart — coming soon'); });
-  document.getElementById('btn-wishlist')?.addEventListener('click', function () { console.log('Wishlist — coming soon'); });
   loadFeatured();
 });
