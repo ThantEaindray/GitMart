@@ -28,11 +28,24 @@ function hideWarning() {
   }
 }
 
+// ── HELPERS ───────────────────────────────────────────────────────────────
+
+function parseResponse(response) {
+  return response.json().then(function (data) {
+    return { status: response.status, data };
+  });
+}
+
 // ── LISTING CARD ──────────────────────────────────────────────────────────
+
+function goToListing() {
+  window.location.href = 'listing.html?id=' + this.dataset.id;
+}
 
 function createListingCard(listing) {
   const card = document.createElement('div');
   card.className = 'card';
+  card.dataset.id = listing.id;
 
   const status = listing.isSold ? 'Sold' : listing.isClosed ? 'Closed' : 'Available';
 
@@ -56,116 +69,79 @@ function createListingCard(listing) {
     </div>
   `;
 
-  card.addEventListener('click', function () {
-    window.location.href = 'listing.html?id=' + listing.id;
-  });
-
+  card.addEventListener('click', goToListing);
   return card;
 }
 
 // ── BROWSE LISTINGS PAGE ──────────────────────────────────────────────────
 
+function renderListings(result) {
+  const listingsGrid = document.getElementById('listingsGrid');
+  listingsGrid.innerHTML = '';
+
+  if (result.status !== 200) {
+    showWarning(result.data.message || 'Failed to load listings.');
+    return;
+  }
+
+  if (!Array.isArray(result.data) || result.data.length === 0) {
+    listingsGrid.innerHTML = '<p class="status-text">No listings available yet.</p>';
+    return;
+  }
+
+  result.data.forEach(function (listing) {
+    listingsGrid.appendChild(createListingCard(listing));
+  });
+}
+
+function onListingsError() {
+  const listingsGrid = document.getElementById('listingsGrid');
+  listingsGrid.innerHTML = '';
+  showWarning('Something went wrong while loading listings.');
+}
+
 function initListingsPage() {
   const listingsGrid = document.getElementById('listingsGrid');
   if (!listingsGrid) return;
 
-  fetch('/api/listings')
-    .then(function (response) {
-      return response.json().then(function (data) {
-        return { status: response.status, data };
-      });
-    })
-    .then(function (result) {
-      listingsGrid.innerHTML = '';
-
-      if (result.status !== 200) {
-        showWarning(result.data.message || 'Failed to load listings.');
-        return;
-      }
-
-      if (!Array.isArray(result.data) || result.data.length === 0) {
-        listingsGrid.innerHTML = '<p class="status-text">No listings available yet.</p>';
-        return;
-      }
-
-      result.data.forEach(function (listing) {
-        listingsGrid.appendChild(createListingCard(listing));
-      });
-    })
-    .catch(function () {
-      listingsGrid.innerHTML = '';
-      showWarning('Something went wrong while loading listings.');
-    });
+  fetch('/api/listings').then(parseResponse).then(renderListings).catch(onListingsError);
 }
 
-// ── AI IMAGE ANALYSIS ─────────────────────────────────────────────────────
+// ── CREATE LISTING PAGE ───────────────────────────────────────────────────
 
-function handleAnalyseImage() {
-  const imageInput = document.getElementById('imageInput');
-  const analyseBtn = document.getElementById('btn-analyse');
-
-  if (!imageInput || !imageInput.files || !imageInput.files[0]) {
-    showToast('Please select an image first.');
+function onCreateListingSuccess(result) {
+  if (result.status === 201) {
+    window.location.href = 'listings.html';
     return;
   }
 
   if (!localStorage.getItem('token')) {
-    showToast('You must be logged in to use AI analysis.');
+    showToast('You must be logged in to create a listing.');
     return;
   }
 
-  const file = imageInput.files[0];
-  const reader = new FileReader();
-
-  reader.onload = function (e) {
-    const base64 = e.target.result.split(',')[1];
-    const mimeType = file.type;
-
-    analyseBtn.textContent = 'Analysing…';
-    analyseBtn.disabled = true;
-
-    authFetch('/api/listings/analyse-image', {
-      method: 'POST',
-      body: JSON.stringify({ imageBase64: base64, mimeType }),
-    })
-      .then(function (response) {
-        return response.json().then(function (data) {
-          return { status: response.status, data };
-        });
-      })
-      .then(function (result) {
-        analyseBtn.textContent = 'Analyse Image';
-        analyseBtn.disabled = false;
-
-        if (result.status !== 200) {
-          showToast(result.data.message || 'Failed to analyse image.');
-          return;
-        }
-
-        const titleInput = document.getElementById('title');
-        const descInput = document.getElementById('description');
-        if (titleInput && result.data.title) titleInput.value = result.data.title;
-        if (descInput && result.data.description) descInput.value = result.data.description;
-        showToast('Form pre-filled from image!');
-      })
-      .catch(function () {
-        analyseBtn.textContent = 'Analyse Image';
-        analyseBtn.disabled = false;
-        showToast('Something went wrong while analysing the image.');
-      });
-  };
-
-  reader.readAsDataURL(file);
+  showWarning(result.data.message || 'Failed to create listing.');
 }
 
-// ── CREATE LISTING PAGE ───────────────────────────────────────────────────
+function onCreateListingError() {
+  showWarning('Something went wrong while creating listing.');
+}
+
+function submitListing(title, description, priceUsd) {
+  authFetch('/api/listings', {
+    method: 'POST',
+    body: JSON.stringify({ title, description, price: priceUsd }),
+  })
+    .then(parseResponse)
+    .then(onCreateListingSuccess)
+    .catch(onCreateListingError);
+}
 
 function handleCreateListingSubmit(event) {
   event.preventDefault();
   hideWarning();
 
-  const token = localStorage.getItem('token');
-  if (!token) {
+  if (!localStorage.getItem('token')) {
     showToast('You must be logged in to create a listing.');
     return;
   }
@@ -186,34 +162,83 @@ function handleCreateListingSubmit(event) {
 
   const code = localStorage.getItem('currency') || 'USD';
   const { rate } = CURRENCIES[code] || CURRENCIES.USD;
-  const priceUsd = Number(price) / rate;
 
-  authFetch('/api/listings', {
-    method: 'POST',
-    body: JSON.stringify({ title, description, price: priceUsd }),
-  })
-    .then(function (response) {
-      return response.json().then(function (data) {
-        return { status: response.status, data };
-      });
-    })
-    .then(function (result) {
-      if (result.status === 201) {
-        window.location.href = 'listings.html';
-        return;
-      }
-
-      if (!localStorage.getItem('token')) {
-        showToast('You must be logged in to create a listing.');
-        return;
-      }
-
-      showWarning(result.data.message || 'Failed to create listing.');
-    })
-    .catch(function () {
-      showWarning('Something went wrong while creating listing.');
-    });
+  submitListing(title, description, Number(price) / rate);
 }
+
+// ── AI IMAGE ANALYSIS ─────────────────────────────────────────────────────
+
+function resetAnalyseButton() {
+  const analyseBtn = document.getElementById('btn-analyse');
+  analyseBtn.textContent = 'Analyse Image';
+  analyseBtn.disabled = false;
+}
+
+function onAnalyseSuccess(result) {
+  resetAnalyseButton();
+
+  if (result.status !== 200) {
+    showToast(result.data.message || 'Failed to analyse image.');
+    return;
+  }
+
+  const titleInput = document.getElementById('title');
+  const descInput = document.getElementById('description');
+  if (titleInput && result.data.title) titleInput.value = result.data.title;
+  if (descInput && result.data.description) descInput.value = result.data.description;
+  showToast('Form pre-filled from image!');
+}
+
+function onAnalyseError() {
+  resetAnalyseButton();
+  showToast('Something went wrong while analysing the image.');
+}
+
+function sendAnalyseRequest(base64, mimeType) {
+  authFetch('/api/listings/analyse-image', {
+    method: 'POST',
+    body: JSON.stringify({ imageBase64: base64, mimeType }),
+  })
+    .then(parseResponse)
+    .then(onAnalyseSuccess)
+    .catch(onAnalyseError);
+}
+
+function onImageRead(e) {
+  const imageInput = document.getElementById('imageInput');
+  const base64 = e.target.result.split(',')[1];
+  sendAnalyseRequest(base64, imageInput.files[0].type);
+}
+
+function handleAnalyseImage() {
+  const imageInput = document.getElementById('imageInput');
+  const analyseBtn = document.getElementById('btn-analyse');
+
+  if (!imageInput || !imageInput.files || !imageInput.files[0]) {
+    showToast('Please select an image first.');
+    return;
+  }
+
+  if (!localStorage.getItem('token')) {
+    showToast('You must be logged in to use AI analysis.');
+    return;
+  }
+
+  analyseBtn.textContent = 'Analysing…';
+  analyseBtn.disabled = true;
+
+  const reader = new FileReader();
+  reader.onload = onImageRead;
+  reader.readAsDataURL(imageInput.files[0]);
+}
+
+function onImagePicked() {
+  const imageInput = document.getElementById('imageInput');
+  const label = document.getElementById('upload-label');
+  if (label) label.textContent = imageInput.files[0] ? imageInput.files[0].name : 'Choose a photo…';
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
 
 function initCreateListingPage() {
   const listingCreateForm = document.getElementById('listingCreateForm');
@@ -226,7 +251,7 @@ function initCreateListingPage() {
   const code = localStorage.getItem('currency') || 'USD';
   const { symbol } = CURRENCIES[code] || CURRENCIES.USD;
   const priceLabel = document.getElementById('price-label');
-  if (priceLabel) priceLabel.textContent = `Price (${code} ${symbol})`;
+  if (priceLabel) priceLabel.textContent = 'Price (' + code + ' ' + symbol + ')';
 
   listingCreateForm.addEventListener('submit', handleCreateListingSubmit);
 
@@ -234,15 +259,8 @@ function initCreateListingPage() {
   if (analyseBtn) analyseBtn.addEventListener('click', handleAnalyseImage);
 
   const imageInput = document.getElementById('imageInput');
-  if (imageInput) {
-    imageInput.addEventListener('change', function () {
-      const label = document.getElementById('upload-label');
-      if (label) label.textContent = imageInput.files[0] ? imageInput.files[0].name : 'Choose a photo…';
-    });
-  }
+  if (imageInput) imageInput.addEventListener('change', onImagePicked);
 }
-
-// ── INIT ──────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', function () {
   initListingsPage();

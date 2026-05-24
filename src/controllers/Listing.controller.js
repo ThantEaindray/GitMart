@@ -1,34 +1,41 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const model = require('../models/Listing.model');
 
+// ── Gemini helper ─────────────────────────────────────────────────────────
+
+function extractGeminiText(result) {
+  return result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+}
+
 // POST /api/listings/analyse-image
-module.exports.analyseImage = async (req, res) => {
+module.exports.analyseImage = function (req, res) {
   const { imageBase64, mimeType } = req.body || {};
 
   if (!imageBase64 || !mimeType) {
     return res.status(400).json({ message: 'imageBase64 and mimeType are required.' });
   }
 
-  try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const gemini = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-    const prompt =
-      'Look at this image and suggest a listing title (max 60 characters) and a short description (2-3 sentences) for selling this item on a luxury marketplace. Respond ONLY with valid JSON, no markdown: {"title": "...", "description": "..."}';
-
-    const result = await gemini.generateContent([
-      { inlineData: { data: imageBase64, mimeType } },
-      prompt,
-    ]);
-
-    const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const parsed = JSON.parse(text);
-
+  function onSuccess(parsed) {
     return res.status(200).json({ title: parsed.title, description: parsed.description });
-  } catch (err) {
+  }
+
+  function onError(err) {
     console.log(err);
     return res.status(500).json({ message: 'Failed to analyse image.' });
   }
+
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const gemini = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+  const prompt =
+    'Look at this image and suggest a listing title (max 60 characters) and a short description (2-3 sentences) for selling this item on a luxury marketplace. Respond ONLY with valid JSON, no markdown: {"title": "...", "description": "..."}';
+
+  gemini
+    .generateContent([{ inlineData: { data: imageBase64, mimeType } }, prompt])
+    .then(extractGeminiText)
+    .then(JSON.parse)
+    .then(onSuccess)
+    .catch(onError);
 };
 
 // GET /api/listings

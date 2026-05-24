@@ -1,9 +1,38 @@
+// ── TOAST ─────────────────────────────────────────────────────────────────
+
 function showToast(message) {
   const toast = document.getElementById('toast');
   if (!toast) return;
   toast.textContent = message;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+
+function parseResponse(response) {
+  return response.json().then(function (data) {
+    return { status: response.status, data };
+  });
+}
+
+function errorView(message) {
+  return (
+    '<div class="product-error">' +
+    '<p class="status-text">' + message + '</p>' +
+    '<a href="listings.html" class="breadcrumb-back"><i class="bi bi-arrow-left"></i> Back to Listings</a>' +
+    '</div>'
+  );
+}
+
+// ── LISTING DETAIL ────────────────────────────────────────────────────────
+
+function onContactClick() {
+  if (!localStorage.getItem('token')) {
+    showToast('You must be logged in to contact a seller.');
+    return;
+  }
+  showToast('Chat coming soon.');
 }
 
 function renderListing(listing) {
@@ -19,29 +48,36 @@ function renderListing(listing) {
     day: 'numeric',
   });
 
-  section.innerHTML = `
-    <div class="product-img">
-      <i class="bi bi-tag"></i>
-    </div>
-    <div class="product-info">
-      <div class="card-cat" style="color:${statusColor};">${status} &nbsp;·&nbsp; Listed ${date}</div>
-      <h1 class="product-name">${listing.title}</h1>
-      <div class="product-price" data-price="${listing.price}">${formatPrice(Number(listing.price))}</div>
-      <p class="product-description">${listing.description}</p>
-      <div class="product-actions">
-        <button class="btn-primary" id="btn-contact">Contact Seller</button>
-      </div>
-    </div>
-  `;
+  section.innerHTML =
+    '<div class="product-img"><i class="bi bi-tag"></i></div>' +
+    '<div class="product-info">' +
+    '<div class="card-cat" style="color:' + statusColor + ';">' + status + ' &nbsp;·&nbsp; Listed ' + date + '</div>' +
+    '<h1 class="product-name">' + listing.title + '</h1>' +
+    '<div class="product-price" data-price="' + listing.price + '">' + formatPrice(Number(listing.price)) + '</div>' +
+    '<p class="product-description">' + listing.description + '</p>' +
+    '<div class="product-actions"><button class="btn-primary" id="btn-contact">Contact Seller</button></div>' +
+    '</div>';
 
-  document.getElementById('btn-contact').addEventListener('click', function () {
-    if (!localStorage.getItem('token')) {
-      showToast('You must be logged in to contact a seller.');
-      return;
-    }
-    showToast('Chat coming soon.');
-  });
+  document.getElementById('btn-contact').addEventListener('click', onContactClick);
 }
+
+function onListingLoaded(result) {
+  const section = document.getElementById('listing-detail');
+
+  if (result.status !== 200) {
+    section.innerHTML = errorView('Listing not found.');
+    return;
+  }
+
+  renderListing(result.data);
+}
+
+function onListingError() {
+  const section = document.getElementById('listing-detail');
+  section.innerHTML = errorView('Failed to load listing.');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
 
 function loadListing() {
   const params = new URLSearchParams(window.location.search);
@@ -52,34 +88,7 @@ function loadListing() {
     return;
   }
 
-  const section = document.getElementById('listing-detail');
-
-  fetch('/api/listings/' + id)
-    .then(function (response) {
-      return response.json().then(function (data) {
-        return { status: response.status, data };
-      });
-    })
-    .then(function (result) {
-      if (result.status !== 200) {
-        section.innerHTML = `
-          <div class="product-error">
-            <p class="status-text">Listing not found.</p>
-            <a href="listings.html" class="breadcrumb-back"><i class="bi bi-arrow-left"></i> Back to Listings</a>
-          </div>
-        `;
-        return;
-      }
-      renderListing(result.data);
-    })
-    .catch(function () {
-      section.innerHTML = `
-        <div class="product-error">
-          <p class="status-text">Failed to load listing.</p>
-          <a href="listings.html" class="breadcrumb-back"><i class="bi bi-arrow-left"></i> Back to Listings</a>
-        </div>
-      `;
-    });
+  fetch('/api/listings/' + id).then(parseResponse).then(onListingLoaded).catch(onListingError);
 }
 
 document.addEventListener('DOMContentLoaded', loadListing);
