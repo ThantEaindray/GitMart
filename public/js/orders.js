@@ -52,7 +52,13 @@ fetch('http://localhost:3000/orders')
                     </option>
                 </select>
                 </p>
-                <p>Created At: ${order.createdAt}</p>
+                <p>Created At: ${
+                    new Date(order.createdAt).toLocaleString('en-SG', {
+                        timeZone: 'Asia/Singapore',
+                        dateStyle: 'medium',
+                        timeStyle: 'short'
+                    })
+                }</p>
             `;
 
             ordersList.appendChild(orderCard);

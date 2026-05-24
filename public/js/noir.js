@@ -65,8 +65,8 @@ function handleProductClick(productId) {
 }
 
 function handleCartClick() {
-  // TODO: open cart panel — call getCart() and render results
-  console.log('Cart clicked');
+  // Redirect user to checkout page
+  window.location.href = '/html/checkout.html';
 }
 
 function handleWishlistClick() {

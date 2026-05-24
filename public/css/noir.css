@@ -318,13 +318,74 @@ body {
 /* ── CHECKOUT SECTION ── */
 .checkout-container {
   max-width: 900px;
-  margin: 0 auto;
-  padding: 40px 20px;
+  margin: 80px auto;
+  padding: 40px;
+  color: #f5f0e8;
+}
+
+.checkout-section {
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  padding: 28px;
+  margin-bottom: 28px;
+}
+
+.checkout-section h2 {
+  color: #d6b64c;
+  margin-bottom: 20px;
+}
+
+.checkout-section label {
+  display: block;
+  margin-top: 14px;
+  margin-bottom: 6px;
+  color: #f5f0e8;
+}
+
+.checkout-section input,
+.checkout-section textarea,
+.checkout-section select {
+  width: 100%;
+  padding: 12px;
+  background: #0b0b0b;
+  border: 1px solid #3a3a3a;
+  color: #f5f0e8;
+  margin-bottom: 12px;
+}
+
+.checkout-section input[type="radio"] {
+  width: auto;
+  margin-right: 8px;
 }
 
 .delivery-notes {
   resize: none;
   overflow-y: auto;
-  min-height: 65px;
+  min-height: 100px;
   width: 100%;
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+#placeOrderButton {
+  background: #d6b64c;
+  color: #050505;
+  border: none;
+  padding: 14px 32px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+#placeOrderButton:hover {
+  background: #f0d46a;
+}
+
+#ordersList .checkout-section {
+  margin-bottom: 20px;
 }
