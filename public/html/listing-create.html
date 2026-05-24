@@ -55,6 +55,24 @@
           <span id="warningText"></span>
         </div>
 
+        <div class="analyse-section">
+          <div class="analyse-header">
+            <i class="bi bi-stars"></i>
+            <div>
+              <p class="analyse-title">AI Photo Analysis</p>
+              <p class="analyse-desc">Upload a photo and AI will suggest a title and description.</p>
+            </div>
+          </div>
+          <label class="upload-zone" for="imageInput">
+            <i class="bi bi-camera"></i>
+            <span id="upload-label">Choose a photo…</span>
+            <input id="imageInput" type="file" accept="image/*" />
+          </label>
+          <button type="button" id="btn-analyse" class="btn-outline analyse-btn">Analyse Image</button>
+        </div>
+
+        <hr class="analyse-divider" />
+
         <form id="listingCreateForm" class="auth-form">
           <div class="form-group">
             <label for="title">Title</label>
