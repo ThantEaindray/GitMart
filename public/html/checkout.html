@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Checkout</title>
+
+  <!-- Main stylesheet -->
+  <link rel="stylesheet" href="../css/noir.css" />
+</head>
+
+<body>
+    
+    <!-- Main checkout container -->
+    <main class="checkout-container">
+
+    <!-- Checkout page title -->
+    <h1>Checkout</h1>
+
+    <!-- Shipping information section -->
+    <section class="checkout-section">
+
+      <h2>Shipping Information</h2>
+
+      <form>
+
+        <label for="fullName">Full Name</label>
+        <input
+          type="text"
+          id="fullName"
+          placeholder="Enter your full name"
+        />
+
+        <label for="emailAddress">Email Address</label>
+        <input
+          type="email"
+          id="emailAddress"
+          placeholder="Enter your email address"
+        />
+
+        <label for="phoneNumber">Phone Number</label>
+        <input
+          type="tel"
+          id="phoneNumber"
+          placeholder="Enter your phone number"
+        />
+
+        <label for="address">Address</label>
+        <input
+          type="text"
+          id="address"
+          placeholder="Enter your address"
+        />
+
+        <label for="unitNumber">Unit Number</label>
+        <input
+          type="text"
+          id="unitNumber"
+          placeholder="e.g. #12-345"
+        />
+
+        <label for="postalCode">Postal Code</label>
+        <input
+          type="text"
+          id="postalCode"
+          placeholder="Enter your postal code"
+        />
+
+        <label for="deliveryNotes">Delivery Notes</label>
+        <textarea
+          id="deliveryNotes"
+          class="delivery-notes"
+          placeholder="Leave delivery instructions here"
+        ></textarea>
+
+      </form>
+
+    </section>
+
+    <!-- Delivery method section -->
+    <section class="checkout-section">
+
+      <h2>Delivery Method</h2>
+
+      <label>
+        <input type="radio" name="delivery" value="0" />
+        Standard Delivery (3-5 Days) - FREE
+      </label>
+
+      <p>Estimated Arrival: 18 Sep - 20 Sep</p>
+
+      <label>
+        <input type="radio" name="delivery" value="9.99" />
+        Express Delivery (1-2 Days) - $9.99
+      </label>
+
+      <p>Estimated Arrival: 16 Sep - 17 Sep</p>
+
+      <label>
+        <input type="radio" name="delivery" value="19.99" />
+        Same Day Delivery - $19.99
+      </label>
+
+      <p>Estimated Arrival: Today</p>
+
+    </section>
+
+    <!-- Payment method section -->
+    <section class="checkout-section">
+
+      <h2>Payment Method</h2>
+
+      <!-- Card payment method -->
+      <div class="payment-group">
+        <h3>Card Payment</h3>
+
+        <label>
+          <input type="radio" name="payment" id="cardPayment" />
+          Visa / Mastercard
+        </label>
+
+        <!-- Card details form -->
+        <div class="card-details">
+
+          <label for="cardName">Name on Card</label>
+          <input
+            type="text"
+            id="cardName"
+            placeholder="Enter name on card"
+          />
+
+          <label for="cardNumber">Card Number</label>
+          <input
+            type="text"
+            id="cardNumber"
+            placeholder="1234 5678 9012 3456"
+          />
+
+          <label for="expiryDate">Expiry Date</label>
+          <input
+            type="text"
+            id="expiryDate"
+            placeholder="MM/YY"
+          />
+
+          <label for="cvv">CVV</label>
+          <input
+            type="password"
+            id="cvv"
+            placeholder="123"
+          />
+
+        </div>
+      </div>
+
+      <!-- Digital wallet payment methods -->
+      <div class="payment-group">
+        <h3>Digital Wallets</h3>
+
+        <label>
+          <input type="radio" name="payment" id="applePay" />
+          Apple Pay
+        </label>
+
+        <label>
+          <input type="radio" name="payment" id="googlePay" />
+          Google Pay
+        </label>
+
+        <label>
+          <input type="radio" name="payment" id="grabPay" />
+          GrabPay
+        </label>
+      </div>
+
+      <!-- Local Singapore payment methods -->
+      <div class="payment-group">
+        <h3>Local Payment Methods</h3>
+
+        <label>
+          <input type="radio" name="payment" id="payNow" />
+          PayNow
+        </label>
+
+        <label>
+          <input type="radio" name="payment" id="nets" />
+          NETS
+        </label>
+      </div>
+
+    </section>
+
+    <!-- Order summary section -->
+    <section class="checkout-section">
+      
+      <h2>Order Summary</h2>
+
+      <!-- Order items -->
+      <div class="order-item">
+        <p>Sony WH-1000XM5 Wireless Headphones x1</p>
+        <p>$389.00</p>
+      </div>
+
+      <div class="order-item">
+        <p>Keychron K2 Max Mechanical Keyboard x1</p>
+        <p>$157.25</p>
+      </div>
+
+      <div class="order-item">
+        <p>Spigen iPhone 15 Pro Liquid Air Case x2</p>
+        <p>$39.98</p>
+      </div>
+
+      <hr />
+
+      <!-- Price summary -->
+      <p>Subtotal: $586.23</p>
+      <p id="deliveryFee">Delivery Fee: FREE</p>
+      <p>GST (9%): $52.76</p>
+
+      <h3 id="totalPrice">Total: $638.99</h3>
+    </section>
+
+    <!-- Place order button -->
+    <section class="checkout-section">
+      <button type="button" id="placeOrderButton">
+        Place Order
+      </button>
+    </section>
+
+  </main>
+
+  <!-- Checkout JavaScript -->
+  <script src="../js/checkout.js"></script>
+
+</body>
+</html>
