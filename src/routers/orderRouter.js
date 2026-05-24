@@ -3,9 +3,16 @@ const express = require('express');
 const router = express.Router();
 const { createOrder, getAllOrders, updateOrderStatus } = require('../models/orderModel');
 
+// Allowed order statuses for status updates
+const allowedStatuses = ['Pending', 'Processing', 'Delivered', 'Cancelled'];
+
+// Backend validation patterns
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phonePattern = /^[0-9]+$/;
+
 router.post('/', (req, res, next) => {
   const orderData = req.body;
-  
+
   if (
     !orderData.fullName ||
     !orderData.emailAddress ||
@@ -17,6 +24,18 @@ router.post('/', (req, res, next) => {
   ) {
     return res.status(400).json({
       message: 'Required checkout order details are missing.',
+    });
+  }
+
+  if (!emailPattern.test(orderData.emailAddress)) {
+    return res.status(400).json({
+      message: 'Invalid email address format.',
+    });
+  }
+
+  if (!phonePattern.test(orderData.phoneNumber)) {
+    return res.status(400).json({
+      message: 'Phone number must contain numbers only.',
     });
   }
 
@@ -37,6 +56,12 @@ router.put('/:id', (req, res, next) => {
   if (!status) {
     return res.status(400).json({
       message: 'Order status is required.',
+    });
+  }
+
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({
+      message: 'Invalid order status.',
     });
   }
 
