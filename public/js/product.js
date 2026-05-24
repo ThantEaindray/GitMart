@@ -1,3 +1,5 @@
+/* global formatPrice, getProductById, getProductsByCategory */
+
 function renderStars(rating) {
   const filled = Math.round(rating ?? 0);
   const full = '<i class="bi bi-star-fill"></i>';
@@ -23,11 +25,44 @@ function renderProduct(product) {
       </div>
       <p class="product-description">${product.description || ''}</p>
       <div class="product-actions">
-        <button class="btn-primary">Add to Cart</button>
+        <button class="btn-primary" id="addToCartButton">Add to Cart</button>
         <button class="btn-outline"><i class="bi bi-heart"></i> Wishlist</button>
       </div>
     </div>
   `;
+
+  document
+    .getElementById('addToCartButton')
+    .addEventListener('click', () => addProductToCart(product));
+}
+
+function addProductToCart(product) {
+  let cart;
+
+  try {
+    const storedCart = JSON.parse(localStorage.getItem('cart') || '[]');
+    cart = Array.isArray(storedCart) ? storedCart : storedCart.items || [];
+  } catch {
+    cart = [];
+  }
+
+  const existingItem = cart.find(
+    (item) => String(item.id ?? item.productId) === String(product.id),
+  );
+
+  if (existingItem) {
+    existingItem.quantity = Number(existingItem.quantity ?? 1) + 1;
+  } else {
+    cart.push({
+      id: product.id,
+      productId: product.id,
+      name: product.name,
+      price: Number(product.price),
+      quantity: 1,
+    });
+  }
+
+  localStorage.setItem('cart', JSON.stringify(cart));
 }
 
 function renderRelated(products) {

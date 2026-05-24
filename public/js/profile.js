@@ -1,3 +1,5 @@
+/* global authFetch */
+
 document.addEventListener('DOMContentLoaded', () => {
   // Get token from localStorage to check if user is logged in
   const token = localStorage.getItem('token');
@@ -15,8 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (warningCard && warningText) {
       warningText.textContent = message;
       warningCard.classList.remove('d-none');
-    } else {
-      alert(message);
     }
   };
 
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
       response.json().then((data) => ({
         status: response.status,
         data,
-      }))
+      })),
     )
     .then(({ status, data }) => {
       console.log('Current user response:', status, data);

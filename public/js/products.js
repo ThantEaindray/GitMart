@@ -120,7 +120,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') handleSearch(e.target.value.trim());
   });
 
-  document.getElementById('btn-cart').addEventListener('click', () => console.log('Cart — coming soon'));
+  document.getElementById('btn-cart').addEventListener('click', () => {
+    window.location.href = 'checkout.html';
+  });
   document.getElementById('btn-wishlist').addEventListener('click', () => console.log('Wishlist — coming soon'));
 
   document.getElementById('category-pills').addEventListener('click', (e) => {

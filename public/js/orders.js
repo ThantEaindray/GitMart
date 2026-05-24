@@ -1,102 +1,246 @@
-// Get orders list container
+/* global authFetch */
+
 const ordersList = document.getElementById('ordersList');
+const ordersCount = document.getElementById('ordersCount');
+const ordersPending = document.getElementById('ordersPending');
+const ordersSpend = document.getElementById('ordersSpend');
+const refreshOrdersButton = document.getElementById('refreshOrders');
 
-// Load orders from backend
-fetch('http://localhost:3000/orders')
-    .then((response) => response.json())
-    .then((orders) => {
+let allOrders = [];
+let activeFilter = 'all';
 
-        ordersList.innerHTML = '';
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
 
-        if (orders.length === 0) {
-            ordersList.innerHTML = '<p>No orders found.</p>';
-            return;
-        }
+function formatMoney(value) {
+  return `$${Number(value || 0).toFixed(2)}`;
+}
 
-        orders.forEach((order) => {
+function normalizeStatus(status) {
+  return String(status || 'Pending').toLowerCase();
+}
 
-            const orderCard = document.createElement('div');
-            orderCard.className = 'checkout-section';
+function formatDate(value) {
+  if (!value) return '-';
+  return new Date(value).toLocaleString('en-SG', {
+    timeZone: 'Asia/Singapore',
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+}
 
-            orderCard.innerHTML = `
-                <h3>Order #${order.id}</h3>
-                <p>Customer: ${order.fullName}</p>
-                <p>Email: ${order.emailAddress}</p>
-                <p>Phone: ${order.phoneNumber}</p>
-                <p>Address: ${order.address} ${order.unitNumber}</p>
-                <p>Postal Code: ${order.postalCode}</p>
-                <p>Delivery: ${order.deliveryMethod}</p>
-                <p>Payment: ${order.paymentMethod}</p>
-                <p>Total: $${Number(order.totalAmount).toFixed(2)}</p>
-                <p>
-                Status:
-                <select class="statusDropdown" data-id="${order.id}">
-                    <option value="Pending"
-                        ${order.status === 'Pending' ? 'selected' : ''}>
-                        Pending
-                    </option>
+function renderItems(items = []) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return '<p class="orders-status">No item details were saved for this order.</p>';
+  }
 
-                    <option value="Processing"
-                        ${order.status === 'Processing' ? 'selected' : ''}>
-                        Processing
-                    </option>
-
-                    <option value="Delivered"
-                        ${order.status === 'Delivered' ? 'selected' : ''}>
-                        Delivered
-                    </option>
-
-                    <option value="Cancelled"
-                        ${order.status === 'Cancelled' ? 'selected' : ''}>
-                        Cancelled
-                    </option>
-                </select>
-                </p>
-                <p>Created At: ${
-                    new Date(order.createdAt).toLocaleString('en-SG', {
-                        timeZone: 'Asia/Singapore',
-                        dateStyle: 'medium',
-                        timeStyle: 'short'
-                    })
-                }</p>
-            `;
-
-            ordersList.appendChild(orderCard);
-
-            const statusDropdown =
-            orderCard.querySelector('.statusDropdown');
-            
-            statusDropdown.addEventListener('change', () => {
-                
-                fetch(`http://localhost:3000/orders/${order.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        status: statusDropdown.value,
-                    }),
-                })
-                
-                .then((response) => response.json())
-                .then((updatedOrder) => {
-                    console.log(updatedOrder);
-                    
-                    alert('Order status updated successfully!');
-                })
-                
-                .catch((error) => {
-
-                    console.error(error);
-                    
-                    alert('Failed to update order status.');
-                });
-            });
-        });
+  return items
+    .map((item) => {
+      const quantity = Number(item.quantity || item.qty || 1);
+      const price = Number(item.price || item.unitPrice || 0) * quantity;
+      return `
+        <div class="order-item-row">
+          <div class="order-item-name">${item.name || item.title || 'Item'}</div>
+          <div class="order-item-qty">Qty ${quantity}</div>
+          <div class="order-item-price">${formatMoney(price)}</div>
+        </div>
+      `;
     })
-    .catch((error) => {
+    .join('');
+}
 
-        console.error(error);
+function createStatusOptions(currentStatus) {
+  const options = ['Pending', 'Processing', 'Delivered', 'Cancelled'];
+  return options
+    .map(
+      (status) =>
+        `<option value="${status}" ${status === currentStatus ? 'selected' : ''}>${status}</option>`,
+    )
+    .join('');
+}
 
-        ordersList.innerHTML = '<p>Failed to load orders.</p>';
+function renderOrder(order) {
+  const status = normalizeStatus(order.status);
+  const total = Number(order.totalAmount || order.total || 0);
+  const card = document.createElement('article');
+  card.className = 'order-card';
+  card.dataset.status = status;
+
+  card.innerHTML = `
+    <div class="order-card-header" role="button" tabindex="0" aria-label="Toggle order ${order.id}">
+      <div class="order-main">
+        <div class="order-id-row">
+          <span class="order-id">Order #${order.id}</span>
+          <span class="status-badge ${status}">${status}</span>
+        </div>
+        <div class="order-date">${formatDate(order.createdAt)}</div>
+        <div class="order-address">${order.fullName || 'Customer'} · ${order.address || 'No address'} ${order.unitNumber || ''}</div>
+      </div>
+      <div class="order-side">
+        <span class="order-total">${formatMoney(total)}</span>
+        <i class="bi bi-chevron-down order-chevron"></i>
+      </div>
+    </div>
+
+    <div class="order-card-body">
+      <div class="order-body-inner">
+        <div class="order-items-list">${renderItems(order.items)}</div>
+
+        <div class="order-detail-grid">
+          <div class="order-detail-block">
+            <p class="order-detail-title">Shipping</p>
+            <p class="order-detail-line">${order.fullName || '-'}</p>
+            <p class="order-detail-line muted">${order.emailAddress || '-'}</p>
+            <p class="order-detail-line muted">${order.phoneNumber || '-'}</p>
+            <p class="order-detail-line muted">${order.address || '-'} ${order.unitNumber || ''}</p>
+            <p class="order-detail-line muted">Postal ${order.postalCode || '-'}</p>
+          </div>
+          <div class="order-detail-block">
+            <p class="order-detail-title">Delivery & Payment</p>
+            <p class="order-detail-line">${order.deliveryMethod || '-'}</p>
+            <p class="order-detail-line muted">${order.paymentMethod || '-'}</p>
+            <p class="order-detail-line muted">${order.deliveryNotes || 'No delivery notes.'}</p>
+          </div>
+        </div>
+
+        <div class="order-actions">
+          <div class="status-control">
+            <label for="status-${order.id}">Status</label>
+            <select class="status-dropdown" id="status-${order.id}" data-id="${order.id}">
+              ${createStatusOptions(order.status || 'Pending')}
+            </select>
+          </div>
+
+          <div class="order-price-summary">
+            <div class="order-price-row">
+              <span class="order-price-label">Subtotal</span>
+              <span class="order-price-value">${formatMoney(order.subtotal)}</span>
+            </div>
+            <div class="order-price-row">
+              <span class="order-price-label">Delivery</span>
+              <span class="order-price-value">${Number(order.deliveryFee || 0) === 0 ? 'FREE' : formatMoney(order.deliveryFee)}</span>
+            </div>
+            <div class="order-price-row">
+              <span class="order-price-label">GST</span>
+              <span class="order-price-value">${formatMoney(order.gst)}</span>
+            </div>
+            <hr class="order-price-divider" />
+            <div class="order-price-total-row">
+              <span class="order-price-total-label">Total</span>
+              <span class="order-price-total-value">${formatMoney(total)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  card.querySelector('.order-card-header').addEventListener('click', () => {
+    card.classList.toggle('open');
+  });
+
+  card.querySelector('.order-card-header').addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    card.classList.toggle('open');
+  });
+
+  const statusDropdown = card.querySelector('.status-dropdown');
+  statusDropdown.addEventListener('click', (event) => event.stopPropagation());
+  statusDropdown.addEventListener('change', async () => {
+    try {
+      const response = await authFetch(`/api/orders/${order.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: statusDropdown.value }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update order status.');
+      order.status = statusDropdown.value;
+      showToast('Order status updated.');
+      renderOrders();
+    } catch (error) {
+      console.error(error);
+      showToast('Failed to update order status.');
+      statusDropdown.value = order.status;
+    }
+  });
+
+  return card;
+}
+
+function updateSummary() {
+  const pendingCount = allOrders.filter(
+    (order) => normalizeStatus(order.status) === 'pending',
+  ).length;
+  const spend = allOrders.reduce(
+    (sum, order) => sum + Number(order.totalAmount || order.total || 0),
+    0,
+  );
+
+  ordersCount.textContent = allOrders.length;
+  ordersPending.textContent = pendingCount;
+  ordersSpend.textContent = formatMoney(spend);
+}
+
+function renderOrders() {
+  updateSummary();
+  const filtered =
+    activeFilter === 'all'
+      ? allOrders
+      : allOrders.filter((order) => normalizeStatus(order.status) === activeFilter);
+
+  ordersList.innerHTML = '';
+
+  if (filtered.length === 0) {
+    ordersList.innerHTML = '<p class="orders-status">No orders match this view.</p>';
+    return;
+  }
+
+  filtered.forEach((order) => {
+    ordersList.appendChild(renderOrder(order));
+  });
+}
+
+async function loadOrders() {
+  if (!localStorage.getItem('token')) {
+    showToast('Please log in to view orders.');
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 900);
+    return;
+  }
+
+  ordersList.innerHTML = '<p class="orders-status">Loading orders...</p>';
+
+  try {
+    const response = await authFetch('/api/orders');
+    const orders = await response.json();
+
+    if (!response.ok) throw new Error(orders.message || orders.error || 'Failed to load orders.');
+    allOrders = Array.isArray(orders) ? orders : [];
+    renderOrders();
+  } catch (error) {
+    console.error(error);
+    ordersList.innerHTML = '<p class="orders-status">Failed to load orders.</p>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.orders-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.orders-tab').forEach((item) => item.classList.remove('active'));
+      tab.classList.add('active');
+      activeFilter = tab.dataset.filter;
+      renderOrders();
     });
+  });
+
+  refreshOrdersButton.addEventListener('click', loadOrders);
+  loadOrders();
+});

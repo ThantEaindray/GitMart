@@ -43,11 +43,9 @@ app.use('/persons', personRouter);
 app.use('/products', productRouter);
 
 // Checkout order API routes.
-// All routes inside orderRouter.js will start with /orders.
-// Example:
-// router.post('/') becomes POST /orders
-// router.get('/') becomes GET /orders
+// Keep /orders for older clients and expose /api/orders for the frontend API convention.
 app.use('/orders', orderRouter);
+app.use('/api/orders', orderRouter);
 
 // User authentication API routes.
 // All routes inside User.router.js will start with /api.
