@@ -1,0 +1,74 @@
+/* CHECKOUT */
+.checkout-container {
+  max-width: 900px;
+  margin: 80px auto;
+  padding: 40px;
+  color: var(--text);
+}
+
+.checkout-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 28px;
+  margin-bottom: 28px;
+}
+
+.checkout-section h2 {
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+
+.checkout-section label {
+  display: block;
+  margin-top: 14px;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.checkout-section input,
+.checkout-section textarea,
+.checkout-section select {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.checkout-section input[type='radio'] {
+  width: auto;
+  margin-right: 8px;
+}
+
+.delivery-notes {
+  resize: none;
+  overflow-y: auto;
+  min-height: 100px;
+  width: 100%;
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+#placeOrderButton {
+  background: var(--accent);
+  color: var(--btn-text);
+  border: none;
+  padding: 14px 32px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+#placeOrderButton:hover {
+  background: var(--accent2);
+}
+
+#ordersList .checkout-section {
+  margin-bottom: 20px;
+}
