@@ -85,6 +85,7 @@ CREATE TABLE listings (
   created_on  DATE           NOT NULL DEFAULT CURRENT_DATE,
   title       TEXT           NOT NULL,
   description TEXT           NOT NULL,
+  category    TEXT           NOT NULL DEFAULT 'Others',
   "isSold"    BOOLEAN        DEFAULT false,
   "isClosed"  BOOLEAN        DEFAULT false
 );
@@ -128,9 +129,9 @@ INSERT INTO products (name, category, description, price, rating, review_count, 
   ('Cedar Shoe Trees',      'Footwear',    'Aromatic cedarwood, adjustable split-toe, preserves shoe shape.',        110, 4.7,  98, 'tree',                'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80'),
   ('Merino Travel Scarf',   'Apparel',     'Extra-fine 18.5-micron merino, 200cm length, hand-finished fringe.',     320, 4.6,  63, 'wind',                'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=600&q=80');
 
-INSERT INTO listings (owner_id, price, title, description, "isSold", "isClosed") VALUES
-  (NULL, 3200.00, 'Vintage Rolex Submariner', 'Circa 1987, ref. 5513. Original dial, tritium plots, 40mm case. Minor patina consistent with age. No box or papers.', false, false),
-  (NULL, 480.00,  'Hermès Silk Scarf — Brides de Gala', 'Classic equestrian print, 90cm × 90cm. Light wear to one corner, otherwise excellent. Original box included.', false, false),
-  (NULL, 1150.00, 'Montblanc Meisterstück 149 Fountain Pen', '18k gold nib, piston filler. Professionally serviced 2024. Comes with original case and two ink bottles.', false, false),
-  (NULL, 620.00,  'Berluti Alessandro Derby Shoes — UK 9', 'Venezia leather, burnished by hand. Light scuffs to toe, resoled once. Cedar shoe trees included.', true,  false),
-  (NULL, 290.00,  'Omega Speedmaster Bracelet — 20mm', 'Stainless steel, brushed and polished, unused. Removed from new watch. Fits 20mm lug width.', false, false);
+INSERT INTO listings (owner_id, price, title, description, category, "isSold", "isClosed") VALUES
+  (NULL, 3200.00, 'Vintage Rolex Submariner',              'Circa 1987, ref. 5513. Original dial, tritium plots, 40mm case. Minor patina consistent with age. No box or papers.',        'Collectibles', false, false),
+  (NULL, 480.00,  'Hermès Silk Scarf — Brides de Gala',   'Classic equestrian print, 90cm × 90cm. Light wear to one corner, otherwise excellent. Original box included.',                'Fashion',      false, false),
+  (NULL, 1150.00, 'Montblanc Meisterstück 149 Fountain Pen','18k gold nib, piston filler. Professionally serviced 2024. Comes with original case and two ink bottles.',                  'Collectibles', false, false),
+  (NULL, 620.00,  'Berluti Alessandro Derby Shoes — UK 9', 'Venezia leather, burnished by hand. Light scuffs to toe, resoled once. Cedar shoe trees included.',                           'Fashion',      true,  false),
+  (NULL, 290.00,  'Omega Speedmaster Bracelet — 20mm',     'Stainless steel, brushed and polished, unused. Removed from new watch. Fits 20mm lug width.',                                'Collectibles', false, false);
