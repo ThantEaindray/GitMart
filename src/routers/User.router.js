@@ -25,8 +25,8 @@ router.post(
   userController.login,
   bcryptMiddleware.comparePassword,
   jwtMiddleware.generateToken,
-  jwtMiddleware.generateRefreshToken,
-  jwtMiddleware.sendToken,
+
+  jwtMiddleware.sendToken
 );
 
 // Get Current Logged-In User

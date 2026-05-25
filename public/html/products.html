@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GitMart — Browse by Category</title>
+    <title>GitMart — Browse</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
       rel="stylesheet"
@@ -23,6 +23,7 @@
     </script>
   </head>
   <body>
+    <!-- ── NAVIGATION ── -->
     <nav class="nav">
       <div class="logo">GitMart</div>
 
@@ -34,26 +35,54 @@
       </ul>
 
       <div class="nav-right">
+        <button class="icon-btn" id="btn-search" title="Search">
+          <i class="bi bi-search"></i>
+        </button>
         <a class="icon-btn" id="btn-account" href="login.html" title="Login"><i class="bi bi-person"></i></a>
+        <a class="icon-btn" href="chats.html" title="chats"><i class="bi bi-chat-left-dots"></i></a>
         <button class="icon-btn" id="btn-wishlist" title="Wishlist"><i class="bi bi-heart"></i></button>
         <a class="icon-btn" href="checkout.html" title="Cart"><i class="bi bi-bag"></i></a>
         <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
       </div>
     </nav>
 
+    <!-- ── SEARCH BAR ── -->
+    <div class="search-bar" id="search-bar">
+      <div class="search-inner">
+        <i class="bi bi-search search-icon-sm"></i>
+        <input type="text" id="search-input" placeholder="Search pieces…" autocomplete="off" />
+        <button class="icon-btn" id="btn-search-clear" title="Clear">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── BREADCRUMB ── -->
     <div class="breadcrumb-bar">
       <a href="noir.html" class="breadcrumb-back">
         <i class="bi bi-arrow-left"></i> Back to Home
       </a>
     </div>
 
-    <section class="section">
+    <!-- ── PRODUCTS ── -->
+    <section class="section" id="products-section">
       <div class="section-header">
-        <h2 class="section-title">Browse by Category</h2>
-        <a href="listings.html" class="see-all">All Listings →</a>
+        <h2 class="section-title" id="section-title">All Products</h2>
       </div>
 
-      <div class="products" id="categories-grid"></div>
+      <div class="category-pills" id="category-pills">
+        <button class="pill active" data-category="">All</button>
+        <button class="pill" data-category="Timepieces">Timepieces</button>
+        <button class="pill" data-category="Accessories">Accessories</button>
+        <button class="pill" data-category="Jewellery">Jewellery</button>
+        <button class="pill" data-category="Writing">Writing</button>
+        <button class="pill" data-category="Footwear">Footwear</button>
+        <button class="pill" data-category="Apparel">Apparel</button>
+      </div>
+
+      <div class="products" id="products-grid">
+        <p class="status-text">Loading products…</p>
+      </div>
     </section>
 
     <script src="../js/prefs.js"></script>

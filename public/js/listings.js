@@ -1,5 +1,7 @@
 // ── TOAST ─────────────────────────────────────────────────────────────────
 
+/* global authFetch, CURRENCIES, formatPrice */
+
 function showToast(message) {
   const toast = document.getElementById('toast');
   if (!toast) return;
@@ -309,11 +311,12 @@ function initCreateListingPage() {
 
   ['title', 'description', 'category', 'price'].forEach(function (id) {
     const el = document.getElementById(id);
-    if (el) el.addEventListener('input', function () {
-      el.classList.remove('input-error');
-      const err = el.parentElement.querySelector('.field-error');
-      if (err) err.remove();
-    });
+    if (el)
+      el.addEventListener('input', function () {
+        el.classList.remove('input-error');
+        const err = el.parentElement.querySelector('.field-error');
+        if (err) err.remove();
+      });
   });
 
   const analyseBtn = document.getElementById('btn-analyse');

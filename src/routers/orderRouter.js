@@ -9,6 +9,7 @@ const allowedStatuses = ['Pending', 'Processing', 'Delivered', 'Cancelled'];
 // Backend validation patterns
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phonePattern = /^[0-9]+$/;
+const postalCodePattern = /^[0-9]{6}$/;
 
 router.post('/', (req, res, next) => {
   const orderData = req.body;
@@ -36,6 +37,12 @@ router.post('/', (req, res, next) => {
   if (!phonePattern.test(orderData.phoneNumber)) {
     return res.status(400).json({
       message: 'Phone number must contain numbers only.',
+    });
+  }
+
+  if (!postalCodePattern.test(orderData.postalCode)) {
+    return res.status(400).json({
+      message: 'Postal code must be exactly 6 digits.',
     });
   }
 

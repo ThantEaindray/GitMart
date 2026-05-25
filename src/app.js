@@ -22,6 +22,8 @@ const orderRouter = require('./routers/orderRouter');
 const userRouter = require('./routers/User.router');
 const listingRouter = require('./routers/Listing.router');
 
+const chatrouter = require('./routers/chats.router')
+
 const app = express();
 
 // Parse incoming JSON request bodies.
@@ -43,11 +45,9 @@ app.use('/persons', personRouter);
 app.use('/products', productRouter);
 
 // Checkout order API routes.
-// All routes inside orderRouter.js will start with /orders.
-// Example:
-// router.post('/') becomes POST /orders
-// router.get('/') becomes GET /orders
+// Keep /orders for older clients and expose /api/orders for the frontend API convention.
 app.use('/orders', orderRouter);
+app.use('/api/orders', orderRouter);
 
 // User authentication API routes.
 // All routes inside User.router.js will start with /api.
@@ -56,7 +56,7 @@ app.use('/orders', orderRouter);
 // router.post('/register') becomes POST /api/register
 app.use('/api', userRouter);
 app.use('/api', listingRouter);
-
+app.use('/api/chats',chatrouter)
 // 404 handler — if no route above matched the request,
 // create a 404 error and pass it to the error handler below.
 app.use((req, res, next) => {

@@ -13,7 +13,7 @@ module.exports.createListing = (data, callback) => {
     data.price,
     data.title,
     data.description,
-    data.category || 'Others'
+    data.category || 'Others',
   ];
 
   pool.query(SQLSTATEMENT, VALUES, (error, result) => {
@@ -95,13 +95,7 @@ module.exports.updateListing = (data, callback) => {
     RETURNING id, owner_id, price, created_on, title, description, "isSold", "isClosed"
   `;
 
-  const VALUES = [
-    data.title,
-    data.description,
-    data.price,
-    data.id,
-    data.owner_id
-  ];
+  const VALUES = [data.title, data.description, data.price, data.id, data.owner_id];
 
   pool.query(SQLSTATEMENT, VALUES, (error, result) => {
     if (error) return callback(error, null);

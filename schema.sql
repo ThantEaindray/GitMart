@@ -95,7 +95,6 @@ CREATE TABLE chats (
   id         SERIAL  PRIMARY KEY,
   user_1     INTEGER REFERENCES users(id),
   user_2     INTEGER REFERENCES users(id),
-  product    INTEGER REFERENCES listings(id),
   "isClosed" BOOLEAN DEFAULT false,
   CHECK (user_1 != user_2)
 );
@@ -106,7 +105,8 @@ CREATE TABLE chatcontent (
   chat_id      INTEGER REFERENCES chats(id),
   sender_id    INTEGER REFERENCES users(id),
   textcontent  TEXT,
-  imagecontent BYTEA
+  imagecontent TEXT,
+  sentOn       DATE    DEFAULT CURRENT_DATE
 );
 
 -- ── Offers ────────────────────────────────────────────────

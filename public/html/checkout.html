@@ -1,267 +1,1030 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Checkout — GitMart</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="stylesheet" href="../css/noir.css" />
+    <script>
+      var t = localStorage.getItem('theme');
+      var f = localStorage.getItem('font');
+      var m = localStorage.getItem('motion');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+      if (f) document.documentElement.setAttribute('data-font', f);
+      if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
+    </script>
+    <style>
+      /* ── CHECKOUT LAYOUT ── */
+      .checkout-page {
+        padding: 60px 60px 100px;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GitMart — Checkout</title>
+      .checkout-heading {
+        font-family: 'Playfair Display', serif;
+        font-size: 36px;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
 
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link rel="stylesheet" href="../css/noir.css" />
-  <link rel="stylesheet" href="../css/auth.css" />
-  <script>
-    var t = localStorage.getItem('theme');
-    var f = localStorage.getItem('font');
-    var m = localStorage.getItem('motion');
-    if (t) document.documentElement.setAttribute('data-theme', t);
-    if (f) document.documentElement.setAttribute('data-font', f);
-    if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
-  </script>
-</head>
+      .checkout-sub {
+        font-size: 0.87em;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+        margin-bottom: 48px;
+      }
 
-<body>
-  <nav class="nav">
-    <div class="logo">GitMart</div>
+      .checkout-grid {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 40px;
+        align-items: start;
+      }
 
-    <ul class="nav-links">
-      <li><a href="noir.html">Home</a></li>
-      <li><a href="products.html">Products</a></li>
-      <li><a href="listings.html">Listings</a></li>
-      <li><a href="listing-create.html">Create Listing</a></li>
-    </ul>
+      @media (max-width: 860px) {
+        .checkout-grid {
+          grid-template-columns: 1fr;
+        }
+        .checkout-page {
+          padding: 40px 24px 80px;
+        }
+      }
 
-    <div class="nav-right">
-      <a class="icon-btn" id="btn-account" href="login.html" title="Login"><i class="bi bi-person"></i></a>
-      <button class="icon-btn" id="btn-wishlist" title="Wishlist"><i class="bi bi-heart"></i></button>
-      <a class="icon-btn" href="checkout.html" title="Cart"><i class="bi bi-bag"></i></a>
-      <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
-    </div>
-  </nav>
+      /* ── SECTIONS ── */
+      .checkout-section {
+        border: 1px solid var(--border);
+        background: var(--card);
+        margin-bottom: 24px;
+      }
 
-  <div class="toast" id="toast"></div>
-    
-    <!-- Main checkout container -->
-    <main class="checkout-container">
+      .checkout-section-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+      }
 
-    <!-- Checkout page title -->
-    <h1>Checkout</h1>
+      .section-step {
+        width: 28px;
+        height: 28px;
+        border: 1px solid var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75em;
+        letter-spacing: 0.05em;
+        color: var(--accent);
+        flex-shrink: 0;
+      }
 
-    <!-- Shipping information section -->
-    <section class="checkout-section">
+      .section-step.complete {
+        background: var(--accent);
+        color: var(--surface);
+      }
 
-      <h2>Shipping Information</h2>
+      .checkout-section-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 18px;
+        color: var(--text);
+        margin: 0;
+      }
 
-      <form>
+      .checkout-section-body {
+        padding: 24px;
+      }
 
-        <label for="fullName">Full Name</label>
-        <input
-          type="text"
-          id="fullName"
-          placeholder="Enter your full name"
-        />
+      /* ── FORM FIELDS ── */
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
 
-        <label for="emailAddress">Email Address</label>
-        <input
-          type="email"
-          id="emailAddress"
-          placeholder="Enter your email address"
-        />
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 14px;
+      }
 
-        <label for="phoneNumber">Phone Number</label>
-        <input
-          type="tel"
-          id="phoneNumber"
-          placeholder="Enter your phone number"
-        />
+      .form-group:last-child {
+        margin-bottom: 0;
+      }
 
-        <label for="address">Address</label>
-        <input
-          type="text"
-          id="address"
-          placeholder="Enter your address"
-        />
+      .form-label {
+        font-size: 0.73em;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
 
-        <label for="unitNumber">Unit Number</label>
-        <input
-          type="text"
-          id="unitNumber"
-          placeholder="e.g. #12-345"
-        />
+      .form-input,
+      .form-textarea {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-family: 'Jost', sans-serif;
+        font-size: 0.87em;
+        letter-spacing: 0.04em;
+        padding: 10px 14px;
+        outline: none;
+        transition: border-color 0.2s;
+        width: 100%;
+        box-sizing: border-box;
+      }
 
-        <label for="postalCode">Postal Code</label>
-        <input
-          type="text"
-          id="postalCode"
-          placeholder="Enter your postal code"
-        />
+      .form-input::placeholder,
+      .form-textarea::placeholder {
+        color: var(--muted);
+        opacity: 0.6;
+      }
 
-        <label for="deliveryNotes">Delivery Notes</label>
-        <textarea
-          id="deliveryNotes"
-          class="delivery-notes"
-          placeholder="Leave delivery instructions here"
-        ></textarea>
+      .form-input:focus,
+      .form-textarea:focus {
+        border-color: var(--accent);
+      }
 
-      </form>
+      .form-input.error,
+      .form-textarea.error {
+        border-color: #c04040;
+      }
 
-    </section>
+      .form-textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
 
-    <!-- Delivery method section -->
-    <section class="checkout-section">
+      .field-error {
+        font-size: 0.73em;
+        letter-spacing: 0.06em;
+        color: #c04040;
+        min-height: 1em;
+        display: block;
+      }
 
-      <h2>Delivery Method</h2>
+      /* ── DELIVERY OPTIONS ── */
+      .delivery-options {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
 
-      <label>
-        <input type="radio" name="delivery" value="0" />
-        Standard Delivery (3-5 Days) - FREE
-      </label>
+      .delivery-option {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: background 0.15s;
+      }
 
-      <p>Estimated Arrival: 18 Sep - 20 Sep</p>
+      .delivery-option:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
 
-      <label>
-        <input type="radio" name="delivery" value="9.99" />
-        Express Delivery (1-2 Days) - $9.99
-      </label>
+      .delivery-option:first-child {
+        padding-top: 0;
+      }
 
-      <p>Estimated Arrival: 16 Sep - 17 Sep</p>
+      .delivery-option input[type='radio'] {
+        display: none;
+      }
 
-      <label>
-        <input type="radio" name="delivery" value="19.99" />
-        Same Day Delivery - $19.99
-      </label>
+      .delivery-radio {
+        width: 18px;
+        height: 18px;
+        border: 1px solid var(--border);
+        border-radius: 50%;
+        flex-shrink: 0;
+        position: relative;
+        transition: border-color 0.2s;
+      }
 
-      <p>Estimated Arrival: Today</p>
+      .delivery-radio::after {
+        content: '';
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: var(--accent);
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        transition: transform 0.2s;
+      }
 
-    </section>
+      .delivery-option input[type='radio']:checked ~ .delivery-radio,
+      .delivery-option.selected .delivery-radio {
+        border-color: var(--accent);
+      }
 
-    <!-- Payment method section -->
-    <section class="checkout-section">
+      .delivery-option input[type='radio']:checked ~ .delivery-radio::after,
+      .delivery-option.selected .delivery-radio::after {
+        transform: translate(-50%, -50%) scale(1);
+      }
 
-      <h2>Payment Method</h2>
+      .delivery-info {
+        flex: 1;
+      }
 
-      <!-- Card payment method -->
-      <div class="payment-group">
-        <h3>Card Payment</h3>
+      .delivery-name {
+        font-size: 0.87em;
+        color: var(--text);
+        letter-spacing: 0.04em;
+        margin-bottom: 2px;
+      }
 
-        <label>
-          <input type="radio" name="payment" id="cardPayment" />
-          Visa / Mastercard
-        </label>
+      .delivery-eta {
+        font-size: 0.75em;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+      }
 
-        <!-- Card details form -->
-        <div class="card-details">
+      .delivery-price {
+        font-size: 0.87em;
+        color: var(--accent);
+        letter-spacing: 0.06em;
+        font-weight: 600;
+        white-space: nowrap;
+      }
 
-          <label for="cardName">Name on Card</label>
-          <input
-            type="text"
-            id="cardName"
-            placeholder="Enter name on card"
-          />
+      /* ── PAYMENT OPTIONS ── */
+      .payment-group-title {
+        font-size: 0.73em;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+      }
 
-          <label for="cardNumber">Card Number</label>
-          <input
-            type="text"
-            id="cardNumber"
-            placeholder="1234 5678 9012 3456"
-          />
+      .payment-group + .payment-group {
+        margin-top: 24px;
+      }
 
-          <label for="expiryDate">Expiry Date</label>
-          <input
-            type="text"
-            id="expiryDate"
-            placeholder="MM/YY"
-          />
+      .payment-option {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 0;
+        cursor: pointer;
+      }
 
-          <label for="cvv">CVV</label>
-          <input
-            type="password"
-            id="cvv"
-            placeholder="123"
-          />
+      .payment-option input[type='radio'] {
+        display: none;
+      }
 
+      .payment-radio {
+        width: 18px;
+        height: 18px;
+        border: 1px solid var(--border);
+        border-radius: 50%;
+        flex-shrink: 0;
+        position: relative;
+        transition: border-color 0.2s;
+      }
+
+      .payment-radio::after {
+        content: '';
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: var(--accent);
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        transition: transform 0.2s;
+      }
+
+      .payment-option.selected .payment-radio {
+        border-color: var(--accent);
+      }
+
+      .payment-option.selected .payment-radio::after {
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      .payment-icon {
+        font-size: 1.1em;
+        color: var(--muted);
+        width: 20px;
+        text-align: center;
+      }
+
+      .payment-label {
+        font-size: 0.87em;
+        color: var(--text);
+        letter-spacing: 0.04em;
+      }
+
+      /* ── CARD DETAILS ── */
+      .card-details {
+        margin-top: 16px;
+        padding: 20px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        display: none;
+      }
+
+      .card-details.visible {
+        display: block;
+      }
+
+      .card-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      /* ── ORDER SUMMARY (sticky sidebar) ── */
+      .order-summary {
+        position: sticky;
+        top: 100px;
+      }
+
+      .order-items {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .order-item {
+        display: flex;
+        gap: 14px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--border);
+        align-items: center;
+      }
+
+      .order-item:last-child {
+        border-bottom: none;
+      }
+
+      .order-item-img {
+        width: 56px;
+        height: 56px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65em;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        text-align: center;
+      }
+
+      .order-item-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .order-item-name {
+        font-size: 0.87em;
+        color: var(--text);
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 3px;
+      }
+
+      .order-item-qty {
+        font-size: 0.73em;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+      }
+
+      .order-item-price {
+        font-size: 0.87em;
+        color: var(--text);
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        font-weight: 600;
+      }
+
+      /* ── PRICE BREAKDOWN ── */
+      .price-breakdown {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .price-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .price-label {
+        font-size: 0.8em;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .price-value {
+        font-size: 0.87em;
+        color: var(--text);
+        letter-spacing: 0.04em;
+      }
+
+      .price-divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 8px 0;
+      }
+
+      .price-total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-top: 4px;
+      }
+
+      .price-total-label {
+        font-family: 'Playfair Display', serif;
+        font-size: 16px;
+        color: var(--text);
+      }
+
+      .price-total-value {
+        font-family: 'Playfair Display', serif;
+        font-size: 22px;
+        color: var(--text);
+      }
+
+      /* ── PLACE ORDER BUTTON ── */
+      .btn-place-order {
+        width: 100%;
+        padding: 16px;
+        background: var(--accent);
+        color: var(--surface);
+        border: none;
+        font-family: 'Jost', sans-serif;
+        font-size: 0.8em;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          opacity 0.2s,
+          transform 0.15s;
+        margin-top: 24px;
+      }
+
+      .btn-place-order:hover:not(:disabled) {
+        opacity: 0.85;
+      }
+
+      .btn-place-order:active:not(:disabled) {
+        transform: scale(0.99);
+      }
+
+      .btn-place-order:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .secure-note {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 12px;
+        font-size: 0.73em;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+      }
+
+      /* ── EMPTY CART ── */
+      .empty-cart-note {
+        font-size: 0.87em;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+        padding: 8px 0;
+      }
+
+      /* ── TOAST (reuse theme pattern) ── */
+      .toast {
+        position: fixed;
+        bottom: 32px;
+        left: 50%;
+        transform: translateX(-50%) translateY(12px);
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        color: var(--text);
+        padding: 12px 28px;
+        font-size: 0.87em;
+        letter-spacing: 0.08em;
+        opacity: 0;
+        transition:
+          opacity 0.25s,
+          transform 0.25s;
+        z-index: 999;
+        pointer-events: none;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      /* ── PROGRESS STEPS ── */
+      .checkout-progress {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        margin-bottom: 48px;
+      }
+
+      .progress-step {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.73em;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .progress-step.active {
+        color: var(--accent);
+      }
+
+      .progress-step.done {
+        color: var(--text);
+      }
+
+      .progress-dot {
+        width: 8px;
+        height: 8px;
+        border: 1px solid currentColor;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .progress-step.active .progress-dot {
+        background: var(--accent);
+      }
+
+      .progress-step.done .progress-dot {
+        background: var(--text);
+      }
+
+      .progress-line {
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+        margin: 0 14px;
+        max-width: 48px;
+      }
+    </style>
+  </head>
+
+  <body class="checkout-body">
+    <!-- ── NAVIGATION ── -->
+    <nav class="nav">
+      <div class="logo">GitMart</div>
+      <ul class="nav-links">
+        <li><a href="noir.html">Home</a></li>
+        <li><a href="products.html">Products</a></li>
+        <li><a href="listings.html">Listings</a></li>
+        <li><a href="listing-create.html">Create Listing</a></li>
+      </ul>
+      <div class="nav-right">
+        <a class="icon-btn" id="btn-account" href="login.html" title="Login"
+          ><i class="bi bi-person"></i
+        ></a>
+        <button class="icon-btn" id="btn-wishlist" title="Wishlist">
+          <i class="bi bi-heart"></i>
+        </button>
+        <a class="icon-btn" id="btn-cart" href="checkout.html" title="Cart"
+          ><i class="bi bi-bag"></i
+        ></a>
+        <a class="icon-btn" href="chats.html" title="Chats"><i class="bi bi-chat-left-dots"></i></a>
+        <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
+      </div>
+    </nav>
+
+    <main class="checkout-page">
+      <h1 class="checkout-heading">Checkout</h1>
+      <p class="checkout-sub">Complete your order below</p>
+
+      <!-- Progress indicator -->
+      <div class="checkout-progress">
+        <div class="progress-step done">
+          <span class="progress-dot"></span>
+          Cart
+        </div>
+        <div class="progress-line"></div>
+        <div class="progress-step active">
+          <span class="progress-dot"></span>
+          Details
+        </div>
+        <div class="progress-line"></div>
+        <div class="progress-step">
+          <span class="progress-dot"></span>
+          Confirm
         </div>
       </div>
 
-      <!-- Digital wallet payment methods -->
-      <div class="payment-group">
-        <h3>Digital Wallets</h3>
+      <div class="checkout-grid">
+        <!-- ── LEFT COLUMN ── -->
+        <div class="checkout-left">
+          <!-- Shipping -->
+          <div class="checkout-section">
+            <div class="checkout-section-header">
+              <div class="section-step" id="step-shipping">1</div>
+              <h2 class="checkout-section-title">Shipping Information</h2>
+            </div>
+            <div class="checkout-section-body">
+              <form id="checkoutForm" novalidate>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label" for="fullName">Full Name</label>
+                    <input class="form-input" type="text" id="fullName" placeholder="Jane Doe" />
+                    <span class="field-error" data-error-for="fullName"></span>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="emailAddress">Email Address</label>
+                    <input
+                      class="form-input"
+                      type="email"
+                      id="emailAddress"
+                      placeholder="jane@example.com"
+                    />
+                    <span class="field-error" data-error-for="emailAddress"></span>
+                  </div>
+                </div>
 
-        <label>
-          <input type="radio" name="payment" id="applePay" />
-          Apple Pay
-        </label>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label" for="phoneNumber">Phone Number</label>
+                    <input
+                      class="form-input"
+                      type="tel"
+                      id="phoneNumber"
+                      placeholder="+65 9123 4567"
+                    />
+                    <span class="field-error" data-error-for="phoneNumber"></span>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="postalCode">Postal Code</label>
+                    <input class="form-input" type="text" id="postalCode" placeholder="123456" />
+                    <span class="field-error" data-error-for="postalCode"></span>
+                  </div>
+                </div>
 
-        <label>
-          <input type="radio" name="payment" id="googlePay" />
-          Google Pay
-        </label>
+                <div class="form-group">
+                  <label class="form-label" for="address">Address</label>
+                  <input
+                    class="form-input"
+                    type="text"
+                    id="address"
+                    placeholder="123 Orchard Road"
+                  />
+                  <span class="field-error" data-error-for="address"></span>
+                </div>
 
-        <label>
-          <input type="radio" name="payment" id="grabPay" />
-          GrabPay
-        </label>
+                <div class="form-group">
+                  <label class="form-label" for="unitNumber"
+                    >Unit Number <span style="opacity: 0.5">(optional)</span></label
+                  >
+                  <input class="form-input" type="text" id="unitNumber" placeholder="#12-345" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="deliveryNotes"
+                    >Delivery Notes <span style="opacity: 0.5">(optional)</span></label
+                  >
+                  <textarea
+                    class="form-textarea"
+                    id="deliveryNotes"
+                    placeholder="Leave at door, ring bell twice…"
+                  ></textarea>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Delivery Method -->
+          <div class="checkout-section">
+            <div class="checkout-section-header">
+              <div class="section-step" id="step-delivery">2</div>
+              <h2 class="checkout-section-title">Delivery Method</h2>
+            </div>
+            <div class="checkout-section-body">
+              <div class="delivery-options">
+                <label class="delivery-option selected" id="delivery-standard">
+                  <input type="radio" name="delivery" value="0" checked />
+                  <span class="delivery-radio"></span>
+                  <div class="delivery-info">
+                    <div class="delivery-name">Standard Delivery</div>
+                    <div class="delivery-eta">
+                      3–5 business days &nbsp;·&nbsp; Est. 18 Sep – 20 Sep
+                    </div>
+                  </div>
+                  <span class="delivery-price">FREE</span>
+                </label>
+
+                <label class="delivery-option" id="delivery-express">
+                  <input type="radio" name="delivery" value="9.99" />
+                  <span class="delivery-radio"></span>
+                  <div class="delivery-info">
+                    <div class="delivery-name">Express Delivery</div>
+                    <div class="delivery-eta">
+                      1–2 business days &nbsp;·&nbsp; Est. 16 Sep – 17 Sep
+                    </div>
+                  </div>
+                  <span class="delivery-price">$9.99</span>
+                </label>
+
+                <label class="delivery-option" id="delivery-sameday">
+                  <input type="radio" name="delivery" value="19.99" />
+                  <span class="delivery-radio"></span>
+                  <div class="delivery-info">
+                    <div class="delivery-name">Same Day Delivery</div>
+                    <div class="delivery-eta">Order before 12 pm &nbsp;·&nbsp; Arrives today</div>
+                  </div>
+                  <span class="delivery-price">$19.99</span>
+                </label>
+              </div>
+              <span
+                class="field-error"
+                data-error-for="delivery"
+                style="margin-top: 8px; display: block"
+              ></span>
+            </div>
+          </div>
+
+          <!-- Payment -->
+          <div class="checkout-section">
+            <div class="checkout-section-header">
+              <div class="section-step" id="step-payment">3</div>
+              <h2 class="checkout-section-title">Payment Method</h2>
+            </div>
+            <div class="checkout-section-body">
+              <div class="payment-group">
+                <p class="payment-group-title">Card Payment</p>
+                <label class="payment-option" data-payment="cardPayment">
+                  <input type="radio" name="payment" id="cardPayment" />
+                  <span class="payment-radio"></span>
+                  <i class="bi bi-credit-card payment-icon"></i>
+                  <span class="payment-label">Visa / Mastercard</span>
+                </label>
+
+                <div class="card-details" id="cardDetails">
+                  <div class="form-group">
+                    <label class="form-label" for="cardName">Name on Card</label>
+                    <input class="form-input" type="text" id="cardName" placeholder="Jane Doe" />
+                    <span class="field-error" data-error-for="cardName"></span>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="cardNumber">Card Number</label>
+                    <input
+                      class="form-input"
+                      type="text"
+                      id="cardNumber"
+                      placeholder="1234 5678 9012 3456"
+                      maxlength="19"
+                    />
+                    <span class="field-error" data-error-for="cardNumber"></span>
+                  </div>
+                  <div class="card-row">
+                    <div class="form-group">
+                      <label class="form-label" for="expiryDate">Expiry Date</label>
+                      <input
+                        class="form-input"
+                        type="text"
+                        id="expiryDate"
+                        placeholder="MM/YY"
+                        maxlength="5"
+                      />
+                      <span class="field-error" data-error-for="expiryDate"></span>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="cvv">CVV</label>
+                      <input
+                        class="form-input"
+                        type="password"
+                        id="cvv"
+                        placeholder="•••"
+                        maxlength="4"
+                      />
+                      <span class="field-error" data-error-for="cvv"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="payment-group">
+                <p class="payment-group-title">Digital Wallets</p>
+                <label class="payment-option" data-payment="applePay">
+                  <input type="radio" name="payment" id="applePay" />
+                  <span class="payment-radio"></span>
+                  <i class="bi bi-apple payment-icon"></i>
+                  <span class="payment-label">Apple Pay</span>
+                </label>
+                <label class="payment-option" data-payment="googlePay">
+                  <input type="radio" name="payment" id="googlePay" />
+                  <span class="payment-radio"></span>
+                  <i class="bi bi-google payment-icon"></i>
+                  <span class="payment-label">Google Pay</span>
+                </label>
+                <label class="payment-option" data-payment="grabPay">
+                  <input type="radio" name="payment" id="grabPay" />
+                  <span class="payment-radio"></span>
+                  <i class="bi bi-phone payment-icon"></i>
+                  <span class="payment-label">GrabPay</span>
+                </label>
+              </div>
+
+              <div class="payment-group">
+                <p class="payment-group-title">Local Payment Methods</p>
+                <label class="payment-option" data-payment="payNow">
+                  <input type="radio" name="payment" id="payNow" />
+                  <span class="payment-radio"></span>
+                  <i class="bi bi-qr-code payment-icon"></i>
+                  <span class="payment-label">PayNow</span>
+                </label>
+                <label class="payment-option" data-payment="nets">
+                  <input type="radio" name="payment" id="nets" />
+                  <span class="payment-radio"></span>
+                  <i class="bi bi-bank payment-icon"></i>
+                  <span class="payment-label">NETS</span>
+                </label>
+              </div>
+
+              <span
+                class="field-error"
+                data-error-for="payment"
+                style="margin-top: 12px; display: block"
+              ></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── RIGHT COLUMN: ORDER SUMMARY ── -->
+        <div class="order-summary">
+          <div class="checkout-section">
+            <div class="checkout-section-header">
+              <div class="section-step">
+                <i class="bi bi-bag" style="font-size: 12px"></i>
+              </div>
+              <h2 class="checkout-section-title">Order Summary</h2>
+            </div>
+            <div class="checkout-section-body">
+              <div class="order-items" id="orderItems">
+                <p class="empty-cart-note">Your cart is empty.</p>
+              </div>
+
+              <div class="price-breakdown">
+                <div class="price-row">
+                  <span class="price-label">Subtotal</span>
+                  <span class="price-value" id="subtotalPrice">$0.00</span>
+                </div>
+                <div class="price-row">
+                  <span class="price-label">Delivery</span>
+                  <span class="price-value" id="deliveryFee">FREE</span>
+                </div>
+                <div class="price-row">
+                  <span class="price-label">GST (9%)</span>
+                  <span class="price-value" id="gstPrice">$0.00</span>
+                </div>
+                <hr class="price-divider" />
+                <div class="price-total-row">
+                  <span class="price-total-label">Total</span>
+                  <span class="price-total-value" id="totalPrice">$0.00</span>
+                </div>
+              </div>
+
+              <span
+                class="field-error"
+                data-error-for="cart"
+                style="margin-top: 8px; display: block"
+              ></span>
+
+              <button type="button" id="placeOrderButton" class="btn-place-order">
+                Place Order
+              </button>
+              <div class="secure-note">
+                <i class="bi bi-lock-fill"></i>
+                Secured with 256-bit encryption
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+    </main>
 
-      <!-- Local Singapore payment methods -->
-      <div class="payment-group">
-        <h3>Local Payment Methods</h3>
+    <div class="toast" id="toast"></div>
 
-        <label>
-          <input type="radio" name="payment" id="payNow" />
-          PayNow
-        </label>
+    <script src="../js/api.js"></script>
+    <script src="../js/checkout.js"></script>
+    <script>
+      /* ── Interactive enhancements ── */
 
-        <label>
-          <input type="radio" name="payment" id="nets" />
-          NETS
-        </label>
-      </div>
+      // Delivery option selection
+      document.querySelectorAll('.delivery-option').forEach((option) => {
+        option.addEventListener('click', () => {
+          document
+            .querySelectorAll('.delivery-option')
+            .forEach((o) => o.classList.remove('selected'));
+          option.classList.add('selected');
+          option.querySelector('input[type="radio"]').checked = true;
+          updateTotals();
+        });
+      });
 
-    </section>
+      // Payment option selection + card details toggle
+      document.querySelectorAll('.payment-option').forEach((option) => {
+        option.addEventListener('click', () => {
+          document
+            .querySelectorAll('.payment-option')
+            .forEach((o) => o.classList.remove('selected'));
+          option.classList.add('selected');
+          option.querySelector('input[type="radio"]').checked = true;
 
-    <!-- Order summary section -->
-    <section class="checkout-section">
-      
-      <h2>Order Summary</h2>
+          const cardDetails = document.getElementById('cardDetails');
+          if (option.dataset.payment === 'cardPayment') {
+            cardDetails.classList.add('visible');
+          } else {
+            cardDetails.classList.remove('visible');
+          }
+        });
+      });
 
-      <!-- Order items -->
-      <div class="order-item">
-        <p>Sony WH-1000XM5 Wireless Headphones x1</p>
-        <p>$389.00</p>
-      </div>
+      // Card number formatting
+      const cardNumberInput = document.getElementById('cardNumber');
+      if (cardNumberInput) {
+        cardNumberInput.addEventListener('input', (e) => {
+          let v = e.target.value.replace(/\D/g, '').substring(0, 16);
+          e.target.value = v.replace(/(.{4})/g, '$1 ').trim();
+        });
+      }
 
-      <div class="order-item">
-        <p>Keychron K2 Max Mechanical Keyboard x1</p>
-        <p>$157.25</p>
-      </div>
+      // Expiry formatting
+      const expiryInput = document.getElementById('expiryDate');
+      if (expiryInput) {
+        expiryInput.addEventListener('input', (e) => {
+          let v = e.target.value.replace(/\D/g, '').substring(0, 4);
+          if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2);
+          e.target.value = v;
+        });
+      }
 
-      <div class="order-item">
-        <p>Spigen iPhone 15 Pro Liquid Air Case x2</p>
-        <p>$39.98</p>
-      </div>
+      // Live input validation feedback
+      document.querySelectorAll('.form-input, .form-textarea').forEach((input) => {
+        input.addEventListener('blur', () => {
+          if (input.value.trim()) {
+            input.classList.remove('error');
+          }
+        });
+      });
 
-      <hr />
+      // Pricing update based on delivery selection
+      function updateTotals() {
+        if (window.updateCheckoutTotals) window.updateCheckoutTotals();
+      }
 
-      <!-- Price summary -->
-      <p>Subtotal: $586.23</p>
-      <p id="deliveryFee">Delivery Fee: FREE</p>
-      <p>GST (9%): $52.76</p>
+      // Section step completion indicators
+      function markStepComplete(stepId) {
+        const step = document.getElementById(stepId);
+        if (step) {
+          step.classList.add('complete');
+          step.innerHTML = '<i class="bi bi-check" style="font-size:14px"></i>';
+        }
+      }
 
-      <h3 id="totalPrice">Total: $638.99</h3>
-    </section>
-
-    <!-- Place order button -->
-    <section class="checkout-section">
-      <button type="button" id="placeOrderButton">
-        Place Order
-      </button>
-    </section>
-
-  </main>
-
-  <script src="../js/prefs.js"></script>
-  <script src="../js/api.js"></script>
-  <script src="../js/checkout.js"></script>
-</body>
+      // Toast helper (replicates theme pattern for use before checkout.js loads)
+      function showToast(msg) {
+        const t = document.getElementById('toast');
+        if (!t) return;
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+      }
+    </script>
+  </body>
 </html>
