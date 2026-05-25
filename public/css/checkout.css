@@ -283,6 +283,44 @@ body:has(.checkout-page) {
   overflow-wrap: anywhere;
 }
 
+.order-item-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.order-qty-btn,
+.order-remove-btn {
+  min-width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  transition:
+    border-color 0.2s,
+    color 0.2s,
+    background 0.2s;
+}
+
+.order-qty-btn:hover,
+.order-remove-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.order-remove-btn {
+  padding: 0 10px;
+  font-size: 0.68em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 @media (max-width: 860px) {
   .checkout-page {
     padding: 28px 16px 72px !important;

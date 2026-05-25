@@ -17,6 +17,8 @@ const totalPriceText = document.getElementById('totalPrice');
 let cartItems = [];
 let subtotal = 0;
 let gst = 0;
+let cartStorageKey = 'cart';
+let cartStorageContainer = null;
 let summaryHeightObserver;
 let summaryScrollFrame;
 
@@ -82,7 +84,7 @@ function normalizeCartItem(item) {
   };
 }
 
-function readCartItems() {
+function readCartState() {
   for (const key of CART_STORAGE_KEYS) {
     const raw = localStorage.getItem(key);
     if (!raw) continue;
@@ -90,13 +92,91 @@ function readCartItems() {
     try {
       const parsed = JSON.parse(raw);
       const items = Array.isArray(parsed) ? parsed : parsed.items;
-      if (Array.isArray(items)) return items.map(normalizeCartItem);
+      if (Array.isArray(items)) {
+        return {
+          key,
+          container: Array.isArray(parsed) ? null : parsed,
+          rawItems: items,
+          items: items.map(normalizeCartItem),
+        };
+      }
     } catch {
       localStorage.removeItem(key);
     }
   }
 
-  return [];
+  return {
+    key: 'cart',
+    container: null,
+    rawItems: [],
+    items: [],
+  };
+}
+
+function readCartItems() {
+  const state = readCartState();
+  cartStorageKey = state.key;
+  cartStorageContainer = state.container;
+  return state.items;
+}
+
+function writeCartItems(nextItems) {
+  if (cartStorageContainer) {
+    localStorage.setItem(
+      cartStorageKey,
+      JSON.stringify({
+        ...cartStorageContainer,
+        items: nextItems,
+      }),
+    );
+    return;
+  }
+
+  localStorage.setItem(cartStorageKey, JSON.stringify(nextItems));
+}
+
+function updateCartQuantity(index, nextQuantity) {
+  const state = readCartState();
+  const nextItems = [...state.rawItems];
+  const item = nextItems[index];
+  if (!item) return;
+
+  if (nextQuantity <= 0) {
+    nextItems.splice(index, 1);
+  } else {
+    nextItems[index] = {
+      ...item,
+      quantity: nextQuantity,
+    };
+  }
+
+  cartStorageKey = state.key;
+  cartStorageContainer = state.container;
+  writeCartItems(nextItems);
+  renderOrderSummary();
+}
+
+function formatPhoneNumber(value) {
+  let digits = value.replace(/\D/g, '');
+  if (!digits) return '';
+
+  if (digits.startsWith('65')) {
+    digits = digits.slice(2);
+  }
+
+  digits = digits.slice(0, 8);
+  const firstBlock = digits.slice(0, 4);
+  const secondBlock = digits.slice(4, 8);
+  return ['+65', firstBlock, secondBlock].filter(Boolean).join(' ');
+}
+
+function formatUnitNumber(value) {
+  const digits = value.replace(/\D/g, '').slice(0, 6);
+  if (!digits) return value.startsWith('#') ? '#' : '';
+
+  const floor = digits.slice(0, 2);
+  const unit = digits.slice(2, 6);
+  return digits.length >= 2 ? `#${floor}-${unit}` : `#${floor}`;
 }
 
 function getSelectedDeliveryFee() {
@@ -114,18 +194,34 @@ function renderOrderSummary() {
   if (cartItems.length === 0) {
     orderItemsEl.innerHTML = '<p class="status-text">Your cart is empty.</p>';
   } else {
-    cartItems.forEach((item) => {
+    cartItems.forEach((item, index) => {
       const row = document.createElement('div');
       row.className = 'order-item';
+      row.dataset.cartIndex = String(index);
       row.innerHTML = `
-        <p>${item.name} x${item.quantity}</p>
-        <p>${formatMoney(item.price * item.quantity)}</p>
+        <div class="order-item-info">
+          <p class="order-item-name">${item.name}</p>
+          <div class="order-item-controls" aria-label="${item.name} quantity controls">
+            <button type="button" class="order-qty-btn" data-cart-action="decrease" aria-label="Decrease ${item.name} quantity">
+              <i class="bi bi-dash"></i>
+            </button>
+            <span class="order-item-qty">x${item.quantity}</span>
+            <button type="button" class="order-qty-btn" data-cart-action="increase" aria-label="Increase ${item.name} quantity">
+              <i class="bi bi-plus"></i>
+            </button>
+            <button type="button" class="order-remove-btn" data-cart-action="remove" aria-label="Remove ${item.name}">
+              Remove
+            </button>
+          </div>
+        </div>
+        <p class="order-item-price">${formatMoney(item.price * item.quantity)}</p>
       `;
       orderItemsEl.appendChild(row);
     });
   }
 
   updateCheckoutTotals();
+  placeOrderButton.disabled = cartItems.length === 0;
 }
 
 function updateCheckoutTotals() {
@@ -234,14 +330,23 @@ function validateCheckout() {
   }
 
   const phoneNumber = getFieldValue('phoneNumber');
-  if (phoneNumber && !/^[0-9]+$/.test(phoneNumber)) {
-    setFieldError('phoneNumber', 'Phone number must contain numbers only.');
+  if (phoneNumber && !/^\+65\s\d{4}\s\d{4}$/.test(phoneNumber)) {
+    setFieldError('phoneNumber', 'Use this format: +65 9086 2744.');
     isValid = false;
   }
 
   const postalCode = getFieldValue('postalCode');
   if (postalCode && !/^[0-9]{6}$/.test(postalCode)) {
     setFieldError('postalCode', 'Postal code must be exactly 6 digits.');
+    isValid = false;
+  }
+
+  const unitNumber = getFieldValue('unitNumber');
+  if (!unitNumber.replace(/\D/g, '')) {
+    setFieldError('unitNumber', 'Unit number is required.');
+    isValid = false;
+  } else if (!/^#\d{2}-\d{2,4}$/.test(unitNumber)) {
+    setFieldError('unitNumber', 'Use this format: #12-345.');
     isValid = false;
   }
 
@@ -340,7 +445,18 @@ async function handlePlaceOrder() {
     const data = await response.json();
 
     if (!response.ok) {
-      setFieldError('cart', data.message || data.error || 'Failed to place order.');
+      const errorMessage = data.message || data.error || 'Failed to place order.';
+
+      if (/phone/i.test(errorMessage)) {
+        setFieldError('phoneNumber', errorMessage);
+      } else if (/unit/i.test(errorMessage)) {
+        setFieldError('unitNumber', errorMessage);
+      } else if (/postal/i.test(errorMessage)) {
+        setFieldError('postalCode', errorMessage);
+      } else {
+        setFieldError('cart', errorMessage);
+      }
+
       return;
     }
 
@@ -375,6 +491,43 @@ function initCheckout() {
   });
 
   placeOrderButton.addEventListener('click', handlePlaceOrder);
+
+  orderItemsEl.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-cart-action]');
+    if (!button) return;
+
+    const row = button.closest('.order-item');
+    const index = Number(row?.dataset.cartIndex);
+    const item = cartItems[index];
+    if (!item) return;
+
+    if (button.dataset.cartAction === 'increase') {
+      updateCartQuantity(index, item.quantity + 1);
+    }
+
+    if (button.dataset.cartAction === 'decrease') {
+      updateCartQuantity(index, item.quantity - 1);
+    }
+
+    if (button.dataset.cartAction === 'remove') {
+      updateCartQuantity(index, 0);
+    }
+  });
+
+  const phoneInput = document.getElementById('phoneNumber');
+  phoneInput?.addEventListener('input', () => {
+    phoneInput.value = formatPhoneNumber(phoneInput.value);
+    setFieldError('phoneNumber', '');
+  });
+
+  const unitInput = document.getElementById('unitNumber');
+  unitInput?.addEventListener('focus', () => {
+    if (!unitInput.value) unitInput.value = '#';
+  });
+  unitInput?.addEventListener('input', () => {
+    unitInput.value = formatUnitNumber(unitInput.value);
+    setFieldError('unitNumber', '');
+  });
 }
 
 window.updateCheckoutTotals = updateCheckoutTotals;

@@ -166,6 +166,20 @@
   margin: 0.7rem 0;
 }
 
+.profile-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.profile-actions .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0;
+  text-decoration: none;
+}
+
 /* ── Inline field validation ── */
 
 .form-group input.input-error {

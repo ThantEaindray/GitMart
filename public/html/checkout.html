@@ -414,6 +414,44 @@
         letter-spacing: 0.08em;
       }
 
+      .order-item-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .order-qty-btn,
+      .order-remove-btn {
+        min-width: 28px;
+        height: 28px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-family: 'Jost', sans-serif;
+        transition:
+          border-color 0.2s,
+          color 0.2s,
+          background 0.2s;
+      }
+
+      .order-qty-btn:hover,
+      .order-remove-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .order-remove-btn {
+        padding: 0 10px;
+        font-size: 0.68em;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
       .order-item-price {
         font-size: 0.87em;
         color: var(--text);
@@ -685,6 +723,7 @@
                       type="tel"
                       id="phoneNumber"
                       placeholder="+65 9123 4567"
+                      maxlength="13"
                     />
                     <span class="field-error" data-error-for="phoneNumber"></span>
                   </div>
@@ -707,10 +746,15 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="unitNumber"
-                    >Unit Number <span style="opacity: 0.5">(optional)</span></label
-                  >
-                  <input class="form-input" type="text" id="unitNumber" placeholder="#12-345" />
+                  <label class="form-label" for="unitNumber">Unit Number</label>
+                  <input
+                    class="form-input"
+                    type="text"
+                    id="unitNumber"
+                    placeholder="#12-345"
+                    maxlength="8"
+                  />
+                  <span class="field-error" data-error-for="unitNumber"></span>
                 </div>
 
                 <div class="form-group">

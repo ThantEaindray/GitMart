@@ -8,8 +8,9 @@ const allowedStatuses = ['Pending', 'Processing', 'Delivered', 'Cancelled'];
 
 // Backend validation patterns
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phonePattern = /^[0-9]+$/;
+const phonePattern = /^\+65\s\d{4}\s\d{4}$/;
 const postalCodePattern = /^[0-9]{6}$/;
+const unitNumberPattern = /^#\d{2}-\d{2,4}$/;
 
 router.post('/', (req, res, next) => {
   const orderData = req.body;
@@ -19,6 +20,7 @@ router.post('/', (req, res, next) => {
     !orderData.emailAddress ||
     !orderData.phoneNumber ||
     !orderData.address ||
+    !orderData.unitNumber ||
     !orderData.postalCode ||
     !orderData.deliveryMethod ||
     !orderData.paymentMethod
@@ -36,13 +38,19 @@ router.post('/', (req, res, next) => {
 
   if (!phonePattern.test(orderData.phoneNumber)) {
     return res.status(400).json({
-      message: 'Phone number must contain numbers only.',
+      message: 'Use this phone format: +65 9086 2744.',
     });
   }
 
   if (!postalCodePattern.test(orderData.postalCode)) {
     return res.status(400).json({
       message: 'Postal code must be exactly 6 digits.',
+    });
+  }
+
+  if (!unitNumberPattern.test(orderData.unitNumber)) {
+    return res.status(400).json({
+      message: 'Use this unit number format: #12-345.',
     });
   }
 
