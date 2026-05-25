@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitMart — Orders</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="../css/noir.css" />
+  <link rel="stylesheet" href="../css/auth.css" />
+  <script>
+    var t = localStorage.getItem('theme');
+    var f = localStorage.getItem('font');
+    var m = localStorage.getItem('motion');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+    if (f) document.documentElement.setAttribute('data-font', f);
+    if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
+  </script>
+</head>
+
+<body>
+  <nav class="nav">
+    <div class="logo">GitMart</div>
+
+    <ul class="nav-links">
+      <li><a href="noir.html">Home</a></li>
+      <li><a href="products.html">Products</a></li>
+      <li><a href="listings.html">Listings</a></li>
+      <li><a href="listing-create.html">Create Listing</a></li>
+    </ul>
+
+    <div class="nav-right">
+      <a class="icon-btn" id="btn-account" href="login.html" title="Login"><i class="bi bi-person"></i></a>
+      <button class="icon-btn" id="btn-wishlist" title="Wishlist"><i class="bi bi-heart"></i></button>
+      <a class="icon-btn" href="checkout.html" title="Cart"><i class="bi bi-bag"></i></a>
+      <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+
+  <main class="checkout-container">
+
+    <h1>Order History</h1>
+
+    <section class="checkout-section">
+      <h2>Submitted Orders</h2>
+
+      <div id="ordersList">
+        <p>Loading orders...</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="../js/prefs.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/orders.js"></script>
+</body>
+</html>

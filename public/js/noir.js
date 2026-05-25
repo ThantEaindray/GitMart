@@ -1,51 +1,55 @@
-function renderStars(rating) {
-  const filled = Math.round(rating ?? 0);
-  const full = '<i class="bi bi-star-fill"></i>';
-  const empty = '<i class="bi bi-star"></i>';
-  return full.repeat(filled) + empty.repeat(5 - filled);
+function parseResponse(response) {
+  return response.json().then(function (data) {
+    return { status: response.status, data };
+  });
+}
+
+function onListingClick() {
+  window.location.href = 'listing.html?id=' + this.dataset.id;
+}
+
+function createFeaturedCard(listing) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.id = listing.id;
+
+  card.innerHTML =
+    '<div class="card-img"><i class="bi bi-tag" style="font-size:2rem;"></i></div>' +
+    '<div class="card-body">' +
+    '<div class="card-cat">' + (listing.category || 'Others') + '</div>' +
+    '<div class="card-name">' + listing.title + '</div>' +
+    '<div class="card-footer">' +
+    '<span class="card-price" data-price="' + listing.price + '">' + formatPrice(Number(listing.price)) + '</span>' +
+    '</div>' +
+    '</div>';
+
+  card.addEventListener('click', onListingClick);
+  return card;
+}
+
+function renderFeatured(result) {
+  const grid = document.getElementById('products-grid');
+  grid.innerHTML = '';
+
+  if (result.status !== 200 || !Array.isArray(result.data) || result.data.length === 0) {
+    grid.innerHTML = '<p class="status-text">No listings yet. <a href="listing-create.html" style="color:var(--accent);">Be the first to list!</a></p>';
+    return;
+  }
+
+  result.data.slice(0, 4).forEach(function (listing) {
+    grid.appendChild(createFeaturedCard(listing));
+  });
+}
+
+function onFeaturedError() {
+  const grid = document.getElementById('products-grid');
+  grid.innerHTML = '<p class="status-text">Failed to load listings.</p>';
 }
 
 function loadFeatured() {
-  const grid = document.getElementById('products-grid');
-
-  getProducts()
-    .then((products) => {
-      grid.innerHTML = '';
-      if (products.length === 0) {
-        grid.innerHTML = '<p class="status-text">No products found.</p>';
-        return;
-      }
-      products.forEach((p) => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <div class="card-img">${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" loading="lazy" />` : `<i class="bi bi-${p.icon ?? 'box-seam'}"></i>`}</div>
-          <div class="card-body">
-            <div class="card-cat">${p.category}</div>
-            <div class="card-name">${p.name}</div>
-            <div class="card-footer">
-              <span class="card-price" data-price="${p.price}">${formatPrice(p.price)}</span>
-              <span class="card-rating">
-                <span class="stars">${renderStars(p.rating)}</span>
-                (${p.reviewCount ?? 0})
-              </span>
-            </div>
-          </div>
-        `;
-        card.addEventListener('click', () => {
-          window.location.href = `product.html?id=${p.id}`;
-        });
-        grid.appendChild(card);
-      });
-    })
-    .catch((err) => {
-      console.error('Could not load products:', err);
-      grid.innerHTML = '<p class="status-text">Failed to load products. Please try again later.</p>';
-    });
+  fetch('/api/listings').then(parseResponse).then(renderFeatured).catch(onFeaturedError);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('btn-cart')?.addEventListener('click', () => console.log('Cart — coming soon'));
-  document.getElementById('btn-wishlist')?.addEventListener('click', () => console.log('Wishlist — coming soon'));
+document.addEventListener('DOMContentLoaded', function () {
   loadFeatured();
 });

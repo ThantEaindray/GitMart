@@ -8,6 +8,12 @@ const somethingRouter = require('./routers/Something.router');
 const personRouter = require('./routers/Person.router');
 const productRouter = require('./routers/product.router');
 
+// Import checkout order routes.
+// This handles backend checkout API routes such as:
+// POST /orders → create a new order
+// GET  /orders → retrieve all orders
+const orderRouter = require('./routers/orderRouter');
+
 // Import user authentication routes
 // This handles backend API routes such as:
 // POST /api/register
@@ -23,7 +29,7 @@ const app = express();
 // Parse incoming JSON request bodies.
 // This is needed before API routes so req.body can read JSON data
 // from Postman or frontend fetch requests.
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
 // Serve static files (HTML, CSS, JS, images) from the 'public' folder.
@@ -37,6 +43,13 @@ app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.use('/somethings', somethingRouter);
 app.use('/persons', personRouter);
 app.use('/products', productRouter);
+
+// Checkout order API routes.
+// All routes inside orderRouter.js will start with /orders.
+// Example:
+// router.post('/') becomes POST /orders
+// router.get('/') becomes GET /orders
+app.use('/orders', orderRouter);
 
 // User authentication API routes.
 // All routes inside User.router.js will start with /api.
