@@ -1,5 +1,7 @@
 // ── TOAST ─────────────────────────────────────────────────────────────────
 
+const { login } = require("../../src/controllers/User.controller");
+
 function showToast(message) {
   const toast = document.getElementById('toast');
   if (!toast) return;
@@ -27,14 +29,6 @@ function errorView(message) {
 
 // ── LISTING DETAIL ────────────────────────────────────────────────────────
 
-function onContactClick() {
-  if (!localStorage.getItem('token')) {
-    showToast('You must be logged in to contact a seller.');
-    return;
-  }
-  showToast('Chat coming soon.');
-}
-
 function renderListing(listing) {
   const section = document.getElementById('listing-detail');
   document.title = 'GitMart — ' + listing.title;
@@ -55,7 +49,7 @@ function renderListing(listing) {
     '<h1 class="product-name">' + listing.title + '</h1>' +
     '<div class="product-price" data-price="' + listing.price + '">' + formatPrice(Number(listing.price)) + '</div>' +
     '<p class="product-description">' + listing.description + '</p>' +
-    '<div class="product-actions"><button class="btn-primary" id="btn-contact">Contact Seller</button></div>' +
+    '<div class="product-actions"><button class="btn-primary" id="btn-contact" onclick="createChat('+ listing.owner+')">Contact Seller</button></div>' +
     '</div>';
 
   document.getElementById('btn-contact').addEventListener('click', onContactClick);
@@ -89,6 +83,34 @@ function loadListing() {
   }
 
   fetch('/api/listings/' + id).then(parseResponse).then(onListingLoaded).catch(onListingError);
+}
+
+function createChat(uId) {
+//ok so we wanna just make a fetchmethod call to the create chat endpoint easy sneesy
+  const token = localStorage.getItem(token)
+  //redirect to the login page if the user dosent have a token already
+  if (!token) {
+    window.location.href = '/login.html'
+  }
+  //format the data into an object for the req to work
+  const data = {
+    id:uId
+  }
+  //now we can do the actual calling the chats part how fun we get to keep at it with our project always something new to do oh joy
+  fetchMethod(`/api/chats/new`, (stat, data) => {
+    if (stat == 500) {
+      errorView("An unknown issue occured while trying to create a chat, please try again later")
+      return
+    }
+    //then if the token is invalid
+    if (stat == 401) {
+      return window.location.href="/login.html"
+    }
+    //and then we need to redirect to the chats page when the chat is actually made or if one already exists
+    if (stat == 201 || stat == 409){
+      window.location.href="/chats.html"
+    }
+  }, "POST", data, token)
 }
 
 document.addEventListener('DOMContentLoaded', loadListing);
