@@ -70,6 +70,7 @@ module.exports.register = (req, res, next) => {
 };
 
 module.exports.login = (req, res, next) => {
+  console.log('login')
   if (req.body.username === undefined || req.body.password === undefined) {
     return res.status(400).json({ message: 'Username or password is missing.' });
   }
@@ -77,6 +78,7 @@ module.exports.login = (req, res, next) => {
   const data = { username: req.body.username };
 
   const callback = (error, result) => {
+    console.log('callback')
     if (error) {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
@@ -258,3 +260,24 @@ module.exports.getCurrentUser = (req, res) => {
 
   model.getUserById(data, callback);
 };
+
+//this function is for the chats but it only really calls the users
+// get the names & pfps of every user who has an open chat with the open user (array of ids)
+module.exports.namesPictures = (req, res, next) => {
+  const data = {
+    ids : res.locals.toLoad
+  }
+  res.locals.namesImgs=new Array
+  const callback = (err, results, fields) => {
+    console.log(results.rows[0])
+    if (err) {
+      console.error("problem getting chat user info", err)
+      return res.status(500).json(err)
+    }
+    res.locals.namesImgs.push(results.rows)
+    next()
+  }
+  data.ids.forEach((e) => {
+      model.namesPictures(e,callback)
+  })
+}
