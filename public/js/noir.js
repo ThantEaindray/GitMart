@@ -1,3 +1,5 @@
+/* global formatPrice */
+
 function parseResponse(response) {
   return response.json().then(function (data) {
     return { status: response.status, data };
@@ -16,10 +18,18 @@ function createFeaturedCard(listing) {
   card.innerHTML =
     '<div class="card-img"><i class="bi bi-tag" style="font-size:2rem;"></i></div>' +
     '<div class="card-body">' +
-    '<div class="card-cat">' + (listing.category || 'Others') + '</div>' +
-    '<div class="card-name">' + listing.title + '</div>' +
+    '<div class="card-cat">' +
+    (listing.category || 'Others') +
+    '</div>' +
+    '<div class="card-name">' +
+    listing.title +
+    '</div>' +
     '<div class="card-footer">' +
-    '<span class="card-price" data-price="' + listing.price + '">' + formatPrice(Number(listing.price)) + '</span>' +
+    '<span class="card-price" data-price="' +
+    listing.price +
+    '">' +
+    formatPrice(Number(listing.price)) +
+    '</span>' +
     '</div>' +
     '</div>';
 
@@ -32,7 +42,8 @@ function renderFeatured(result) {
   grid.innerHTML = '';
 
   if (result.status !== 200 || !Array.isArray(result.data) || result.data.length === 0) {
-    grid.innerHTML = '<p class="status-text">No listings yet. <a href="listing-create.html" style="color:var(--accent);">Be the first to list!</a></p>';
+    grid.innerHTML =
+      '<p class="status-text">No listings yet. <a href="listing-create.html" style="color:var(--accent);">Be the first to list!</a></p>';
     return;
   }
 
