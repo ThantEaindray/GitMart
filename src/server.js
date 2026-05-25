@@ -18,7 +18,8 @@ app.listen(PORT, () => {
 //so from what i understand app is basically just express but renamed
 // this is the scary part everyone pray i dont break the entire server
 const { WebSocketServer } = require('ws')
-const webS= new WebSocketServer({port:443})
+const WS_PORT = process.env.WS_PORT || 443;
+const webS = new WebSocketServer({ port: WS_PORT })
 
 //now we tell it what to do upon a new connection
 webS.on('connection', ws => {
