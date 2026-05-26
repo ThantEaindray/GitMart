@@ -1,3 +1,5 @@
+var uId = localStorage.getItem('loggedInUserId');
+
 function loadChat(data) {
   document.getElementById('messages').innerHTML = '';
   data.forEach(function (e) {
@@ -54,19 +56,18 @@ document.addEventListener("DOMContentLoaded", () => {
   //so first things first we need to do the most basic of calling the api to get the users chats to load in, first things first\
   //check for a logged in user
   const token = localStorage.getItem('token')
-  const uId = localStorage.getItem('loggedInUserId')
   if (!token) {
-    wondow.location.href = "./login.html"
+    window.location.href = "./login.html"
     return
   }
 
-  document.getElementById('input-form').addEventListener('submit', () => {
+  document.getElementById('input-form').addEventListener('submit', (event) => {
     //ok so we need to figure out how the actual sending a message part goes now which should in theory be easy enough
-    sendTxt(document.getElementById('message').value)
     event.preventDefault()
+    sendTxt(document.getElementById('message').value)
   })
 
-  
+
   //its by no means my finest work but itll do the trick
   //now we need to make the part where it actually calls the api :pensive:
   fetchMethod("/api/chats", (stat, data) => {
@@ -74,8 +75,8 @@ document.addEventListener("DOMContentLoaded", () => {
       renderChats(data)
     } else if (stat == 401) {
       window.location.href = ('./login.html')
+      console.error("problem loading chat list")
     }
-    console.error("problem loading chat list")
   }, "GET", null, token)
   //and now we wanna make the part where it loads a specific chat based on what someone presses
 

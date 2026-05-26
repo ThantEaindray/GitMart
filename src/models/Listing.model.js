@@ -103,6 +103,41 @@ module.exports.updateListing = (data, callback) => {
   });
 };
 
+// Aggregate stats for one seller's listings
+module.exports.getSellerStats = (data, callback) => {
+  const SQLSTATEMENT = `
+    SELECT
+      COUNT(*)                                                 AS total,
+      COUNT(*) FILTER (WHERE NOT "isSold" AND NOT "isClosed") AS active,
+      COUNT(*) FILTER (WHERE "isSold")                        AS sold,
+      COUNT(*) FILTER (WHERE "isClosed")                      AS closed,
+      ROUND(AVG(price)::numeric, 2)                           AS avg_price,
+      MIN(price)                                              AS min_price,
+      MAX(price)                                              AS max_price
+    FROM listings
+    WHERE owner_id = $1
+  `;
+  pool.query(SQLSTATEMENT, [data.owner_id], (error, result) => {
+    if (error) return callback(error, null);
+    callback(null, result.rows[0]);
+  });
+};
+
+// Count of listings per category for one seller
+module.exports.getSellerCategoryBreakdown = (data, callback) => {
+  const SQLSTATEMENT = `
+    SELECT category, COUNT(*) AS count
+    FROM listings
+    WHERE owner_id = $1
+    GROUP BY category
+    ORDER BY count DESC
+  `;
+  pool.query(SQLSTATEMENT, [data.owner_id], (error, result) => {
+    if (error) return callback(error, null);
+    callback(null, result.rows);
+  });
+};
+
 // Delete listing owned by logged-in user
 module.exports.deleteListing = (data, callback) => {
   const SQLSTATEMENT = `

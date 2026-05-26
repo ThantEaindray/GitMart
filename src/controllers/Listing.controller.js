@@ -42,6 +42,32 @@ module.exports.analyseImage = function (req, res) {
     .catch(onError);
 };
 
+// GET /api/listings/dashboard
+module.exports.loadSellerStats = (req, res, next) => {
+  const data = { owner_id: res.locals.userId };
+  model.getSellerStats(data, function (error, stats) {
+    if (error) return res.status(500).json({ message: 'Internal server error' });
+    res.locals.dashStats = stats;
+    next();
+  });
+};
+
+module.exports.loadSellerCategoryBreakdown = (req, res, next) => {
+  const data = { owner_id: res.locals.userId };
+  model.getSellerCategoryBreakdown(data, function (error, categories) {
+    if (error) return res.status(500).json({ message: 'Internal server error' });
+    res.locals.dashCategories = categories;
+    next();
+  });
+};
+
+module.exports.sendDashboard = (req, res) => {
+  return res.status(200).json({
+    stats: res.locals.dashStats,
+    categories: res.locals.dashCategories,
+  });
+};
+
 // GET /api/listings/category/:category
 module.exports.getListingsByCategory = (req, res) => {
   const data = { category: req.params.category };
