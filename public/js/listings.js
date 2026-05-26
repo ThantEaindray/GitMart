@@ -61,6 +61,148 @@ function parseResponse(response) {
   });
 }
 
+let allListings = [];
+let currentListingFilter = 'all';
+
+function getCurrentUserId() {
+  return Number(
+    localStorage.getItem('loggedInUserId') ||
+    localStorage.getItem('userId')
+  );
+}
+
+function isOwner(listing) {
+  return Number(listing.owner_id) === getCurrentUserId();
+}
+
+function createListingFilterBar() {
+  const listingsGrid = document.getElementById('listingsGrid');
+  if (!listingsGrid) return;
+
+  const existing = document.getElementById('listingFilterBar');
+  if (existing) return;
+
+  const filterBar = document.createElement('div');
+  filterBar.id = 'listingFilterBar';
+  filterBar.className = 'listing-filter-bar';
+  filterBar.innerHTML = `
+    <button class="btn-primary" id="btnAllListings">All Listings</button>
+    <button class="btn-primary" id="btnMyListings">My Listings</button>
+  `;
+
+  listingsGrid.parentElement.insertBefore(filterBar, listingsGrid);
+
+  document.getElementById('btnAllListings').addEventListener('click', function () {
+    currentListingFilter = 'all';
+    renderListingCards(allListings);
+  });
+
+  document.getElementById('btnMyListings').addEventListener('click', function () {
+    if (!localStorage.getItem('token')) {
+      showToast('Please log in to view your listings.');
+      return;
+    }
+
+    currentListingFilter = 'mine';
+    renderListingCards(allListings);
+  });
+}
+
+function renderListingCards(listings) {
+  const listingsGrid = document.getElementById('listingsGrid');
+  listingsGrid.innerHTML = '';
+
+  let displayListings = listings;
+
+  if (currentListingFilter === 'mine') {
+    displayListings = listings.filter(isOwner);
+  }
+
+  if (!Array.isArray(displayListings) || displayListings.length === 0) {
+    listingsGrid.innerHTML =
+      currentListingFilter === 'mine'
+        ? '<p class="status-text">You have not created any listings yet.</p>'
+        : '<p class="status-text">No listings available yet.</p>';
+    return;
+  }
+
+  displayListings.forEach(function (listing) {
+    listingsGrid.appendChild(createListingCard(listing));
+  });
+}
+
+function openEditListingPrompt(listing) {
+  if (!localStorage.getItem('token')) {
+    showToast('Please log in to edit your listing.');
+    return;
+  }
+
+  const newTitle = prompt('Update title:', listing.title);
+  if (newTitle === null) return;
+
+  const newDescription = prompt('Update description:', listing.description);
+  if (newDescription === null) return;
+
+  const newPrice = prompt('Update price:', listing.price);
+  if (newPrice === null) return;
+
+  if (!newTitle.trim() || !newDescription.trim() || Number(newPrice) <= 0) {
+    showWarning('Title, description and valid price are required.');
+    return;
+  }
+
+  authFetch('/api/listings/' + listing.id, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      title: newTitle.trim(),
+      description: newDescription.trim(),
+      price: Number(newPrice),
+    }),
+  })
+    .then(parseResponse)
+    .then(function (result) {
+      if (result.status !== 200) {
+        showWarning(result.data.message || 'Failed to update listing.');
+        return;
+      }
+
+      showToast('Listing updated successfully.');
+      loadAllListings();
+    })
+    .catch(function () {
+      showWarning('Something went wrong while updating listing.');
+    });
+}
+
+function deleteListing(listing) {
+  if (!localStorage.getItem('token')) {
+    showToast('Please log in to delete your listing.');
+    return;
+  }
+
+  const confirmed = confirm('Are you sure you want to delete this listing?');
+
+  if (!confirmed) {
+    return;
+  }
+
+  authFetch('/api/listings/' + listing.id, {
+    method: 'DELETE',
+  })
+    .then(parseResponse)
+    .then(function (result) {
+      if (result.status !== 200) {
+        showWarning(result.data.message || 'Failed to delete listing.');
+        return;
+      }
+
+      showToast('Listing deleted successfully.');
+      loadAllListings();
+    })
+    .catch(function () {
+      showWarning('Something went wrong while deleting listing.');
+    });
+}
 // ── LISTING CARD ──────────────────────────────────────────────────────────
 
 function goToListing() {
@@ -80,6 +222,15 @@ function createListingCard(listing) {
     day: 'numeric',
   });
 
+  const ownerControls = isOwner(listing)
+    ? `
+      <div class="owner-actions">
+        <button class="btn-primary btn-edit-listing" data-id="${listing.id}">Edit</button>
+        <button class="btn-secondary btn-delete-listing" data-id="${listing.id}">Delete</button>
+      </div>
+    `
+    : '';
+
   card.innerHTML = `
     <div class="card-img">
       <i class="bi bi-tag" style="font-size:2.5rem;"></i>
@@ -91,10 +242,28 @@ function createListingCard(listing) {
       <div class="card-footer">
         <span class="card-price" data-price="${listing.price}">${formatPrice(Number(listing.price))}</span>
       </div>
+      ${ownerControls}
     </div>
   `;
 
   card.addEventListener('click', goToListing);
+
+  const editBtn = card.querySelector('.btn-edit-listing');
+  if (editBtn) {
+    editBtn.addEventListener('click', function (event) {
+      event.stopPropagation();
+      openEditListingPrompt(listing);
+    });
+  }
+
+  const deleteBtn = card.querySelector('.btn-delete-listing');
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', function (event) {
+      event.stopPropagation();
+      deleteListing(listing);
+    });
+  }
+
   return card;
 }
 
@@ -109,14 +278,9 @@ function renderListings(result) {
     return;
   }
 
-  if (!Array.isArray(result.data) || result.data.length === 0) {
-    listingsGrid.innerHTML = '<p class="status-text">No listings available yet.</p>';
-    return;
-  }
-
-  result.data.forEach(function (listing) {
-    listingsGrid.appendChild(createListingCard(listing));
-  });
+  allListings = result.data;
+  createListingFilterBar();
+  renderListingCards(allListings);
 }
 
 function onListingsError() {
@@ -125,16 +289,14 @@ function onListingsError() {
   showWarning('Something went wrong while loading listings.');
 }
 
-function initListingsPage() {
-  const listingsGrid = document.getElementById('listingsGrid');
-  if (!listingsGrid) return;
-
+function loadAllListings() {
   const params = new URLSearchParams(window.location.search);
   const category = params.get('category');
 
   if (category) {
     const title = document.querySelector('.section-title');
     if (title) title.textContent = category + ' Listings';
+
     fetch('/api/listings/category/' + encodeURIComponent(category))
       .then(parseResponse)
       .then(renderListings)
@@ -142,6 +304,28 @@ function initListingsPage() {
   } else {
     fetch('/api/listings').then(parseResponse).then(renderListings).catch(onListingsError);
   }
+} function loadAllListings() {
+  const params = new URLSearchParams(window.location.search);
+  const category = params.get('category');
+
+  if (category) {
+    const title = document.querySelector('.section-title');
+    if (title) title.textContent = category + ' Listings';
+
+    fetch('/api/listings/category/' + encodeURIComponent(category))
+      .then(parseResponse)
+      .then(renderListings)
+      .catch(onListingsError);
+  } else {
+    fetch('/api/listings').then(parseResponse).then(renderListings).catch(onListingsError);
+  }
+}
+
+function initListingsPage() {
+  const listingsGrid = document.getElementById('listingsGrid');
+  if (!listingsGrid) return;
+
+  loadAllListings();
 }
 
 // ── CREATE LISTING PAGE ───────────────────────────────────────────────────
