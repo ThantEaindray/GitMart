@@ -90,12 +90,58 @@ function createListingCard(listing) {
       <p style="font-size:0.82em;color:var(--muted);margin:6px 0 10px;line-height:1.5;">${listing.description}</p>
       <div class="card-footer">
         <span class="card-price" data-price="${listing.price}">${formatPrice(Number(listing.price))}</span>
+        ${listing.view_count > 0 ? `<span style="font-size:0.78rem;color:var(--muted);"><i class="bi bi-eye"></i> ${listing.view_count}</span>` : ''}
       </div>
     </div>
   `;
 
   card.addEventListener('click', goToListing);
   return card;
+}
+
+// ── SEARCH + FILTER ───────────────────────────────────────────────────────
+
+function debounce(fn, delay) {
+  var timer;
+  return function () { clearTimeout(timer); timer = setTimeout(fn, delay); };
+}
+
+function buildSearchUrl() {
+  var search   = (document.getElementById('search-input') || {}).value || '';
+  var minPrice = (document.getElementById('min-price')    || {}).value || '';
+  var maxPrice = (document.getElementById('max-price')    || {}).value || '';
+  var sort     = (document.getElementById('sort-select')  || {}).value || 'newest';
+  var category = new URLSearchParams(window.location.search).get('category') || '';
+
+  var params = new URLSearchParams();
+  if (search.trim()) params.set('search', search.trim());
+  if (minPrice)      params.set('minPrice', minPrice);
+  if (maxPrice)      params.set('maxPrice', maxPrice);
+  params.set('sort', sort);
+  if (category)      params.set('category', category);
+
+  return '/api/listings/search?' + params.toString();
+}
+
+function fetchListings() {
+  fetch(buildSearchUrl()).then(parseResponse).then(renderListings).catch(onListingsError);
+}
+
+// ── MOST VIEWED ───────────────────────────────────────────────────────────
+
+function renderMostViewed(result) {
+  var section = document.getElementById('most-viewed-section');
+  var grid    = document.getElementById('mostViewedGrid');
+  if (!grid) return;
+
+  if (result.status !== 200 || !result.data || result.data.length === 0) {
+    if (section) section.style.display = 'none';
+    return;
+  }
+
+  result.data.forEach(function (listing) {
+    grid.appendChild(createListingCard(listing));
+  });
 }
 
 // ── BROWSE LISTINGS PAGE ──────────────────────────────────────────────────
@@ -126,22 +172,34 @@ function onListingsError() {
 }
 
 function initListingsPage() {
-  const listingsGrid = document.getElementById('listingsGrid');
+  var listingsGrid = document.getElementById('listingsGrid');
   if (!listingsGrid) return;
 
-  const params = new URLSearchParams(window.location.search);
-  const category = params.get('category');
-
+  var category = new URLSearchParams(window.location.search).get('category');
   if (category) {
-    const title = document.querySelector('.section-title');
+    var title = document.querySelector('.section-title');
     if (title) title.textContent = category + ' Listings';
-    fetch('/api/listings/category/' + encodeURIComponent(category))
-      .then(parseResponse)
-      .then(renderListings)
-      .catch(onListingsError);
-  } else {
-    fetch('/api/listings').then(parseResponse).then(renderListings).catch(onListingsError);
   }
+
+  var searchInput = document.getElementById('search-input');
+  var minPrice    = document.getElementById('min-price');
+  var maxPrice    = document.getElementById('max-price');
+  var sortSelect  = document.getElementById('sort-select');
+
+  if (searchInput) searchInput.addEventListener('input', debounce(fetchListings, 300));
+  if (minPrice)    minPrice.addEventListener('input',   debounce(fetchListings, 400));
+  if (maxPrice)    maxPrice.addEventListener('input',   debounce(fetchListings, 400));
+  if (sortSelect)  sortSelect.addEventListener('change', fetchListings);
+
+  fetchListings();
+
+  fetch('/api/listings/most-viewed')
+    .then(parseResponse)
+    .then(renderMostViewed)
+    .catch(function () {
+      var s = document.getElementById('most-viewed-section');
+      if (s) s.style.display = 'none';
+    });
 }
 
 // ── CREATE LISTING PAGE ───────────────────────────────────────────────────

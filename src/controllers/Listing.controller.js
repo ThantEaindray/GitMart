@@ -42,6 +42,39 @@ module.exports.analyseImage = function (req, res) {
     .catch(onError);
 };
 
+// GET /api/listings/most-viewed
+module.exports.getMostViewed = (req, res) => {
+  model.getMostViewed(function (error, results) {
+    if (error) return res.status(500).json({ message: 'Internal server error' });
+    return res.status(200).json(results);
+  });
+};
+
+// GET /api/listings/search
+module.exports.searchListings = (req, res) => {
+  const data = {
+    search:   req.query.search   || '',
+    minPrice: req.query.minPrice || null,
+    maxPrice: req.query.maxPrice || null,
+    sort:     req.query.sort     || 'newest',
+    category: req.query.category || '',
+  };
+  model.searchListings(data, function (error, results) {
+    if (error) return res.status(500).json({ message: 'Internal server error' });
+    return res.status(200).json(results);
+  });
+};
+
+// GET /api/listings/dashboard — step 3: viewers per listing
+module.exports.loadSellerViewBreakdown = (req, res, next) => {
+  const data = { owner_id: res.locals.userId };
+  model.getSellerViewBreakdown(data, function (error, rows) {
+    if (error) return res.status(500).json({ message: 'Internal server error' });
+    res.locals.dashViewBreakdown = rows;
+    next();
+  });
+};
+
 // GET /api/listings/dashboard
 module.exports.loadSellerStats = (req, res, next) => {
   const data = { owner_id: res.locals.userId };
@@ -63,8 +96,9 @@ module.exports.loadSellerCategoryBreakdown = (req, res, next) => {
 
 module.exports.sendDashboard = (req, res) => {
   return res.status(200).json({
-    stats: res.locals.dashStats,
-    categories: res.locals.dashCategories,
+    stats:         res.locals.dashStats,
+    categories:    res.locals.dashCategories,
+    viewBreakdown: res.locals.dashViewBreakdown,
   });
 };
 
@@ -100,7 +134,8 @@ module.exports.getAllListings = (req, res) => {
 // GET /api/listings/:id
 module.exports.getListingById = (req, res) => {
   const data = {
-    id: req.params.id,
+    id:     req.params.id,
+    userId: res.locals.userId || null,
   };
 
   const callback = (error, results) => {

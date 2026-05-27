@@ -44,7 +44,7 @@ function renderListing(listing) {
   section.innerHTML =
     '<div class="product-img"><i class="bi bi-tag"></i></div>' +
     '<div class="product-info">' +
-    '<div class="card-cat" style="color:' + statusColor + ';">' + status + ' &nbsp;·&nbsp; Listed ' + date + '</div>' +
+    '<div class="card-cat" style="color:' + statusColor + ';">' + status + ' &nbsp;·&nbsp; Listed ' + date + (listing.view_count > 0 ? ' &nbsp;·&nbsp; <i class="bi bi-eye"></i> ' + listing.view_count + ' views' : '') + '</div>' +
     '<h1 class="product-name">' + listing.title + '</h1>' +
     '<div class="product-price" data-price="' + listing.price + '">' + formatPrice(Number(listing.price)) + '</div>' +
     '<p class="product-description">' + listing.description + '</p>' +
@@ -80,7 +80,9 @@ function loadListing() {
     return;
   }
 
-  fetch('/api/listings/' + id).then(parseResponse).then(onListingLoaded).catch(onListingError);
+  var token = localStorage.getItem('token');
+  var options = token ? { headers: { 'Authorization': 'Bearer ' + token } } : {};
+  fetch('/api/listings/' + id, options).then(parseResponse).then(onListingLoaded).catch(onListingError);
 }
 
 function createChat(uId) {

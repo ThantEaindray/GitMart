@@ -21,6 +21,7 @@ function renderStats(stats) {
   document.getElementById('stat-avg').textContent    = stats.avg_price
     ? formatPrice(Number(stats.avg_price))
     : '—';
+  document.getElementById('stat-views').textContent  = stats.total_views || 0;
 }
 
 // ── CATEGORY BARS ─────────────────────────────────────────────────────────
@@ -51,12 +52,32 @@ function renderCategories(categories) {
 
 // ── DASHBOARD LOAD ────────────────────────────────────────────────────────
 
+function renderViewBreakdown(rows) {
+  var container = document.getElementById('view-breakdown');
+  if (!rows || rows.length === 0) return;
+
+  var max = Math.max.apply(null, rows.map(function (r) { return Number(r.view_count); }));
+  container.innerHTML = rows.map(function (r) {
+    var pct = Math.round((Number(r.view_count) / max) * 100);
+    return (
+      '<div class="cat-row">' +
+        '<span class="cat-name" title="' + r.title + '">' + r.title.slice(0, 18) + (r.title.length > 18 ? '…' : '') + '</span>' +
+        '<div class="cat-bar-track">' +
+          '<div class="cat-bar-fill" style="width:' + pct + '%"></div>' +
+        '</div>' +
+        '<span class="cat-count">' + r.view_count + '</span>' +
+      '</div>'
+    );
+  }).join('');
+}
+
 function onDashboardLoaded(result) {
   if (result.status !== 200) {
     showToast('Failed to load dashboard stats.');
     return;
   }
   renderStats(result.data.stats);
+  renderViewBreakdown(result.data.viewBreakdown);
   renderCategories(result.data.categories);
 }
 
@@ -70,7 +91,7 @@ function renderMyListings(result) {
   var tbody = document.getElementById('listings-body');
 
   if (result.status !== 200 || !result.data || result.data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="status-text" style="padding:16px;">No listings yet.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="status-text" style="padding:16px;">No listings yet.</td></tr>';
     return;
   }
 
@@ -85,6 +106,7 @@ function renderMyListings(result) {
         '<td><a href="listing.html?id=' + l.id + '" style="color:var(--accent);">' + l.title + '</a></td>' +
         '<td>' + (l.category || '—') + '</td>' +
         '<td>' + formatPrice(Number(l.price)) + '</td>' +
+        '<td style="color:var(--muted);">' + (l.view_count || 0) + '</td>' +
         '<td><span class="status-badge badge-' + status + '">' + label + '</span></td>' +
         '<td style="color:var(--muted);">' + date + '</td>' +
       '</tr>'
@@ -94,7 +116,7 @@ function renderMyListings(result) {
 
 function onMyListingsError() {
   document.getElementById('listings-body').innerHTML =
-    '<tr><td colspan="5" class="status-text" style="padding:16px;">Failed to load listings.</td></tr>';
+    '<tr><td colspan="6" class="status-text" style="padding:16px;">Failed to load listings.</td></tr>';
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
