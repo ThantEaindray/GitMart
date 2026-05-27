@@ -8,6 +8,14 @@ const deliveryOptions = document.querySelectorAll('input[name="delivery"]');
 const paymentOptions = document.querySelectorAll('input[name="payment"]');
 const cardDetails = document.querySelector('.card-details');
 const cardPaymentRadio = document.getElementById('cardPayment');
+const applePayRadio = document.getElementById('applePay');
+const applePayModal = document.getElementById('applePayModal');
+const applePayClose = document.getElementById('applePayClose');
+const applePayCancel = document.getElementById('applePayCancel');
+const applePayContinue = document.getElementById('applePayContinue');
+const applePayStatus = document.getElementById('applePayStatus');
+const applePayTotal = document.getElementById('applePayTotal');
+const applePaySupportNote = document.getElementById('applePaySupportNote');
 const orderItemsEl = document.getElementById('orderItems');
 const subtotalPriceText = document.getElementById('subtotalPrice');
 const deliveryFeeText = document.getElementById('deliveryFee');
@@ -21,6 +29,8 @@ let cartStorageKey = 'cart';
 let cartStorageContainer = null;
 let summaryHeightObserver;
 let summaryScrollFrame;
+let pendingApplePayOrderData = null;
+let applePayTimer = null;
 
 function showToast(message) {
   const toast = document.getElementById('toast');
@@ -182,6 +192,14 @@ function formatUnitNumber(value) {
 function getSelectedDeliveryFee() {
   const selectedDelivery = document.querySelector('input[name="delivery"]:checked');
   return selectedDelivery ? Number(selectedDelivery.value) : 0;
+}
+
+function isApplePaySupported() {
+  return Boolean(
+    window.ApplePaySession &&
+    typeof window.ApplePaySession.canMakePayments === 'function' &&
+    window.ApplePaySession.canMakePayments(),
+  );
 }
 
 function renderOrderSummary() {
@@ -404,23 +422,12 @@ function validateCheckout() {
   return isValid;
 }
 
-async function handlePlaceOrder() {
-  if (!localStorage.getItem('token')) {
-    showToast('Please log in before checking out.');
-    setTimeout(() => {
-      window.location.href = 'login.html';
-    }, 900);
-    return;
-  }
-
-  renderOrderSummary();
-  if (!validateCheckout()) return;
-
+function getCheckoutOrderData() {
   const selectedDelivery = document.querySelector('input[name="delivery"]:checked');
   const selectedPayment = document.querySelector('input[name="payment"]:checked');
   const deliveryFee = Number(selectedDelivery.value);
 
-  const orderData = {
+  return {
     fullName: getFieldValue('fullName'),
     emailAddress: getFieldValue('emailAddress'),
     phoneNumber: getFieldValue('phoneNumber'),
@@ -436,6 +443,45 @@ async function handlePlaceOrder() {
     gst,
     totalAmount: subtotal + gst + deliveryFee,
   };
+}
+
+function openApplePayModal(orderData) {
+  pendingApplePayOrderData = orderData;
+  clearTimeout(applePayTimer);
+
+  if (applePayTotal) applePayTotal.textContent = formatMoney(orderData.totalAmount);
+  if (applePayStatus) applePayStatus.textContent = 'Ready for Apple Pay authorization.';
+  if (applePayContinue) {
+    applePayContinue.disabled = false;
+    applePayContinue.textContent = 'Continue with Apple Pay';
+  }
+  if (applePaySupportNote) {
+    applePaySupportNote.textContent = isApplePaySupported()
+      ? 'Apple Pay support was detected on this browser or device.'
+      : 'Apple Pay may only work on Safari with a compatible Apple device. You can still choose Google Pay, GrabPay, or another payment method.';
+  }
+
+  applePayModal?.classList.add('visible');
+  applePayModal?.setAttribute('aria-hidden', 'false');
+}
+
+function closeApplePayModal() {
+  clearTimeout(applePayTimer);
+  pendingApplePayOrderData = null;
+  applePayModal?.classList.remove('visible');
+  applePayModal?.setAttribute('aria-hidden', 'true');
+}
+
+async function submitOrder(orderData) {
+  placeOrderButton.disabled = true;
+
+  if (!localStorage.getItem('token')) {
+    showToast('Please log in before checking out.');
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 900);
+    return;
+  }
 
   try {
     const response = await authFetch('/api/orders', {
@@ -460,6 +506,7 @@ async function handlePlaceOrder() {
       return;
     }
 
+    closeApplePayModal();
     localStorage.removeItem('checkoutCart');
     localStorage.removeItem('cart');
     localStorage.removeItem('cartItems');
@@ -467,7 +514,61 @@ async function handlePlaceOrder() {
   } catch (error) {
     console.error(error);
     setFieldError('cart', 'Failed to place order.');
+  } finally {
+    if (cartItems.length > 0) placeOrderButton.disabled = false;
   }
+}
+
+async function handleApplePayContinue() {
+  if (!pendingApplePayOrderData || !applePayContinue || !applePayStatus) return;
+
+  if (!localStorage.getItem('token')) {
+    closeApplePayModal();
+    showToast('Please log in before checking out.');
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 900);
+    return;
+  }
+
+  renderOrderSummary();
+  if (!validateCheckout()) {
+    closeApplePayModal();
+    return;
+  }
+
+  pendingApplePayOrderData = getCheckoutOrderData();
+  applePayContinue.disabled = true;
+  applePayStatus.textContent = 'Waiting for Apple Pay approval...';
+
+  applePayTimer = setTimeout(() => {
+    applePayStatus.textContent = 'Apple Pay approved successfully. Payment successful.';
+
+    applePayTimer = setTimeout(() => {
+      submitOrder(pendingApplePayOrderData);
+    }, 700);
+  }, 1400);
+}
+
+async function handlePlaceOrder() {
+  if (!localStorage.getItem('token')) {
+    showToast('Please log in before checking out.');
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 900);
+    return;
+  }
+
+  renderOrderSummary();
+  if (!validateCheckout()) return;
+
+  const orderData = getCheckoutOrderData();
+  if (applePayRadio?.checked) {
+    openApplePayModal(orderData);
+    return;
+  }
+
+  await submitOrder(orderData);
 }
 
 function initCheckout() {
@@ -480,7 +581,20 @@ function initCheckout() {
   });
 
   paymentOptions.forEach((option) => {
-    option.addEventListener('change', updateCardDetailsVisibility);
+    option.addEventListener('change', () => {
+      updateCardDetailsVisibility();
+      if (option.id === 'applePay' && option.checked) {
+        openApplePayModal(getCheckoutOrderData());
+      } else {
+        closeApplePayModal();
+      }
+    });
+  });
+
+  document.querySelector('[data-payment="applePay"]')?.addEventListener('click', () => {
+    setTimeout(() => {
+      if (applePayRadio?.checked) openApplePayModal(getCheckoutOrderData());
+    }, 0);
   });
 
   ['cardName', 'cardNumber', 'expiryDate', 'cvv'].forEach((fieldId) => {
@@ -491,6 +605,12 @@ function initCheckout() {
   });
 
   placeOrderButton.addEventListener('click', handlePlaceOrder);
+  applePayContinue?.addEventListener('click', handleApplePayContinue);
+  applePayClose?.addEventListener('click', closeApplePayModal);
+  applePayCancel?.addEventListener('click', closeApplePayModal);
+  applePayModal?.addEventListener('click', (event) => {
+    if (event.target === applePayModal) closeApplePayModal();
+  });
 
   orderItemsEl.addEventListener('click', (event) => {
     const button = event.target.closest('[data-cart-action]');
