@@ -3,7 +3,6 @@ const token = localStorage.getItem('token')
 const uId = localStorage.getItem('loggedInUserId')
 let openChat = localStorage.getItem('openChat')
 const webSocket = new WebSocket('ws://localhost:443/');
-openChat="1"
 webSocket.onmessage = (event) => {
   //so the event is the message content basically, in this case itll be an object with a recipient
   //so we need to unwrap it first and determine if its for our user

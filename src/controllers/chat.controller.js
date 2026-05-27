@@ -167,7 +167,7 @@ module.exports.hasChat = (req, res, next) => {
     if (results.length > 0) {
       console.log("chat already exists")
       res.locals.chatid = results.id
-      return res.status(409).json()
+      return res.status(409).json({})
     }
     //and finally we can call a next yippeee
     next()
@@ -186,7 +186,7 @@ module.exports.newChat = (req,res,next) => {
       console.error("problem creating chat", err)
       return res.status(500).json(err)
     }
-    res.status(201).json()
+    res.status(201).json({})
   }
   model.newChat(data,callback)
 }

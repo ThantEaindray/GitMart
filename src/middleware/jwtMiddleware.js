@@ -91,7 +91,11 @@ module.exports.verifyRefreshToken = (req, res, next) => {
     // Check token exists in DB (not yet revoked)
     model.getRefreshToken({ token }, (dbErr, result) => {
       if (dbErr) return res.status(500).json({ message: 'Internal server error' });
-      if (result.rows.length === 0) return res.status(401).json({ error: 'Refresh token revoked' });
+      if (result.rows.length === 0) {
+        // Token was already rotated or revoked — possible theft. Nuke all sessions for this user.
+        model.deleteAllRefreshTokensForUser({ userId: decoded.userId }, function () {});
+        return res.status(401).json({ error: 'Session invalidated. Please log in again.' });
+      }
 
       const row = result.rows[0];
       if (new Date(row.expires_at) < new Date()) {

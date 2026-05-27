@@ -4,7 +4,7 @@ const chatController = require("../controllers/chat.controller.js")
 const userController = require ("../controllers/User.controller.js")
 const router = express.Router();
 
-router.get("/", jwt.verifyToken, chatController.loadChats, chatController.toLoad ,userController.namesPictures,  chatController.formatList)
+router.get("/", jwt.verifyToken, chatController.loadChats, chatController.toLoad ,userController.namesPictures, chatController.formatList)
 router.get("/viewChat/:id", chatController.loadMessages)
 router.post("/new", jwt.verifyToken, chatController.hasChat ,chatController.newChat)
 router.post("/send", chatController.sendText)
