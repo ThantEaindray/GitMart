@@ -691,6 +691,16 @@
         padding-inline: 18px;
       }
 
+      .google-pay-details {
+        margin-top: 14px;
+        border-top: 1px solid var(--border);
+      }
+
+      .google-pay-details[hidden],
+      .google-pay-confirm[hidden] {
+        display: none;
+      }
+
       /* ── PROGRESS STEPS ── */
       .checkout-progress {
         display: flex;
@@ -1126,6 +1136,63 @@
             <button type="button" class="btn-outline" id="applePayCancel">Cancel</button>
             <button type="button" class="btn-place-order" id="applePayContinue">
               Continue with Apple Pay
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="apple-pay-modal" id="googlePayModal" aria-hidden="true">
+      <div
+        class="apple-pay-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="googlePayTitle"
+      >
+        <div class="apple-pay-header">
+          <h2 class="apple-pay-title" id="googlePayTitle">
+            <i class="bi bi-google"></i>
+            Google Pay
+          </h2>
+          <button
+            type="button"
+            class="apple-pay-close"
+            id="googlePayClose"
+            aria-label="Close Google Pay"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="apple-pay-body">
+          <p class="apple-pay-support-note">
+            Review your Google Pay payment details, confirm the selected card, then approve the
+            payment to place your order.
+          </p>
+
+          <div class="google-pay-details" id="googlePayDetails" hidden>
+            <div class="apple-pay-total-row">
+              <span class="price-label">Total amount</span>
+              <span class="price-value" id="googlePayTotal">$0.00</span>
+            </div>
+            <div class="apple-pay-total-row">
+              <span class="price-label">Selected card</span>
+              <span class="price-value" id="googlePayCard">Visa •••• 4242</span>
+            </div>
+          </div>
+
+          <div class="apple-pay-status" id="googlePayStatus">Ready for Google Pay.</div>
+
+          <div class="apple-pay-actions">
+            <button type="button" class="btn-outline" id="googlePayCancel">Cancel</button>
+            <button type="button" class="btn-place-order" id="googlePayContinue">
+              Continue with Google Pay
+            </button>
+            <button
+              type="button"
+              class="btn-place-order google-pay-confirm"
+              id="googlePayConfirm"
+              hidden
+            >
+              Confirm payment
             </button>
           </div>
         </div>

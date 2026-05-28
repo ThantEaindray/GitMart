@@ -9,6 +9,7 @@ const paymentOptions = document.querySelectorAll('input[name="payment"]');
 const cardDetails = document.querySelector('.card-details');
 const cardPaymentRadio = document.getElementById('cardPayment');
 const applePayRadio = document.getElementById('applePay');
+const googlePayRadio = document.getElementById('googlePay');
 const applePayModal = document.getElementById('applePayModal');
 const applePayClose = document.getElementById('applePayClose');
 const applePayCancel = document.getElementById('applePayCancel');
@@ -16,6 +17,14 @@ const applePayContinue = document.getElementById('applePayContinue');
 const applePayStatus = document.getElementById('applePayStatus');
 const applePayTotal = document.getElementById('applePayTotal');
 const applePaySupportNote = document.getElementById('applePaySupportNote');
+const googlePayModal = document.getElementById('googlePayModal');
+const googlePayClose = document.getElementById('googlePayClose');
+const googlePayCancel = document.getElementById('googlePayCancel');
+const googlePayContinue = document.getElementById('googlePayContinue');
+const googlePayConfirm = document.getElementById('googlePayConfirm');
+const googlePayStatus = document.getElementById('googlePayStatus');
+const googlePayDetails = document.getElementById('googlePayDetails');
+const googlePayTotal = document.getElementById('googlePayTotal');
 const orderItemsEl = document.getElementById('orderItems');
 const subtotalPriceText = document.getElementById('subtotalPrice');
 const deliveryFeeText = document.getElementById('deliveryFee');
@@ -31,6 +40,8 @@ let summaryHeightObserver;
 let summaryScrollFrame;
 let pendingApplePayOrderData = null;
 let applePayTimer = null;
+let pendingGooglePayOrderData = null;
+let googlePayTimer = null;
 
 function showToast(message) {
   const toast = document.getElementById('toast');
@@ -472,6 +483,33 @@ function closeApplePayModal() {
   applePayModal?.setAttribute('aria-hidden', 'true');
 }
 
+function openGooglePayModal(orderData) {
+  pendingGooglePayOrderData = orderData;
+  clearTimeout(googlePayTimer);
+
+  if (googlePayTotal) googlePayTotal.textContent = formatMoney(orderData.totalAmount);
+  if (googlePayStatus) googlePayStatus.textContent = 'Ready for Google Pay.';
+  if (googlePayContinue) {
+    googlePayContinue.hidden = false;
+    googlePayContinue.disabled = false;
+  }
+  if (googlePayConfirm) {
+    googlePayConfirm.hidden = true;
+    googlePayConfirm.disabled = false;
+  }
+  googlePayDetails?.setAttribute('hidden', '');
+
+  googlePayModal?.classList.add('visible');
+  googlePayModal?.setAttribute('aria-hidden', 'false');
+}
+
+function closeGooglePayModal() {
+  clearTimeout(googlePayTimer);
+  pendingGooglePayOrderData = null;
+  googlePayModal?.classList.remove('visible');
+  googlePayModal?.setAttribute('aria-hidden', 'true');
+}
+
 async function submitOrder(orderData) {
   placeOrderButton.disabled = true;
 
@@ -507,6 +545,7 @@ async function submitOrder(orderData) {
     }
 
     closeApplePayModal();
+    closeGooglePayModal();
     localStorage.removeItem('checkoutCart');
     localStorage.removeItem('cart');
     localStorage.removeItem('cartItems');
@@ -550,6 +589,51 @@ async function handleApplePayContinue() {
   }, 1400);
 }
 
+async function handleGooglePayContinue() {
+  if (!pendingGooglePayOrderData || !googlePayContinue || !googlePayStatus) return;
+
+  if (!localStorage.getItem('token')) {
+    closeGooglePayModal();
+    showToast('Please log in before checking out.');
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 900);
+    return;
+  }
+
+  renderOrderSummary();
+  if (!validateCheckout()) {
+    closeGooglePayModal();
+    return;
+  }
+
+  pendingGooglePayOrderData = getCheckoutOrderData();
+  if (googlePayTotal) {
+    googlePayTotal.textContent = formatMoney(pendingGooglePayOrderData.totalAmount);
+  }
+
+  googlePayContinue.disabled = true;
+  googlePayStatus.textContent = 'Opening Google Pay...';
+
+  googlePayTimer = setTimeout(() => {
+    googlePayDetails?.removeAttribute('hidden');
+    googlePayContinue.hidden = true;
+    if (googlePayConfirm) googlePayConfirm.hidden = false;
+    googlePayStatus.textContent = 'Review payment details and confirm payment.';
+  }, 900);
+}
+
+async function handleGooglePayConfirm() {
+  if (!pendingGooglePayOrderData || !googlePayConfirm || !googlePayStatus) return;
+
+  googlePayConfirm.disabled = true;
+  googlePayStatus.textContent = 'Google Pay approved successfully.';
+
+  googlePayTimer = setTimeout(() => {
+    submitOrder(pendingGooglePayOrderData);
+  }, 700);
+}
+
 async function handlePlaceOrder() {
   if (!localStorage.getItem('token')) {
     showToast('Please log in before checking out.');
@@ -565,6 +649,11 @@ async function handlePlaceOrder() {
   const orderData = getCheckoutOrderData();
   if (applePayRadio?.checked) {
     openApplePayModal(orderData);
+    return;
+  }
+
+  if (googlePayRadio?.checked) {
+    openGooglePayModal(orderData);
     return;
   }
 
@@ -584,9 +673,14 @@ function initCheckout() {
     option.addEventListener('change', () => {
       updateCardDetailsVisibility();
       if (option.id === 'applePay' && option.checked) {
+        closeGooglePayModal();
         openApplePayModal(getCheckoutOrderData());
+      } else if (option.id === 'googlePay' && option.checked) {
+        closeApplePayModal();
+        openGooglePayModal(getCheckoutOrderData());
       } else {
         closeApplePayModal();
+        closeGooglePayModal();
       }
     });
   });
@@ -594,6 +688,12 @@ function initCheckout() {
   document.querySelector('[data-payment="applePay"]')?.addEventListener('click', () => {
     setTimeout(() => {
       if (applePayRadio?.checked) openApplePayModal(getCheckoutOrderData());
+    }, 0);
+  });
+
+  document.querySelector('[data-payment="googlePay"]')?.addEventListener('click', () => {
+    setTimeout(() => {
+      if (googlePayRadio?.checked) openGooglePayModal(getCheckoutOrderData());
     }, 0);
   });
 
@@ -610,6 +710,13 @@ function initCheckout() {
   applePayCancel?.addEventListener('click', closeApplePayModal);
   applePayModal?.addEventListener('click', (event) => {
     if (event.target === applePayModal) closeApplePayModal();
+  });
+  googlePayContinue?.addEventListener('click', handleGooglePayContinue);
+  googlePayConfirm?.addEventListener('click', handleGooglePayConfirm);
+  googlePayClose?.addEventListener('click', closeGooglePayModal);
+  googlePayCancel?.addEventListener('click', closeGooglePayModal);
+  googlePayModal?.addEventListener('click', (event) => {
+    if (event.target === googlePayModal) closeGooglePayModal();
   });
 
   orderItemsEl.addEventListener('click', (event) => {
