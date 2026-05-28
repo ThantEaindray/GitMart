@@ -51,26 +51,36 @@ module.exports.getListingsByCategory = (data, callback) => {
   });
 };
 
-// Get one listing by id.
-// If userId provided, records the view in listing_views (unique per user) and
-// increments view_count only on first visit. Anonymous users (userId = null)
-// can read the listing but don't increment the counter.
+// Get listing by id — anonymous (no view tracking)
 module.exports.getListingById = (data, callback) => {
+  const SQLSTATEMENT = `
+    SELECT id, owner_id, price, created_on, title, description, category, view_count, "isSold", "isClosed"
+    FROM listings
+    WHERE id = $1
+  `;
+  const VALUES = [data.id];
+  pool.query(SQLSTATEMENT, VALUES, (error, result) => {
+    if (error) return callback(error, null);
+    callback(null, result.rows);
+  });
+};
+
+// Get listing by id — logged-in user, records unique view via CTE
+module.exports.getListingByIdWithView = (data, callback) => {
   const SQLSTATEMENT = `
     WITH maybe_view AS (
       INSERT INTO listing_views (listing_id, user_id)
-      SELECT $1, $2
-      WHERE $2 IS NOT NULL
+      VALUES ($1::integer, $2::integer)
       ON CONFLICT (listing_id, user_id) DO NOTHING
       RETURNING listing_id
     )
     UPDATE listings
     SET view_count = view_count + (CASE WHEN EXISTS(SELECT 1 FROM maybe_view) THEN 1 ELSE 0 END)
-    WHERE id = $1
+    WHERE id = $1::integer
     RETURNING id, owner_id, price, created_on, title, description, category, view_count, "isSold", "isClosed"
   `;
-
-  pool.query(SQLSTATEMENT, [data.id, data.userId || null], (error, result) => {
+  const VALUES = [data.id, data.userId];
+  pool.query(SQLSTATEMENT, VALUES, (error, result) => {
     if (error) return callback(error, null);
     callback(null, result.rows);
   });

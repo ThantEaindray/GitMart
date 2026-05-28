@@ -143,15 +143,17 @@ module.exports.getListingById = (req, res) => {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
     }
-
     if (results.length === 0) {
       return res.status(404).json({ message: 'Listing not found.' });
     }
-
     return res.status(200).json(results[0]);
   };
 
-  model.getListingById(data, callback);
+  if (data.userId) {
+    model.getListingByIdWithView(data, callback);
+  } else {
+    model.getListingById(data, callback);
+  }
 };
 
 // GET /api/listings/owner/:owner_id
