@@ -1,0 +1,119 @@
+/* ── PROFILE PAGE LAYOUT ─────────────────────────────── */
+
+.profile-wide-card {
+    width: min(760px, 100%);
+    padding: 42px;
+}
+
+.profile-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 34px;
+    align-items: center;
+    margin-top: 28px;
+}
+
+.profile-image-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+.profile-image-preview {
+    width: 140px;
+    height: 140px;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.profile-image-preview i {
+    font-size: 3.2rem;
+    color: var(--accent);
+}
+
+.profile-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Left side profile image buttons */
+.profile-image-upload,
+.profile-upload-btn {
+    width: 220px;
+    min-height: 52px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 18px;
+    text-align: center;
+    text-decoration: none;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+/* Right side account details */
+.profile-details-column {
+    border-left: 1px solid var(--border);
+    padding-left: 32px;
+}
+
+.profile-info {
+    margin-bottom: 26px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+}
+
+.profile-info p {
+    margin: 0 0 14px;
+    color: var(--text);
+    line-height: 1.6;
+}
+
+.profile-info strong {
+    color: var(--accent);
+    margin-right: 6px;
+}
+
+/* Right side action buttons */
+.profile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.profile-dashboard-btn,
+.profile-logout-btn {
+    width: 100%;
+    min-height: 52px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 18px;
+    text-align: center;
+    text-decoration: none;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+/* Remove strange default button shape differences */
+.profile-upload-btn,
+.profile-logout-btn {
+    border-radius: 0;
+}

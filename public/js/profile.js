@@ -1,10 +1,8 @@
 /* global authFetch */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Get token from localStorage to check if user is logged in
   const token = localStorage.getItem('token');
 
-  // Get profile display elements
   const usernameText = document.getElementById('profileUsername');
   const emailText = document.getElementById('profileEmail');
   const staffText = document.getElementById('profileStaff');
@@ -12,7 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const warningCard = document.getElementById('warningCard');
   const warningText = document.getElementById('warningText');
 
-  // Show profile loading/session errors
+  const profileImagePreview = document.getElementById('profileImagePreview');
+  const profileImageInput = document.getElementById('profileImageInput');
+  const uploadProfileImageBtn = document.getElementById('uploadProfileImageBtn');
+
+  let selectedProfileImageBase64 = null;
+
   const showWarning = (message) => {
     if (warningCard && warningText) {
       warningText.textContent = message;
@@ -20,13 +23,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // If no token exists, user should log in first
+  const getProfileImageStorageKey = () => {
+    const userId = localStorage.getItem('loggedInUserId') || 'current';
+    return 'profileImage_' + userId;
+  };
+
+  const showProfileImage = (imageData) => {
+    if (!profileImagePreview || !imageData) return;
+
+    const src = imageData.startsWith('data:image/')
+      ? imageData
+      : `data:image/jpeg;base64,${imageData}`;
+
+    profileImagePreview.innerHTML = `
+    <img src="${src}" alt="Profile image" />
+  `;
+  };
+
   if (!token) {
     window.location.href = '/html/login.html';
     return;
   }
 
-  // Request current user details from protected backend route
   authFetch('/api/me')
     .then((response) =>
       response.json().then((data) => ({
@@ -35,9 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
       })),
     )
     .then(({ status, data }) => {
-      console.log('Current user response:', status, data);
-
-      // If token is invalid/expired, clear session and redirect to login
       if (status !== 200) {
         localStorage.removeItem('token');
         localStorage.removeItem('loggedInUserId');
@@ -53,7 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Display user details on the profile page
       if (usernameText) usernameText.textContent = data.username;
       if (emailText) emailText.textContent = data.email;
       if (staffText) staffText.textContent = data.isStaff ? 'Staff' : 'Normal User';
@@ -62,9 +76,86 @@ document.addEventListener('DOMContentLoaded', () => {
         const date = data.created_on ? new Date(data.created_on).toLocaleDateString() : '-';
         createdText.textContent = date;
       }
+
+      if (data.profile_image) {
+        showProfileImage(data.profile_image);
+        localStorage.setItem(getProfileImageStorageKey(), `data:image/jpeg;base64,${data.profile_image}`);
+      } else {
+        const savedProfileImage = localStorage.getItem(getProfileImageStorageKey());
+        if (savedProfileImage) {
+          showProfileImage(savedProfileImage);
+        }
+      }
     })
     .catch((error) => {
       console.error('Profile error:', error);
       showWarning('Failed to load profile.');
     });
+
+  if (profileImageInput) {
+    profileImageInput.addEventListener('change', () => {
+      const file = profileImageInput.files[0];
+
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        showWarning('Please choose a valid image file.');
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        selectedProfileImageBase64 = reader.result;
+        localStorage.setItem(getProfileImageStorageKey(), reader.result);
+        showProfileImage(reader.result);
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (uploadProfileImageBtn) {
+    uploadProfileImageBtn.addEventListener('click', () => {
+      if (!selectedProfileImageBase64) {
+        showWarning('Please choose an image first.');
+        return;
+      }
+
+      authFetch('/api/me/profile-image', {
+        method: 'PUT',
+        body: JSON.stringify({
+          imageBase64: selectedProfileImageBase64,
+        }),
+      })
+        .then((response) =>
+          response.json().then((data) => ({
+            status: response.status,
+            data,
+          })),
+        )
+        .then(({ status, data }) => {
+          if (status !== 200) {
+            showWarning(data.message || data.error || 'Failed to upload profile image.');
+            return;
+          }
+
+          if (data.profile_image) {
+            const savedImage = `data:image/jpeg;base64,${data.profile_image}`;
+            localStorage.setItem(getProfileImageStorageKey(), savedImage);
+            showProfileImage(savedImage);
+          } else if (selectedProfileImageBase64) {
+            localStorage.setItem(getProfileImageStorageKey(), selectedProfileImageBase64);
+            showProfileImage(selectedProfileImageBase64);
+          }
+
+          selectedProfileImageBase64 = null;
+          showWarning('Profile image updated successfully.');
+        })
+        .catch((error) => {
+          console.error('Profile image upload error:', error);
+          showWarning('Something went wrong while uploading profile image.');
+        });
+    });
+  }
 });

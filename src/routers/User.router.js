@@ -49,6 +49,8 @@ router.post(
 // Update Display Name
 router.put('/me/profile', jwtMiddleware.verifyToken, userController.updateDisplayName);
 
+router.put('/me/profile-image', jwtMiddleware.verifyToken, userController.updateProfileImage);
+
 // Update Notification Preferences
 router.put('/me/notifications', jwtMiddleware.verifyToken, userController.updateNotifications);
 
