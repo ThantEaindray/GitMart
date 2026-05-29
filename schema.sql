@@ -86,6 +86,7 @@ CREATE TABLE listings (
   title       TEXT           NOT NULL,
   description TEXT           NOT NULL,
   category    TEXT           NOT NULL DEFAULT 'Others',
+  image_url   TEXT,
   "isSold"    BOOLEAN        DEFAULT false,
   "isClosed"  BOOLEAN        DEFAULT false
 );

@@ -41,8 +41,12 @@ function renderListing(listing) {
     day: 'numeric',
   });
 
+  const listingImage = listing.image_url
+    ? '<img src="' + listing.image_url + '" alt="' + listing.title + '" class="listing-detail-image" />'
+    : '<i class="bi bi-tag"></i>';
+
   section.innerHTML =
-    '<div class="product-img"><i class="bi bi-tag"></i></div>' +
+    '<div class="product-img">' + listingImage + '</div>' +
     '<div class="product-info">' +
     '<div class="card-cat" style="color:' + statusColor + ';">' + status + ' &nbsp;·&nbsp; Listed ' + date + '</div>' +
     '<h1 class="product-name">' + listing.title + '</h1>' +

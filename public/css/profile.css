@@ -1,0 +1,109 @@
+/* ── PROFILE PAGE LAYOUT ─────────────────────────────── */
+
+.profile-wide-card {
+  width: min(520px, 100%);
+  padding: 42px;
+}
+
+.profile-wide-card h2 {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.profile-layout {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.profile-image-column {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ── PROFILE IMAGE ───────────────────────────────────── */
+
+.profile-image-preview {
+  width: 150px;
+  height: 150px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.profile-image-preview i {
+  font-size: 3.4rem;
+  color: var(--accent);
+}
+
+.profile-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── PROFILE BUTTONS ─────────────────────────────────── */
+
+.profile-image-upload,
+.profile-upload-btn,
+.profile-dashboard-btn,
+.profile-logout-btn {
+  width: 260px;
+  min-height: 54px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  margin: 0;
+  text-align: center;
+  text-decoration: none;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+/* ── PROFILE INFO UNDER IMAGE ────────────────────────── */
+
+.profile-info {
+  width: 260px;
+  margin-top: 18px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+
+.profile-info p {
+  margin: 0 0 14px;
+  color: var(--text);
+  line-height: 1.6;
+  text-align: left;
+}
+
+.profile-info strong {
+  color: var(--accent);
+  margin-right: 6px;
+}
+
+.profile-actions {
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
