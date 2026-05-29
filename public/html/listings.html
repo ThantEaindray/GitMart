@@ -53,6 +53,24 @@
       <a href="listing-create.html" class="see-all">Create Listing →</a>
     </div>
 
+    <div class="search-filter-bar">
+      <input class="search-filter-input" type="text" id="search-input" placeholder="Search listings…" />
+      <input class="search-filter-price" type="number" id="min-price" placeholder="Min $" min="0" />
+      <input class="search-filter-price" type="number" id="max-price" placeholder="Max $" min="0" />
+      <select class="search-filter-select" id="sort-select">
+        <option value="newest">Newest</option>
+        <option value="cheapest">Cheapest</option>
+        <option value="expensive">Most Expensive</option>
+      </select>
+    </div>
+
+    <div id="most-viewed-section">
+      <div class="hero-tag" style="margin-bottom:8px;">Trending</div>
+      <h3 style="font-size:1rem;margin-bottom:16px;color:var(--muted);font-weight:400;letter-spacing:0.05em;text-transform:uppercase;">Most Viewed</h3>
+      <div class="products" id="mostViewedGrid"></div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;" />
+    </div>
+
     <div id="warningCard" class="auth-alert d-none">
       <span id="warningText"></span>
     </div>

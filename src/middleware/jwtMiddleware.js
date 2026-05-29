@@ -110,6 +110,20 @@ module.exports.verifyRefreshToken = (req, res, next) => {
   });
 };
 
+// Optional auth — sets res.locals.userId if a valid token is present, null otherwise
+module.exports.optionalAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.locals.userId = null;
+    return next();
+  }
+  const token = authHeader.substring(7);
+  jwt.verify(token, accessSecret, (err, decoded) => {
+    res.locals.userId = err ? null : (decoded.userId ?? decoded.user_id ?? decoded.id ?? decoded.sub);
+    next();
+  });
+};
+
 // Rotate: delete the old refresh token and issue a fresh one1
 module.exports.rotateRefreshToken = (req, res, next) => {
   model.deleteRefreshToken({ token: res.locals.refreshToken }, (err) => {

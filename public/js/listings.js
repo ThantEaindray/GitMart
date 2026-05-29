@@ -72,22 +72,8 @@ function parseResponse(response) {
   });
 }
 
-let allListings = [];
-let currentListingFilter = 'all';
-let currentSearchTerm = '';
-let currentSortMode = 'newest';
 let selectedListingImageUrl = null;
 let pendingCoverImageUrl = null;
-
-function updateFilterButtonState() {
-  const allButton = document.getElementById('btnAllListings');
-  const myButton = document.getElementById('btnMyListings');
-
-  if (!allButton || !myButton) return;
-
-  allButton.classList.toggle('active', currentListingFilter === 'all');
-  myButton.classList.toggle('active', currentListingFilter === 'mine');
-}
 
 function getCurrentUserId() {
   return Number(localStorage.getItem('loggedInUserId') || localStorage.getItem('userId'));
@@ -95,145 +81,6 @@ function getCurrentUserId() {
 
 function isOwner(listing) {
   return Number(listing.owner_id) === getCurrentUserId();
-}
-
-function getVisibleListings() {
-  let visibleListings = [...allListings];
-
-  // Filter between all listings and logged-in user's listings
-  if (currentListingFilter === 'mine') {
-    visibleListings = visibleListings.filter(isOwner);
-  }
-
-  // Search by title, description or category
-  if (currentSearchTerm) {
-    visibleListings = visibleListings.filter(function (listing) {
-      const title = String(listing.title || '').toLowerCase();
-      const description = String(listing.description || '').toLowerCase();
-      const category = String(listing.category || '').toLowerCase();
-
-      return (
-        title.includes(currentSearchTerm) ||
-        description.includes(currentSearchTerm) ||
-        category.includes(currentSearchTerm)
-      );
-    });
-  }
-
-  // Sort the visible listings
-  if (currentSortMode === 'price-low') {
-    visibleListings.sort(function (a, b) {
-      return Number(a.price) - Number(b.price);
-    });
-  } else if (currentSortMode === 'price-high') {
-    visibleListings.sort(function (a, b) {
-      return Number(b.price) - Number(a.price);
-    });
-  } else {
-    visibleListings.sort(function (a, b) {
-      return new Date(b.created_on) - new Date(a.created_on);
-    });
-  }
-
-  return visibleListings;
-}
-// ── LISTING FILTER BAR ────────────────────────────────────────────────────
-
-function createListingFilterBar() {
-  const listingsGrid = document.getElementById('listingsGrid');
-  if (!listingsGrid) return;
-
-  const existing = document.getElementById('listingFilterBar');
-  if (existing) {
-    updateFilterButtonState();
-    return;
-  }
-
-  const filterBar = document.createElement('div');
-  filterBar.id = 'listingFilterBar';
-  filterBar.className = 'listing-filter-bar';
-
-  filterBar.innerHTML = `
-    <button class="btn-primary" id="btnAllListings" type="button">All Listings</button>
-    <button class="btn-primary" id="btnMyListings" type="button">My Listings</button>
-  `;
-
-  listingsGrid.parentElement.insertBefore(filterBar, listingsGrid);
-
-  const allListingsButton = document.getElementById('btnAllListings');
-  const myListingsButton = document.getElementById('btnMyListings');
-
-  if (allListingsButton) {
-    allListingsButton.addEventListener('click', function () {
-      currentListingFilter = 'all';
-      updateFilterButtonState();
-      renderListingCards(getVisibleListings());
-    });
-  }
-
-  if (myListingsButton) {
-    myListingsButton.addEventListener('click', function () {
-      if (!localStorage.getItem('token')) {
-        showToast('Please log in to view your listings.');
-        return;
-      }
-
-      currentListingFilter = 'mine';
-      updateFilterButtonState();
-      renderListingCards(getVisibleListings());
-    });
-  }
-
-  updateFilterButtonState();
-}
-
-function createListingSearchSortBar() {
-  const listingsGrid = document.getElementById('listingsGrid');
-  if (!listingsGrid) return;
-
-  const existing = document.getElementById('listingSearchSortBar');
-  if (existing) return;
-
-  const toolbar = document.createElement('div');
-  toolbar.id = 'listingSearchSortBar';
-  toolbar.className = 'listing-search-sort-bar';
-
-  toolbar.innerHTML = `
-    <div class="listing-search-box">
-      <i class="bi bi-search"></i>
-      <input
-        id="listingSearchInput"
-        type="text"
-        placeholder="Search by title, description or category..."
-        autocomplete="off"
-      />
-    </div>
-
-    <select id="listingSortSelect" class="listing-sort-select">
-      <option value="newest">Newest First</option>
-      <option value="price-low">Price: Low to High</option>
-      <option value="price-high">Price: High to Low</option>
-    </select>
-  `;
-
-  listingsGrid.parentElement.insertBefore(toolbar, listingsGrid);
-
-  const searchInput = document.getElementById('listingSearchInput');
-  const sortSelect = document.getElementById('listingSortSelect');
-
-  if (searchInput) {
-    searchInput.addEventListener('input', function () {
-      currentSearchTerm = searchInput.value.trim().toLowerCase();
-      renderListingCards(getVisibleListings());
-    });
-  }
-
-  if (sortSelect) {
-    sortSelect.addEventListener('change', function () {
-      currentSortMode = sortSelect.value;
-      renderListingCards(getVisibleListings());
-    });
-  }
 }
 
 // ── LISTING CARD ──────────────────────────────────────────────────────────
@@ -279,6 +126,7 @@ function createListingCard(listing) {
       <p style="font-size:0.82em;color:var(--muted);margin:6px 0 10px;line-height:1.5;">${listing.description}</p>
       <div class="card-footer">
         <span class="card-price" data-price="${listing.price}">${formatPrice(Number(listing.price))}</span>
+        ${listing.view_count > 0 ? `<span style="font-size:0.78rem;color:var(--muted);"><i class="bi bi-eye"></i> ${listing.view_count}</span>` : ''}
       </div>
       ${ownerControls}
     </div>
@@ -305,6 +153,51 @@ function createListingCard(listing) {
   return card;
 }
 
+// ── SEARCH + FILTER ───────────────────────────────────────────────────────
+
+function debounce(fn, delay) {
+  var timer;
+  return function () { clearTimeout(timer); timer = setTimeout(fn, delay); };
+}
+
+function buildSearchUrl() {
+  var search   = (document.getElementById('search-input') || {}).value || '';
+  var minPrice = (document.getElementById('min-price')    || {}).value || '';
+  var maxPrice = (document.getElementById('max-price')    || {}).value || '';
+  var sort     = (document.getElementById('sort-select')  || {}).value || 'newest';
+  var category = new URLSearchParams(window.location.search).get('category') || '';
+
+  var params = new URLSearchParams();
+  if (search.trim()) params.set('search', search.trim());
+  if (minPrice)      params.set('minPrice', minPrice);
+  if (maxPrice)      params.set('maxPrice', maxPrice);
+  params.set('sort', sort);
+  if (category)      params.set('category', category);
+
+  return '/api/listings/search?' + params.toString();
+}
+
+function fetchListings() {
+  fetch(buildSearchUrl()).then(parseResponse).then(renderListings).catch(onListingsError);
+}
+
+// ── MOST VIEWED ───────────────────────────────────────────────────────────
+
+function renderMostViewed(result) {
+  var section = document.getElementById('most-viewed-section');
+  var grid    = document.getElementById('mostViewedGrid');
+  if (!grid) return;
+
+  if (result.status !== 200 || !result.data || result.data.length === 0) {
+    if (section) section.style.display = 'none';
+    return;
+  }
+
+  result.data.forEach(function (listing) {
+    grid.appendChild(createListingCard(listing));
+  });
+}
+
 // ── RENDER LISTINGS ───────────────────────────────────────────────────────
 
 function renderListingCards(listings) {
@@ -313,30 +206,12 @@ function renderListingCards(listings) {
 
   listingsGrid.innerHTML = '';
 
-  let displayListings = listings;
-
-  if (!Array.isArray(displayListings) || displayListings.length === 0) {
-    listingsGrid.innerHTML =
-      currentListingFilter === 'mine'
-        ? `
-          <div class="listing-empty-state">
-            <i class="bi bi-shop"></i>
-            <h3>No listings created yet</h3>
-            <p>You have not created any listings yet. Create your first listing to start selling on GitMart.</p>
-            <a href="listing-create.html" class="btn-primary">Create Listing</a>
-          </div>
-        `
-        : `
-          <div class="listing-empty-state">
-            <i class="bi bi-tags"></i>
-            <h3>No listings available</h3>
-            <p>There are no marketplace listings available at the moment.</p>
-          </div>
-        `;
+  if (!Array.isArray(listings) || listings.length === 0) {
+    listingsGrid.innerHTML = '<p class="status-text">No listings found.</p>';
     return;
   }
 
-  displayListings.forEach(function (listing) {
+  listings.forEach(function (listing) {
     listingsGrid.appendChild(createListingCard(listing));
   });
 }
@@ -352,10 +227,7 @@ function renderListings(result) {
     return;
   }
 
-  allListings = result.data;
-  createListingFilterBar();
-  createListingSearchSortBar();
-  renderListingCards(getVisibleListings());
+  renderListingCards(result.data);
 }
 
 function onListingsError() {
@@ -368,34 +240,35 @@ function onListingsError() {
   showWarning('Something went wrong while loading listings.');
 }
 
-function loadAllListings() {
-  const params = new URLSearchParams(window.location.search);
-  const category = params.get('category');
-
-  if (category) {
-    const title = document.querySelector('.section-title');
-
-    if (title) {
-      title.textContent = category + ' Listings';
-    }
-
-    fetch('/api/listings/category/' + encodeURIComponent(category))
-      .then(parseResponse)
-      .then(renderListings)
-      .catch(onListingsError);
-  } else {
-    fetch('/api/listings')
-      .then(parseResponse)
-      .then(renderListings)
-      .catch(onListingsError);
-  }
-}
-
 function initListingsPage() {
-  const listingsGrid = document.getElementById('listingsGrid');
+  var listingsGrid = document.getElementById('listingsGrid');
   if (!listingsGrid) return;
 
-  loadAllListings();
+  var category = new URLSearchParams(window.location.search).get('category');
+  if (category) {
+    var title = document.querySelector('.section-title');
+    if (title) title.textContent = category + ' Listings';
+  }
+
+  var searchInput = document.getElementById('search-input');
+  var minPrice    = document.getElementById('min-price');
+  var maxPrice    = document.getElementById('max-price');
+  var sortSelect  = document.getElementById('sort-select');
+
+  if (searchInput) searchInput.addEventListener('input', debounce(fetchListings, 300));
+  if (minPrice)    minPrice.addEventListener('input',   debounce(fetchListings, 400));
+  if (maxPrice)    maxPrice.addEventListener('input',   debounce(fetchListings, 400));
+  if (sortSelect)  sortSelect.addEventListener('change', fetchListings);
+
+  fetchListings();
+
+  fetch('/api/listings/most-viewed')
+    .then(parseResponse)
+    .then(renderMostViewed)
+    .catch(function () {
+      var s = document.getElementById('most-viewed-section');
+      if (s) s.style.display = 'none';
+    });
 }
 
 // ── LISTING MODAL HELPERS ─────────────────────────────────────────────────
@@ -423,7 +296,6 @@ function openListingModal(mode, listing) {
     modalMessage.textContent = 'Update your listing details below.';
     confirmButton.textContent = 'Save Changes';
     editFields.classList.remove('d-none');
-
     document.getElementById('editTitle').value = listing.title;
     document.getElementById('editDescription').value = listing.description;
     document.getElementById('editPrice').value = listing.price;
@@ -441,25 +313,15 @@ function openListingModal(mode, listing) {
 
 function closeListingModal() {
   const modal = document.getElementById('listingModal');
-
-  if (modal) {
-    modal.classList.add('d-none');
-  }
-
+  if (modal) modal.classList.add('d-none');
   selectedListing = null;
   listingModalMode = null;
 }
 
 function handleListingModalConfirm() {
   if (!selectedListing || !listingModalMode) return;
-
-  if (listingModalMode === 'edit') {
-    updateListingFromModal(selectedListing);
-  }
-
-  if (listingModalMode === 'delete') {
-    deleteListingFromModal(selectedListing);
-  }
+  if (listingModalMode === 'edit') updateListingFromModal(selectedListing);
+  if (listingModalMode === 'delete') deleteListingFromModal(selectedListing);
 }
 
 function updateListingFromModal(listing) {
@@ -494,7 +356,7 @@ function updateListingFromModal(listing) {
 
       closeListingModal();
       showToast('Listing updated successfully.');
-      loadAllListings();
+      fetchListings();
     })
     .catch(function () {
       showWarning('Something went wrong while updating listing.');
@@ -519,7 +381,7 @@ function deleteListingFromModal(listing) {
 
       closeListingModal();
       showToast('Listing deleted successfully.');
-      loadAllListings();
+      fetchListings();
     })
     .catch(function () {
       showWarning('Something went wrong while deleting listing.');

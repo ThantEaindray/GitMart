@@ -88,7 +88,16 @@ CREATE TABLE listings (
   category    TEXT           NOT NULL DEFAULT 'Others',
   image_url   TEXT,
   "isSold"    BOOLEAN        DEFAULT false,
-  "isClosed"  BOOLEAN        DEFAULT false
+  "isClosed"  BOOLEAN        DEFAULT false,
+  view_count  INTEGER        DEFAULT 0
+);
+
+-- ── Listing Views (unique per user per listing) ───────────
+CREATE TABLE listing_views (
+  listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+  user_id    INTEGER NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
+  viewed_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (listing_id, user_id)
 );
 
 -- ── Chats ─────────────────────────────────────────────────
