@@ -64,12 +64,16 @@ function renderListing(listing) {
     day: 'numeric',
   });
 
+  const listingImage = listing.image_url
+    ? '<img src="' + listing.image_url + '" alt="' + listing.title + '" class="listing-detail-image" />'
+    : '<i class="bi bi-tag"></i>';
+
   var cartBtn = isAvailable
     ? '<button class="btn-outline" id="btn-cart" onclick="addToCart()"><i class="bi bi-bag"></i> Add to Cart</button>'
     : '';
 
   section.innerHTML =
-    '<div class="product-img"><i class="bi bi-tag"></i></div>' +
+    '<div class="product-img">' + listingImage + '</div>' +
     '<div class="product-info">' +
     '<div class="card-cat" style="color:' + statusColor + ';">' + status + ' &nbsp;·&nbsp; Listed ' + date + (listing.view_count > 0 ? ' &nbsp;·&nbsp; <i class="bi bi-eye"></i> ' + listing.view_count + ' views' : '') + '</div>' +
     '<h1 class="product-name">' + listing.title + '</h1>' +

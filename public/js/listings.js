@@ -5,9 +5,13 @@
 function showToast(message) {
   const toast = document.getElementById('toast');
   if (!toast) return;
+
   toast.textContent = message;
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 3000);
+
+  setTimeout(function () {
+    toast.classList.remove('show');
+  }, 3000);
 }
 
 // ── FIELD VALIDATION ──────────────────────────────────────────────────────
@@ -15,12 +19,16 @@ function showToast(message) {
 function showFieldError(id, message) {
   const el = document.getElementById(id);
   if (!el) return;
+
   el.classList.add('input-error');
+
   const existing = el.parentElement.querySelector('.field-error');
   if (existing) existing.remove();
+
   const err = document.createElement('span');
   err.className = 'field-error';
   err.textContent = message;
+
   el.parentElement.appendChild(err);
 }
 
@@ -28,6 +36,7 @@ function clearFieldErrors() {
   document.querySelectorAll('.input-error').forEach(function (el) {
     el.classList.remove('input-error');
   });
+
   document.querySelectorAll('.field-error').forEach(function (el) {
     el.remove();
   });
@@ -38,6 +47,7 @@ function clearFieldErrors() {
 function showWarning(message) {
   const warningCard = document.getElementById('warningCard');
   const warningText = document.getElementById('warningText');
+
   if (warningCard && warningText) {
     warningText.textContent = message;
     warningCard.classList.remove('d-none');
@@ -47,6 +57,7 @@ function showWarning(message) {
 function hideWarning() {
   const warningCard = document.getElementById('warningCard');
   const warningText = document.getElementById('warningText');
+
   if (warningCard && warningText) {
     warningText.textContent = '';
     warningCard.classList.add('d-none');
@@ -59,6 +70,17 @@ function parseResponse(response) {
   return response.json().then(function (data) {
     return { status: response.status, data };
   });
+}
+
+let selectedListingImageUrl = null;
+let pendingCoverImageUrl = null;
+
+function getCurrentUserId() {
+  return Number(localStorage.getItem('loggedInUserId') || localStorage.getItem('userId'));
+}
+
+function isOwner(listing) {
+  return Number(listing.owner_id) === getCurrentUserId();
 }
 
 // ── LISTING CARD ──────────────────────────────────────────────────────────
@@ -80,10 +102,24 @@ function createListingCard(listing) {
     day: 'numeric',
   });
 
+  const ownerControls = isOwner(listing)
+    ? `
+      <div class="owner-actions">
+        <button class="btn-primary btn-edit-listing" data-id="${listing.id}" type="button">Edit</button>
+        <button class="btn-secondary btn-delete-listing" data-id="${listing.id}" type="button">Delete</button>
+      </div>
+    `
+    : '';
+
+  const listingImage = listing.image_url
+    ? `<img src="${listing.image_url}" alt="${listing.title}" class="listing-card-image" />`
+    : '<i class="bi bi-tag" style="font-size:2.5rem;"></i>';
+
   card.innerHTML = `
     <div class="card-img">
-      <i class="bi bi-tag" style="font-size:2.5rem;"></i>
+      ${listingImage}
     </div>
+
     <div class="card-body">
       <div class="card-cat">${status} &nbsp;·&nbsp; ${date}</div>
       <div class="card-name">${listing.title}</div>
@@ -92,10 +128,28 @@ function createListingCard(listing) {
         <span class="card-price" data-price="${listing.price}">${formatPrice(Number(listing.price))}</span>
         ${listing.view_count > 0 ? `<span style="font-size:0.78rem;color:var(--muted);"><i class="bi bi-eye"></i> ${listing.view_count}</span>` : ''}
       </div>
+      ${ownerControls}
     </div>
   `;
 
   card.addEventListener('click', goToListing);
+
+  const editBtn = card.querySelector('.btn-edit-listing');
+  if (editBtn) {
+    editBtn.addEventListener('click', function (event) {
+      event.stopPropagation();
+      openListingModal('edit', listing);
+    });
+  }
+
+  const deleteBtn = card.querySelector('.btn-delete-listing');
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', function (event) {
+      event.stopPropagation();
+      openListingModal('delete', listing);
+    });
+  }
+
   return card;
 }
 
@@ -144,10 +198,28 @@ function renderMostViewed(result) {
   });
 }
 
-// ── BROWSE LISTINGS PAGE ──────────────────────────────────────────────────
+// ── RENDER LISTINGS ───────────────────────────────────────────────────────
+
+function renderListingCards(listings) {
+  const listingsGrid = document.getElementById('listingsGrid');
+  if (!listingsGrid) return;
+
+  listingsGrid.innerHTML = '';
+
+  if (!Array.isArray(listings) || listings.length === 0) {
+    listingsGrid.innerHTML = '<p class="status-text">No listings found.</p>';
+    return;
+  }
+
+  listings.forEach(function (listing) {
+    listingsGrid.appendChild(createListingCard(listing));
+  });
+}
 
 function renderListings(result) {
   const listingsGrid = document.getElementById('listingsGrid');
+  if (!listingsGrid) return;
+
   listingsGrid.innerHTML = '';
 
   if (result.status !== 200) {
@@ -155,19 +227,16 @@ function renderListings(result) {
     return;
   }
 
-  if (!Array.isArray(result.data) || result.data.length === 0) {
-    listingsGrid.innerHTML = '<p class="status-text">No listings available yet.</p>';
-    return;
-  }
-
-  result.data.forEach(function (listing) {
-    listingsGrid.appendChild(createListingCard(listing));
-  });
+  renderListingCards(result.data);
 }
 
 function onListingsError() {
   const listingsGrid = document.getElementById('listingsGrid');
-  listingsGrid.innerHTML = '';
+
+  if (listingsGrid) {
+    listingsGrid.innerHTML = '';
+  }
+
   showWarning('Something went wrong while loading listings.');
 }
 
@@ -202,6 +271,122 @@ function initListingsPage() {
     });
 }
 
+// ── LISTING MODAL HELPERS ─────────────────────────────────────────────────
+
+let selectedListing = null;
+let listingModalMode = null;
+
+function openListingModal(mode, listing) {
+  selectedListing = listing;
+  listingModalMode = mode;
+
+  const modal = document.getElementById('listingModal');
+  const modalTitle = document.getElementById('listingModalTitle');
+  const modalMessage = document.getElementById('listingModalMessage');
+  const editFields = document.getElementById('editListingFields');
+  const confirmButton = document.getElementById('btnConfirmListingModal');
+
+  if (!modal || !modalTitle || !modalMessage || !editFields || !confirmButton) {
+    showWarning('Modal elements are missing.');
+    return;
+  }
+
+  if (mode === 'edit') {
+    modalTitle.textContent = 'Edit Listing';
+    modalMessage.textContent = 'Update your listing details below.';
+    confirmButton.textContent = 'Save Changes';
+    editFields.classList.remove('d-none');
+    document.getElementById('editTitle').value = listing.title;
+    document.getElementById('editDescription').value = listing.description;
+    document.getElementById('editPrice').value = listing.price;
+  }
+
+  if (mode === 'delete') {
+    modalTitle.textContent = 'Delete Listing';
+    modalMessage.textContent = 'Are you sure you want to delete "' + listing.title + '"? This action cannot be undone.';
+    confirmButton.textContent = 'Delete';
+    editFields.classList.add('d-none');
+  }
+
+  modal.classList.remove('d-none');
+}
+
+function closeListingModal() {
+  const modal = document.getElementById('listingModal');
+  if (modal) modal.classList.add('d-none');
+  selectedListing = null;
+  listingModalMode = null;
+}
+
+function handleListingModalConfirm() {
+  if (!selectedListing || !listingModalMode) return;
+  if (listingModalMode === 'edit') updateListingFromModal(selectedListing);
+  if (listingModalMode === 'delete') deleteListingFromModal(selectedListing);
+}
+
+function updateListingFromModal(listing) {
+  if (!localStorage.getItem('token')) {
+    showToast('Please log in to edit your listing.');
+    return;
+  }
+
+  const newTitle = document.getElementById('editTitle').value.trim();
+  const newDescription = document.getElementById('editDescription').value.trim();
+  const newPrice = document.getElementById('editPrice').value;
+
+  if (!newTitle || !newDescription || Number(newPrice) <= 0) {
+    showWarning('Title, description and valid price are required.');
+    return;
+  }
+
+  authFetch('/api/listings/' + listing.id, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      title: newTitle,
+      description: newDescription,
+      price: Number(newPrice),
+    }),
+  })
+    .then(parseResponse)
+    .then(function (result) {
+      if (result.status !== 200) {
+        showWarning(result.data.message || 'Failed to update listing.');
+        return;
+      }
+
+      closeListingModal();
+      showToast('Listing updated successfully.');
+      fetchListings();
+    })
+    .catch(function () {
+      showWarning('Something went wrong while updating listing.');
+    });
+}
+
+function deleteListingFromModal(listing) {
+  if (!localStorage.getItem('token')) {
+    showToast('Please log in to delete your listing.');
+    return;
+  }
+
+  authFetch('/api/listings/' + listing.id, {
+    method: 'DELETE',
+  })
+    .then(parseResponse)
+    .then(function (result) {
+      if (result.status !== 200) {
+        showWarning(result.data.message || 'Failed to delete listing.');
+        return;
+      }
+
+      closeListingModal();
+      showToast('Listing deleted successfully.');
+      fetchListings();
+    })
+    .catch(function () {
+      showWarning('Something went wrong while deleting listing.');
+    });
+}
 // ── CREATE LISTING PAGE ───────────────────────────────────────────────────
 
 function onCreateListingSuccess(result) {
@@ -223,13 +408,20 @@ function onCreateListingError() {
     showToast('You must be logged in to create a listing.');
     return;
   }
+
   showWarning('Something went wrong while creating listing.');
 }
 
 function submitListing(title, description, category, priceUsd) {
   authFetch('/api/listings', {
     method: 'POST',
-    body: JSON.stringify({ title, description, category, price: priceUsd }),
+    body: JSON.stringify({
+      title,
+      description,
+      category,
+      price: priceUsd,
+      imageUrl: selectedListingImageUrl,
+    }),
   })
     .then(parseResponse)
     .then(onCreateListingSuccess)
@@ -238,6 +430,7 @@ function submitListing(title, description, category, priceUsd) {
 
 function handleCreateListingSubmit(event) {
   event.preventDefault();
+
   hideWarning();
   clearFieldErrors();
 
@@ -257,14 +450,17 @@ function handleCreateListingSubmit(event) {
     showFieldError('title', 'Title is required.');
     hasError = true;
   }
+
   if (!description) {
     showFieldError('description', 'Description is required.');
     hasError = true;
   }
+
   if (!category) {
     showFieldError('category', 'Please select a category.');
     hasError = true;
   }
+
   if (!price || Number(price) <= 0) {
     showFieldError('price', 'Enter a valid price greater than 0.');
     hasError = true;
@@ -282,6 +478,8 @@ function handleCreateListingSubmit(event) {
 
 function resetAnalyseButton() {
   const analyseBtn = document.getElementById('btn-analyse');
+  if (!analyseBtn) return;
+
   analyseBtn.textContent = 'Analyse Image';
   analyseBtn.disabled = false;
 }
@@ -296,8 +494,15 @@ function onAnalyseSuccess(result) {
 
   const titleInput = document.getElementById('title');
   const descInput = document.getElementById('description');
-  if (titleInput && result.data.title) titleInput.value = result.data.title;
-  if (descInput && result.data.description) descInput.value = result.data.description;
+
+  if (titleInput && result.data.title) {
+    titleInput.value = result.data.title;
+  }
+
+  if (descInput && result.data.description) {
+    descInput.value = result.data.description;
+  }
+
   showToast('Form pre-filled from image!');
 }
 
@@ -309,7 +514,10 @@ function onAnalyseError() {
 function sendAnalyseRequest(base64, mimeType) {
   authFetch('/api/listings/analyse-image', {
     method: 'POST',
-    body: JSON.stringify({ imageBase64: base64, mimeType }),
+    body: JSON.stringify({
+      imageBase64: base64,
+      mimeType,
+    }),
   })
     .then(parseResponse)
     .then(onAnalyseSuccess)
@@ -318,6 +526,12 @@ function sendAnalyseRequest(base64, mimeType) {
 
 function onImageRead(e) {
   const imageInput = document.getElementById('imageInput');
+
+  if (!imageInput || !imageInput.files || !imageInput.files[0]) {
+    showToast('Please select an image first.');
+    return;
+  }
+
   const base64 = e.target.result.split(',')[1];
   sendAnalyseRequest(base64, imageInput.files[0].type);
 }
@@ -336,10 +550,13 @@ function handleAnalyseImage() {
     return;
   }
 
-  analyseBtn.textContent = 'Analysing…';
-  analyseBtn.disabled = true;
+  if (analyseBtn) {
+    analyseBtn.textContent = 'Analysing…';
+    analyseBtn.disabled = true;
+  }
 
   const reader = new FileReader();
+
   reader.onload = onImageRead;
   reader.readAsDataURL(imageInput.files[0]);
 }
@@ -347,10 +564,86 @@ function handleAnalyseImage() {
 function onImagePicked() {
   const imageInput = document.getElementById('imageInput');
   const label = document.getElementById('upload-label');
-  if (label) label.textContent = imageInput.files[0] ? imageInput.files[0].name : 'Choose a photo…';
+  const coverImageStatus = document.getElementById('coverImageStatus');
+
+  selectedListingImageUrl = null;
+  pendingCoverImageUrl = null;
+
+  if (coverImageStatus) {
+    coverImageStatus.textContent = 'No cover image selected yet.';
+  }
+
+  if (!imageInput || !imageInput.files || !imageInput.files[0]) {
+    if (label) label.textContent = 'Choose a photo…';
+    return;
+  }
+
+  const file = imageInput.files[0];
+
+  if (label) {
+    label.textContent = file.name;
+  }
+
+  if (!file.type.startsWith('image/')) {
+    showToast('Please choose a valid image file.');
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function () {
+    pendingCoverImageUrl = reader.result;
+  };
+
+  reader.readAsDataURL(file);
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────────
+function openCoverImageModal() {
+  const imageInput = document.getElementById('imageInput');
+  const modal = document.getElementById('coverImageModal');
+
+  if (!imageInput || !imageInput.files || !imageInput.files[0]) {
+    showToast('Please choose a photo first.');
+    return;
+  }
+
+  if (!pendingCoverImageUrl) {
+    showToast('Please wait for the image to finish loading.');
+    return;
+  }
+
+  if (modal) {
+    modal.classList.remove('d-none');
+  }
+}
+
+function closeCoverImageModal() {
+  const modal = document.getElementById('coverImageModal');
+
+  if (modal) {
+    modal.classList.add('d-none');
+  }
+}
+
+function confirmCoverImage() {
+  const coverImageStatus = document.getElementById('coverImageStatus');
+
+  if (!pendingCoverImageUrl) {
+    showToast('Please choose a photo first.');
+    return;
+  }
+
+  selectedListingImageUrl = pendingCoverImageUrl;
+
+  if (coverImageStatus) {
+    coverImageStatus.textContent = 'This photo will be used as the listing cover image.';
+  }
+
+  closeCoverImageModal();
+  showToast('Cover image selected.');
+}
+
+// ── INIT CREATE LISTING PAGE ──────────────────────────────────────────────
 
 function initCreateListingPage() {
   const listingCreateForm = document.getElementById('listingCreateForm');
@@ -362,29 +655,75 @@ function initCreateListingPage() {
 
   const code = localStorage.getItem('currency') || 'USD';
   const { symbol } = CURRENCIES[code] || CURRENCIES.USD;
+
   const priceLabel = document.getElementById('price-label');
-  if (priceLabel) priceLabel.textContent = 'Price (' + code + ' ' + symbol + ')';
+
+  if (priceLabel) {
+    priceLabel.textContent = 'Price (' + code + ' ' + symbol + ')';
+  }
 
   listingCreateForm.addEventListener('submit', handleCreateListingSubmit);
 
   ['title', 'description', 'category', 'price'].forEach(function (id) {
     const el = document.getElementById(id);
-    if (el)
+
+    if (el) {
       el.addEventListener('input', function () {
         el.classList.remove('input-error');
+
         const err = el.parentElement.querySelector('.field-error');
-        if (err) err.remove();
+
+        if (err) {
+          err.remove();
+        }
       });
+    }
   });
 
   const analyseBtn = document.getElementById('btn-analyse');
-  if (analyseBtn) analyseBtn.addEventListener('click', handleAnalyseImage);
+
+  if (analyseBtn) {
+    analyseBtn.addEventListener('click', handleAnalyseImage);
+  }
 
   const imageInput = document.getElementById('imageInput');
-  if (imageInput) imageInput.addEventListener('change', onImagePicked);
+
+  if (imageInput) {
+    imageInput.addEventListener('change', onImagePicked);
+  }
+
+  const useCoverImageBtn = document.getElementById('btnUseCoverImage');
+  const cancelCoverImageBtn = document.getElementById('btnCancelCoverImage');
+  const confirmCoverImageBtn = document.getElementById('btnConfirmCoverImage');
+
+  if (useCoverImageBtn) {
+    useCoverImageBtn.addEventListener('click', openCoverImageModal);
+  }
+
+  if (cancelCoverImageBtn) {
+    cancelCoverImageBtn.addEventListener('click', closeCoverImageModal);
+  }
+
+  if (confirmCoverImageBtn) {
+    confirmCoverImageBtn.addEventListener('click', confirmCoverImage);
+  }
+
 }
+
+// ── INIT ──────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', function () {
   initListingsPage();
   initCreateListingPage();
+
+  const cancelModalButton = document.getElementById('btnCancelListingModal');
+  const confirmModalButton = document.getElementById('btnConfirmListingModal');
+
+  if (cancelModalButton) {
+    cancelModalButton.addEventListener('click', closeListingModal);
+  }
+
+  if (confirmModalButton) {
+    confirmModalButton.addEventListener('click', handleListingModalConfirm);
+  }
 });
