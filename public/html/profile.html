@@ -55,43 +55,41 @@
     </section>
 
     <section class="auth-card profile-card profile-wide-card">
-  <h2>Account</h2>
+      <h2>Account</h2>
 
-  <div id="warningCard" class="auth-alert d-none">
-    <span id="warningText"></span>
-  </div>
-
-  <div class="profile-layout">
-    <div class="profile-image-column">
-      <div class="profile-image-preview" id="profileImagePreview">
-        <i class="bi bi-person"></i>
+      <div id="warningCard" class="auth-alert d-none">
+        <span id="warningText"></span>
       </div>
 
-      <label class="btn-outline profile-image-upload">
-        Choose Profile Image
-        <input id="profileImageInput" type="file" accept="image/*" hidden />
-      </label>
+      <div class="profile-layout">
+        <div class="profile-image-column">
+          <div class="profile-image-preview" id="profileImagePreview">
+            <i class="bi bi-person"></i>
+          </div>
 
-      <button id="uploadProfileImageBtn" class="btn-primary profile-upload-btn" type="button">
-        Upload Image
-      </button>
-    </div>
+          <label class="btn-outline profile-image-upload">
+            Choose Profile Image
+            <input id="profileImageInput" type="file" accept="image/*" hidden />
+          </label>
 
-    <div class="profile-details-column">
-      <div class="profile-info">
-        <p><strong>Username:</strong> <span id="profileUsername">Loading...</span></p>
-        <p><strong>Email:</strong> <span id="profileEmail">Loading...</span></p>
-        <p><strong>Role:</strong> <span id="profileStaff">Loading...</span></p>
-        <p><strong>Created On:</strong> <span id="profileCreatedOn">Loading...</span></p>
+          <button id="uploadProfileImageBtn" class="btn-primary profile-upload-btn" type="button">
+            Upload Image
+          </button>
+
+          <div class="profile-info">
+            <p><strong>Username:</strong> <span id="profileUsername">Loading...</span></p>
+            <p><strong>Email:</strong> <span id="profileEmail">Loading...</span></p>
+            <p><strong>Role:</strong> <span id="profileStaff">Loading...</span></p>
+            <p><strong>Created On:</strong> <span id="profileCreatedOn">Loading...</span></p>
+          </div>
+
+          <div class="profile-actions">
+            <a href="dashboard.html" class="btn-primary profile-dashboard-btn">My Dashboard</a>
+            <button id="logoutBtn" class="btn-outline profile-logout-btn">Logout</button>
+          </div>
+        </div>
       </div>
-
-      <div class="profile-actions">
-        <a href="dashboard.html" class="btn-primary profile-dashboard-btn">My Dashboard</a>
-        <button id="logoutBtn" class="btn-outline profile-logout-btn">Logout</button>
-      </div>
-    </div>
-  </div>
-</section>
+    </section>
   </main>
 
   <script src="../js/prefs.js"></script>

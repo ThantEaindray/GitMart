@@ -281,3 +281,66 @@
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* ── LISTING IMAGES ──────────────────────────────────── */
+
+.card-img {
+  overflow: hidden;
+}
+
+.listing-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Listing detail image */
+.product-img {
+  overflow: hidden;
+}
+
+.listing-detail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── COVER IMAGE CHOICE ──────────────────────────────── */
+
+.cover-image-choice {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  padding: 16px 18px;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.cover-image-choice:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.cover-image-status {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 10px 0 0;
+  text-align: center;
+}

@@ -76,6 +76,8 @@ let allListings = [];
 let currentListingFilter = 'all';
 let currentSearchTerm = '';
 let currentSortMode = 'newest';
+let selectedListingImageUrl = null;
+let pendingCoverImageUrl = null;
 
 function updateFilterButtonState() {
   const allButton = document.getElementById('btnAllListings');
@@ -262,10 +264,15 @@ function createListingCard(listing) {
     `
     : '';
 
+  const listingImage = listing.image_url
+    ? `<img src="${listing.image_url}" alt="${listing.title}" class="listing-card-image" />`
+    : '<i class="bi bi-tag" style="font-size:2.5rem;"></i>';
+
   card.innerHTML = `
     <div class="card-img">
-      <i class="bi bi-tag" style="font-size:2.5rem;"></i>
+      ${listingImage}
     </div>
+
     <div class="card-body">
       <div class="card-cat">${status} &nbsp;·&nbsp; ${date}</div>
       <div class="card-name">${listing.title}</div>
@@ -551,6 +558,7 @@ function submitListing(title, description, category, priceUsd) {
       description,
       category,
       price: priceUsd,
+      imageUrl: selectedListingImageUrl,
     }),
   })
     .then(parseResponse)
@@ -694,10 +702,83 @@ function handleAnalyseImage() {
 function onImagePicked() {
   const imageInput = document.getElementById('imageInput');
   const label = document.getElementById('upload-label');
+  const coverImageStatus = document.getElementById('coverImageStatus');
 
-  if (label && imageInput) {
-    label.textContent = imageInput.files[0] ? imageInput.files[0].name : 'Choose a photo…';
+  selectedListingImageUrl = null;
+  pendingCoverImageUrl = null;
+
+  if (coverImageStatus) {
+    coverImageStatus.textContent = 'No cover image selected yet.';
   }
+
+  if (!imageInput || !imageInput.files || !imageInput.files[0]) {
+    if (label) label.textContent = 'Choose a photo…';
+    return;
+  }
+
+  const file = imageInput.files[0];
+
+  if (label) {
+    label.textContent = file.name;
+  }
+
+  if (!file.type.startsWith('image/')) {
+    showToast('Please choose a valid image file.');
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function () {
+    pendingCoverImageUrl = reader.result;
+  };
+
+  reader.readAsDataURL(file);
+}
+
+function openCoverImageModal() {
+  const imageInput = document.getElementById('imageInput');
+  const modal = document.getElementById('coverImageModal');
+
+  if (!imageInput || !imageInput.files || !imageInput.files[0]) {
+    showToast('Please choose a photo first.');
+    return;
+  }
+
+  if (!pendingCoverImageUrl) {
+    showToast('Please wait for the image to finish loading.');
+    return;
+  }
+
+  if (modal) {
+    modal.classList.remove('d-none');
+  }
+}
+
+function closeCoverImageModal() {
+  const modal = document.getElementById('coverImageModal');
+
+  if (modal) {
+    modal.classList.add('d-none');
+  }
+}
+
+function confirmCoverImage() {
+  const coverImageStatus = document.getElementById('coverImageStatus');
+
+  if (!pendingCoverImageUrl) {
+    showToast('Please choose a photo first.');
+    return;
+  }
+
+  selectedListingImageUrl = pendingCoverImageUrl;
+
+  if (coverImageStatus) {
+    coverImageStatus.textContent = 'This photo will be used as the listing cover image.';
+  }
+
+  closeCoverImageModal();
+  showToast('Cover image selected.');
 }
 
 // ── INIT CREATE LISTING PAGE ──────────────────────────────────────────────
@@ -748,6 +829,23 @@ function initCreateListingPage() {
   if (imageInput) {
     imageInput.addEventListener('change', onImagePicked);
   }
+
+  const useCoverImageBtn = document.getElementById('btnUseCoverImage');
+  const cancelCoverImageBtn = document.getElementById('btnCancelCoverImage');
+  const confirmCoverImageBtn = document.getElementById('btnConfirmCoverImage');
+
+  if (useCoverImageBtn) {
+    useCoverImageBtn.addEventListener('click', openCoverImageModal);
+  }
+
+  if (cancelCoverImageBtn) {
+    cancelCoverImageBtn.addEventListener('click', closeCoverImageModal);
+  }
+
+  if (confirmCoverImageBtn) {
+    confirmCoverImageBtn.addEventListener('click', confirmCoverImage);
+  }
+
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────

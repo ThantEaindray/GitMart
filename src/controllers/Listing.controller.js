@@ -159,6 +159,7 @@ module.exports.createListing = (req, res) => {
     description,
     price,
     category: req.body.category || 'Others',
+    image_url: req.body.imageUrl || null,
   };
 
   const callback = (error, results) => {
