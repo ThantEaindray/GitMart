@@ -794,6 +794,157 @@
         text-underline-offset: 3px;
       }
 
+      .paynow-qr-box {
+        display: grid;
+        grid-template-columns: 184px minmax(0, 1fr);
+        gap: 22px;
+        align-items: center;
+        margin: 16px 0;
+        padding: 20px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+      }
+
+      .paynow-card {
+        overflow: hidden;
+        position: relative;
+        width: 184px;
+        min-height: 238px;
+        border: 1px solid #d8d2c4;
+        background: #fdfcf8;
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+      }
+
+      .paynow-card-header {
+        padding: 14px 14px 8px;
+        color: #1b1b1b;
+        font-size: 0.64em;
+        letter-spacing: 0.08em;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      .paynow-card-merchant {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+
+      .paynow-qr {
+        position: relative;
+        width: 136px;
+        height: 136px;
+        margin: 0 auto 12px;
+        border: 6px solid #fff;
+        background:
+          linear-gradient(90deg, transparent 44%, #8f2a8d 44% 56%, transparent 56%),
+          linear-gradient(transparent 44%, #8f2a8d 44% 56%, transparent 56%),
+          repeating-conic-gradient(from 45deg, #8f2a8d 0 25%, transparent 0 50%) 0 0 / 15px 15px,
+          #fff;
+        box-shadow: 0 0 0 1px #d8d2c4;
+      }
+
+      .paynow-finder {
+        position: absolute;
+        width: 28px;
+        height: 28px;
+        border: 5px solid #8f2a8d;
+        background: #fff;
+      }
+
+      .paynow-finder::after {
+        content: '';
+        position: absolute;
+        inset: 6px;
+        background: #8f2a8d;
+      }
+
+      .paynow-finder.top-left {
+        top: 12px;
+        left: 12px;
+      }
+
+      .paynow-finder.top-right {
+        top: 12px;
+        right: 12px;
+      }
+
+      .paynow-finder.bottom-left {
+        bottom: 12px;
+        left: 12px;
+      }
+
+      .paynow-logo {
+        position: absolute;
+        inset: 50% auto auto 50%;
+        padding: 3px 8px;
+        background: #fff;
+        color: #8f2a8d;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        line-height: 1;
+        text-align: center;
+        transform: translate(-50%, -50%);
+      }
+
+      .paynow-scan-band {
+        padding: 8px 12px;
+        background: #8f2a8d;
+        color: #fff;
+        font-size: 0.72em;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      .paynow-card-foot {
+        padding: 9px 12px 12px;
+        color: #6f695f;
+        font-size: 0.58em;
+        line-height: 1.4;
+        text-align: center;
+      }
+
+      .paynow-info {
+        display: grid;
+        gap: 8px;
+      }
+
+      .paynow-info-title {
+        color: var(--text);
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        margin: 0;
+        text-transform: uppercase;
+      }
+
+      .paynow-info-line,
+      .paynow-reference {
+        color: var(--accent);
+        font-size: 0.84em;
+        letter-spacing: 0.08em;
+        margin: 0;
+        text-transform: uppercase;
+      }
+
+      .paynow-info-note {
+        color: var(--muted);
+        font-size: 0.86em;
+        line-height: 1.5;
+        margin: 0;
+      }
+
+      @media (max-width: 620px) {
+        .paynow-qr-box {
+          grid-template-columns: 1fr;
+        }
+
+        .paynow-card {
+          margin: 0 auto;
+        }
+      }
+
       /* ── PROGRESS STEPS ── */
       .checkout-progress {
         display: flex;
@@ -1430,6 +1581,79 @@
               hidden
             >
               Verify OTP
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="apple-pay-modal" id="payNowModal" aria-hidden="true">
+      <div class="apple-pay-dialog" role="dialog" aria-modal="true" aria-labelledby="payNowTitle">
+        <div class="apple-pay-header">
+          <h2 class="apple-pay-title" id="payNowTitle">
+            <i class="bi bi-qr-code"></i>
+            PayNow
+          </h2>
+          <button type="button" class="apple-pay-close" id="payNowClose" aria-label="Close PayNow">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="apple-pay-body">
+          <p class="apple-pay-context">
+            Scan the PayNow QR code with your banking app, confirm the total amount, then return
+            here once payment is complete.
+          </p>
+
+          <div class="apple-pay-sheet">
+            <div class="apple-pay-total-row">
+              <span class="price-label">Merchant</span>
+              <span class="price-value">GitMart</span>
+            </div>
+            <div class="apple-pay-total-row">
+              <span class="price-label">Payment method</span>
+              <span class="price-value">PayNow</span>
+            </div>
+            <div class="apple-pay-total-row total">
+              <span class="price-label">Total</span>
+              <span class="price-value" id="payNowTotal">$0.00</span>
+            </div>
+          </div>
+
+          <div class="paynow-qr-box" aria-label="PayNow payment details">
+            <div class="paynow-card" aria-hidden="true">
+              <div class="paynow-card-header">
+                <span class="paynow-card-merchant">GitMart</span>
+                PayNow payment request
+              </div>
+              <div class="paynow-qr">
+                <span class="paynow-finder top-left"></span>
+                <span class="paynow-finder top-right"></span>
+                <span class="paynow-finder bottom-left"></span>
+                <span class="paynow-logo">Pay<br />Now</span>
+              </div>
+              <div class="paynow-scan-band">Scan to Pay</div>
+              <div class="paynow-card-foot">
+                Confirm merchant, amount, and reference in your banking app.
+              </div>
+            </div>
+            <div class="paynow-info">
+              <p class="paynow-info-title">Scan to pay</p>
+              <p class="paynow-info-line">PayNow UEN: 202612345G</p>
+              <p class="paynow-info-line" id="payNowAmountLine">Amount: $0.00</p>
+              <p class="paynow-reference" id="payNowReference">Reference: GM-000000</p>
+              <p class="paynow-info-note">
+                Use your banking app to scan, check the amount and reference, then confirm payment.
+              </p>
+            </div>
+          </div>
+          <div class="apple-pay-status" id="payNowStatus">
+            PayNow QR generated. Scan with your banking app.
+          </div>
+
+          <div class="apple-pay-actions">
+            <button type="button" class="btn-outline" id="payNowCancel">Cancel</button>
+            <button type="button" class="btn-place-order" id="payNowComplete">
+              I have completed payment
             </button>
           </div>
         </div>

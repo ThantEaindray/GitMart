@@ -11,6 +11,7 @@ const cardPaymentRadio = document.getElementById('cardPayment');
 const applePayRadio = document.getElementById('applePay');
 const googlePayRadio = document.getElementById('googlePay');
 const grabPayRadio = document.getElementById('grabPay');
+const payNowRadio = document.getElementById('payNow');
 const applePayModal = document.getElementById('applePayModal');
 const applePayClose = document.getElementById('applePayClose');
 const applePayCancel = document.getElementById('applePayCancel');
@@ -44,6 +45,14 @@ const grabPayTotal = document.getElementById('grabPayTotal');
 const grabPayOtpPanel = document.getElementById('grabPayOtpPanel');
 const grabPayOtpMessage = document.getElementById('grabPayOtpMessage');
 const grabPayOtp = document.getElementById('grabPayOtp');
+const payNowModal = document.getElementById('payNowModal');
+const payNowClose = document.getElementById('payNowClose');
+const payNowCancel = document.getElementById('payNowCancel');
+const payNowComplete = document.getElementById('payNowComplete');
+const payNowStatus = document.getElementById('payNowStatus');
+const payNowTotal = document.getElementById('payNowTotal');
+const payNowReference = document.getElementById('payNowReference');
+const payNowAmountLine = document.getElementById('payNowAmountLine');
 const orderItemsEl = document.getElementById('orderItems');
 const subtotalPriceText = document.getElementById('subtotalPrice');
 const deliveryFeeText = document.getElementById('deliveryFee');
@@ -63,6 +72,8 @@ let pendingGooglePayOrderData = null;
 let googlePayTimer = null;
 let pendingGrabPayOrderData = null;
 let grabPayTimer = null;
+let pendingPayNowOrderData = null;
+let payNowTimer = null;
 
 function showToast(message) {
   const toast = document.getElementById('toast');
@@ -675,6 +686,39 @@ function closeGrabPayModal() {
   grabPayModal?.setAttribute('aria-hidden', 'true');
 }
 
+function createPayNowReference() {
+  const timestamp = new Date().toISOString().replace(/\D/g, '').slice(0, 12);
+  return `GM-${timestamp}`;
+}
+
+function openPayNowModal(orderData) {
+  pendingPayNowOrderData = orderData;
+  clearTimeout(payNowTimer);
+
+  if (payNowTotal) payNowTotal.textContent = formatMoney(orderData.totalAmount);
+  if (payNowAmountLine) {
+    payNowAmountLine.textContent = `Amount: ${formatMoney(orderData.totalAmount)}`;
+  }
+  if (payNowReference) payNowReference.textContent = `Reference: ${createPayNowReference()}`;
+  if (payNowStatus) {
+    payNowStatus.textContent = 'PayNow QR generated. Scan with your banking app.';
+  }
+  if (payNowComplete) {
+    payNowComplete.disabled = false;
+    payNowComplete.textContent = 'I have completed payment';
+  }
+
+  payNowModal?.classList.add('visible');
+  payNowModal?.setAttribute('aria-hidden', 'false');
+}
+
+function closePayNowModal() {
+  clearTimeout(payNowTimer);
+  pendingPayNowOrderData = null;
+  payNowModal?.classList.remove('visible');
+  payNowModal?.setAttribute('aria-hidden', 'true');
+}
+
 async function submitOrder(orderData) {
   placeOrderButton.disabled = true;
 
@@ -712,6 +756,7 @@ async function submitOrder(orderData) {
     closeApplePayModal();
     closeGooglePayModal();
     closeGrabPayModal();
+    closePayNowModal();
     localStorage.removeItem('purchasedItems');
     localStorage.removeItem('checkoutCart');
     localStorage.removeItem('cart');
@@ -875,6 +920,39 @@ async function handleGrabPayVerify() {
   }, 900);
 }
 
+async function handlePayNowComplete() {
+  if (!pendingPayNowOrderData || !payNowComplete || !payNowStatus) return;
+
+  if (!localStorage.getItem('token')) {
+    closePayNowModal();
+    showToast('Please log in before checking out.');
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 900);
+    return;
+  }
+
+  renderOrderSummary();
+  if (!validateCheckout()) {
+    closePayNowModal();
+    return;
+  }
+
+  pendingPayNowOrderData = getCheckoutOrderData();
+  if (payNowTotal) payNowTotal.textContent = formatMoney(pendingPayNowOrderData.totalAmount);
+
+  payNowComplete.disabled = true;
+  payNowStatus.textContent = 'Verifying PayNow payment...';
+
+  payNowTimer = setTimeout(() => {
+    payNowStatus.textContent = 'PayNow payment received successfully.';
+
+    payNowTimer = setTimeout(() => {
+      submitOrder(pendingPayNowOrderData);
+    }, 700);
+  }, 1200);
+}
+
 async function handlePlaceOrder() {
   if (!localStorage.getItem('token')) {
     showToast('Please log in before checking out.');
@@ -903,6 +981,11 @@ async function handlePlaceOrder() {
     return;
   }
 
+  if (payNowRadio?.checked) {
+    openPayNowModal(orderData);
+    return;
+  }
+
   await submitOrder(orderData);
 }
 
@@ -921,19 +1004,28 @@ function initCheckout() {
       if (option.id === 'applePay' && option.checked) {
         closeGooglePayModal();
         closeGrabPayModal();
+        closePayNowModal();
         openApplePayModal(getCheckoutOrderData());
       } else if (option.id === 'googlePay' && option.checked) {
         closeApplePayModal();
         closeGrabPayModal();
+        closePayNowModal();
         openGooglePayModal(getCheckoutOrderData());
       } else if (option.id === 'grabPay' && option.checked) {
         closeApplePayModal();
         closeGooglePayModal();
+        closePayNowModal();
         openGrabPayModal(getCheckoutOrderData());
+      } else if (option.id === 'payNow' && option.checked) {
+        closeApplePayModal();
+        closeGooglePayModal();
+        closeGrabPayModal();
+        openPayNowModal(getCheckoutOrderData());
       } else {
         closeApplePayModal();
         closeGooglePayModal();
         closeGrabPayModal();
+        closePayNowModal();
       }
     });
   });
@@ -953,6 +1045,12 @@ function initCheckout() {
   document.querySelector('[data-payment="grabPay"]')?.addEventListener('click', () => {
     setTimeout(() => {
       if (grabPayRadio?.checked) openGrabPayModal(getCheckoutOrderData());
+    }, 0);
+  });
+
+  document.querySelector('[data-payment="payNow"]')?.addEventListener('click', () => {
+    setTimeout(() => {
+      if (payNowRadio?.checked) openPayNowModal(getCheckoutOrderData());
     }, 0);
   });
 
@@ -983,6 +1081,12 @@ function initCheckout() {
   grabPayCancel?.addEventListener('click', closeGrabPayModal);
   grabPayModal?.addEventListener('click', (event) => {
     if (event.target === grabPayModal) closeGrabPayModal();
+  });
+  payNowComplete?.addEventListener('click', handlePayNowComplete);
+  payNowClose?.addEventListener('click', closePayNowModal);
+  payNowCancel?.addEventListener('click', closePayNowModal);
+  payNowModal?.addEventListener('click', (event) => {
+    if (event.target === payNowModal) closePayNowModal();
   });
   grabPayOtp?.addEventListener('input', () => {
     grabPayOtp.value = grabPayOtp.value.replace(/\D/g, '').substring(0, 6);
