@@ -32,11 +32,22 @@ module.exports.createUser = (data, callback) => {
 
 module.exports.getUserById = (data, callback) => {
   const SQLSTATEMENT = `
-        SELECT id, username, email, "isStaff" AS "isStaff", created_on
-        FROM users
-        WHERE id = $1
-    `;
+    SELECT 
+      id, 
+      username, 
+      email, 
+      "isStaff" AS "isStaff", 
+      created_on,
+      CASE
+        WHEN icon IS NULL THEN NULL
+        ELSE encode(icon, 'base64')
+      END AS profile_image
+    FROM users
+    WHERE id = $1
+  `;
+
   const VALUES = [data.id];
+
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
@@ -75,6 +86,24 @@ module.exports.deleteRefreshToken = (data, callback) => {
 module.exports.deleteAllRefreshTokensForUser = (data, callback) => {
   const SQLSTATEMENT = `DELETE FROM refresh_tokens WHERE user_id = $1`;
   pool.query(SQLSTATEMENT, [data.userId], callback);
+};
+
+module.exports.updateProfileImage = (data, callback) => {
+  const SQLSTATEMENT = `
+    UPDATE users
+    SET icon = $2
+    WHERE id = $1
+    RETURNING 
+      id,
+      CASE
+        WHEN icon IS NULL THEN NULL
+        ELSE encode(icon, 'base64')
+      END AS profile_image
+  `;
+
+  const VALUES = [data.id, data.imageBuffer];
+
+  pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
 module.exports.updateDisplayName = (data, callback) => {

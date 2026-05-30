@@ -13,9 +13,11 @@ router.get('/listings/category/:category', listingController.getListingsByCatego
 router.get('/listings/owner/:owner_id', listingController.getListingsByOwner);
 
 // Seller dashboard — must be before /:id to avoid being caught by the param route
-router.get('/listings/dashboard', jwtMiddleware.verifyToken, listingController.loadSellerStats, listingController.loadSellerCategoryBreakdown, listingController.sendDashboard);
+router.get('/listings/dashboard',    jwtMiddleware.verifyToken, listingController.loadSellerStats, listingController.loadSellerCategoryBreakdown, listingController.loadSellerViewBreakdown, listingController.sendDashboard);
+router.get('/listings/most-viewed',  listingController.getMostViewed);
+router.get('/listings/search',       listingController.searchListings);
 
-router.get('/listings/:id', listingController.getListingById);
+router.get('/listings/:id', jwtMiddleware.optionalAuth, listingController.getListingById);
 
 // Protected listing routes
 router.post('/listings', jwtMiddleware.verifyToken, listingController.createListing);

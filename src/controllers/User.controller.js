@@ -150,6 +150,35 @@ module.exports.updateDisplayName = (req, res) => {
   model.updateDisplayName(data, callback);
 };
 
+module.exports.updateProfileImage = (req, res) => {
+  const { imageBase64 } = req.body || {};
+
+  if (!imageBase64) {
+    return res.status(400).json({ message: 'Profile image is required.' });
+  }
+
+  const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+
+  const data = {
+    id: res.locals.userId,
+    imageBuffer: Buffer.from(base64Data, 'base64'),
+  };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+
+    return res.status(200).json({
+      message: 'Profile image updated successfully.',
+      profile_image: result.rows[0].profile_image,
+    });
+  };
+
+  model.updateProfileImage(data, callback);
+};
+
 module.exports.updateNotifications = (req, res) => {
   const data = {
     id: res.locals.userId,
@@ -265,9 +294,9 @@ module.exports.getCurrentUser = (req, res) => {
 // get the names & pfps of every user who has an open chat with the open user (array of ids)
 module.exports.namesPictures = (req, res, next) => {
   const data = {
-    ids : res.locals.toLoad
+    ids: res.locals.toLoad
   }
-  res.locals.namesImgs=new Array
+  res.locals.namesImgs = new Array
   const callback = (err, results, fields) => {
     console.log(results.rows[0])
     if (err) {
@@ -278,6 +307,6 @@ module.exports.namesPictures = (req, res, next) => {
     next()
   }
   data.ids.forEach((e) => {
-      model.namesPictures(e,callback)
+    model.namesPictures(e, callback)
   })
 }

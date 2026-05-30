@@ -1,5 +1,6 @@
 // ── TOAST ─────────────────────────────────────────────────────────────────
 
+var currentListing = null;
 
 function showToast(message) {
   const toast = document.getElementById('toast');
@@ -28,12 +29,36 @@ function errorView(message) {
 
 // ── LISTING DETAIL ────────────────────────────────────────────────────────
 
+function addToCart() {
+  if (!currentListing) return;
+  var raw = localStorage.getItem('cart');
+  var cart = raw ? JSON.parse(raw) : [];
+  var existing = cart.find(function (item) { return item.id === currentListing.id; });
+  if (existing) {
+    existing.quantity = Number(existing.quantity || 1) + 1;
+    localStorage.setItem('cart', JSON.stringify(cart));
+    showToast('Added another to cart.');
+    return;
+  }
+  cart.push({
+    id:       currentListing.id,
+    title:    currentListing.title,
+    price:    currentListing.price,
+    category: currentListing.category,
+    quantity: 1,
+  });
+  localStorage.setItem('cart', JSON.stringify(cart));
+  showToast('Added to cart.');
+}
+
 function renderListing(listing) {
+  currentListing = listing;
   const section = document.getElementById('listing-detail');
   document.title = 'GitMart — ' + listing.title;
 
+  const isAvailable = !listing.isSold && !listing.isClosed;
   const status = listing.isSold ? 'Sold' : listing.isClosed ? 'Closed' : 'Available';
-  const statusColor = listing.isSold || listing.isClosed ? 'var(--muted)' : 'var(--accent)';
+  const statusColor = isAvailable ? 'var(--accent)' : 'var(--muted)';
 
   const date = new Date(listing.created_on).toLocaleDateString(undefined, {
     year: 'numeric',
@@ -41,16 +66,26 @@ function renderListing(listing) {
     day: 'numeric',
   });
 
+  const listingImage = listing.image_url
+    ? '<img src="' + listing.image_url + '" alt="' + listing.title + '" class="listing-detail-image" />'
+    : '<i class="bi bi-tag"></i>';
+
+  var cartBtn = isAvailable
+    ? '<button class="btn-outline" id="btn-cart" onclick="addToCart()"><i class="bi bi-bag"></i> Add to Cart</button>'
+    : '';
+
   section.innerHTML =
-    '<div class="product-img"><i class="bi bi-tag"></i></div>' +
+    '<div class="product-img">' + listingImage + '</div>' +
     '<div class="product-info">' +
-    '<div class="card-cat" style="color:' + statusColor + ';">' + status + ' &nbsp;·&nbsp; Listed ' + date + '</div>' +
+    '<div class="card-cat" style="color:' + statusColor + ';">' + status + ' &nbsp;·&nbsp; Listed ' + date + (listing.view_count > 0 ? ' &nbsp;·&nbsp; <i class="bi bi-eye"></i> ' + listing.view_count + ' views' : '') + '</div>' +
     '<h1 class="product-name">' + listing.title + '</h1>' +
     '<div class="product-price" data-price="' + listing.price + '">' + formatPrice(Number(listing.price)) + '</div>' +
     '<p class="product-description">' + listing.description + '</p>' +
-    '<div class="product-actions"><button class="btn-primary" id="btn-contact" onclick="createChat(' + listing.owner + ')">Contact Seller</button></div>' +
+    '<div class="product-actions">' +
+      '<button class="btn-primary" id="btn-contact" onclick="createChat(' + listing.owner_id + ')">Contact Seller</button>' +
+      cartBtn +
+    '</div>' +
     '</div>';
-
 }
 
 function onListingLoaded(result) {
@@ -80,7 +115,9 @@ function loadListing() {
     return;
   }
 
-  fetch('/api/listings/' + id).then(parseResponse).then(onListingLoaded).catch(onListingError);
+  var token = localStorage.getItem('token');
+  var options = token ? { headers: { 'Authorization': 'Bearer ' + token } } : {};
+  fetch('/api/listings/' + id, options).then(parseResponse).then(onListingLoaded).catch(onListingError);
 }
 
 function createChat(uId) {

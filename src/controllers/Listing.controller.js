@@ -42,98 +42,129 @@ module.exports.analyseImage = function (req, res) {
     .catch(onError);
 };
 
+// GET /api/listings/most-viewed
+module.exports.getMostViewed = (req, res) => {
+  const callback = (error, result) => {
+    if (error) return res.status(500).json({ message: 'Internal server error' });
+    return res.status(200).json(result.rows);
+  };
+  model.getMostViewed(callback);
+};
+
+// GET /api/listings/search
+module.exports.searchListings = (req, res) => {
+  const data = {
+    search:   req.query.search   || '',
+    minPrice: req.query.minPrice || null,
+    maxPrice: req.query.maxPrice || null,
+    sort:     req.query.sort     || 'newest',
+    category: req.query.category || '',
+  };
+  const callback = (error, result) => {
+    if (error) return res.status(500).json({ message: 'Internal server error' });
+    return res.status(200).json(result.rows);
+  };
+  model.searchListings(data, callback);
+};
+
+// GET /api/listings/dashboard — step 3: viewers per listing
+module.exports.loadSellerViewBreakdown = (req, res, next) => {
+  const data = { owner_id: res.locals.userId };
+  const callback = (error, result) => {
+    if (error) return res.status(500).json({ message: 'Internal server error' });
+    res.locals.dashViewBreakdown = result.rows;
+    next();
+  };
+  model.getSellerViewBreakdown(data, callback);
+};
+
 // GET /api/listings/dashboard
 module.exports.loadSellerStats = (req, res, next) => {
   const data = { owner_id: res.locals.userId };
-  model.getSellerStats(data, function (error, stats) {
+  const callback = (error, result) => {
     if (error) return res.status(500).json({ message: 'Internal server error' });
-    res.locals.dashStats = stats;
+    res.locals.dashStats = result.rows[0];
     next();
-  });
+  };
+  model.getSellerStats(data, callback);
 };
 
 module.exports.loadSellerCategoryBreakdown = (req, res, next) => {
   const data = { owner_id: res.locals.userId };
-  model.getSellerCategoryBreakdown(data, function (error, categories) {
+  const callback = (error, result) => {
     if (error) return res.status(500).json({ message: 'Internal server error' });
-    res.locals.dashCategories = categories;
+    res.locals.dashCategories = result.rows;
     next();
-  });
+  };
+  model.getSellerCategoryBreakdown(data, callback);
 };
 
 module.exports.sendDashboard = (req, res) => {
   return res.status(200).json({
-    stats: res.locals.dashStats,
-    categories: res.locals.dashCategories,
+    stats:         res.locals.dashStats,
+    categories:    res.locals.dashCategories,
+    viewBreakdown: res.locals.dashViewBreakdown,
   });
 };
 
 // GET /api/listings/category/:category
 module.exports.getListingsByCategory = (req, res) => {
   const data = { category: req.params.category };
-
-  const callback = (error, results) => {
+  const callback = (error, result) => {
     if (error) {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
     }
-    return res.status(200).json(results);
+    return res.status(200).json(result.rows);
   };
-
   model.getListingsByCategory(data, callback);
 };
 
 // GET /api/listings
 module.exports.getAllListings = (req, res) => {
-  const callback = (error, results) => {
+  const callback = (error, result) => {
     if (error) {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
     }
-
-    return res.status(200).json(results);
+    return res.status(200).json(result.rows);
   };
-
   model.getAllListings(callback);
 };
 
 // GET /api/listings/:id
 module.exports.getListingById = (req, res) => {
   const data = {
-    id: req.params.id,
+    id:     req.params.id,
+    userId: res.locals.userId || null,
   };
-
-  const callback = (error, results) => {
+  const callback = (error, result) => {
     if (error) {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
     }
-
-    if (results.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Listing not found.' });
     }
-
-    return res.status(200).json(results[0]);
+    return res.status(200).json(result.rows[0]);
   };
-
-  model.getListingById(data, callback);
+  if (data.userId) {
+    model.getListingByIdWithView(data, callback);
+  } else {
+    model.getListingById(data, callback);
+  }
 };
 
 // GET /api/listings/owner/:owner_id
 module.exports.getListingsByOwner = (req, res) => {
-  const data = {
-    owner_id: req.params.owner_id,
-  };
-
-  const callback = (error, results) => {
+  const data = { owner_id: req.params.owner_id };
+  const callback = (error, result) => {
     if (error) {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
     }
-
-    return res.status(200).json(results);
+    return res.status(200).json(result.rows);
   };
-
   model.getListingsByOwner(data, callback);
 };
 
@@ -159,17 +190,17 @@ module.exports.createListing = (req, res) => {
     description,
     price,
     category: req.body.category || 'Others',
+    image_url: req.body.imageUrl || null,
   };
 
-  const callback = (error, results) => {
+  const callback = (error, result) => {
     if (error) {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
     }
-
     return res.status(201).json({
       message: 'Listing created successfully.',
-      listing: results[0],
+      listing: result.rows[0],
     });
   };
 
@@ -193,28 +224,26 @@ module.exports.updateListing = (req, res) => {
   }
 
   const data = {
-    id: req.params.id,
+    id:       req.params.id,
     owner_id: res.locals.userId,
     title,
     description,
     price,
   };
 
-  const callback = (error, results) => {
+  const callback = (error, result) => {
     if (error) {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
     }
-
-    if (results.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({
         message: 'Listing not found or you are not the owner.',
       });
     }
-
     return res.status(200).json({
       message: 'Listing updated successfully.',
-      listing: results[0],
+      listing: result.rows[0],
     });
   };
 
@@ -224,22 +253,20 @@ module.exports.updateListing = (req, res) => {
 // DELETE /api/listings/:id
 module.exports.deleteListing = (req, res) => {
   const data = {
-    id: req.params.id,
+    id:       req.params.id,
     owner_id: res.locals.userId,
   };
 
-  const callback = (error, results) => {
+  const callback = (error, result) => {
     if (error) {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
     }
-
-    if (results.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({
         message: 'Listing not found or you are not the owner.',
       });
     }
-
     return res.status(200).json({
       message: 'Listing deleted successfully.',
     });

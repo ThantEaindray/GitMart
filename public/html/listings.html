@@ -1,71 +1,154 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitMart — Listings</title>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GitMart — Listings</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="stylesheet" href="../css/noir.css" />
+    <link rel="stylesheet" href="../css/auth.css" />
+    <link rel="stylesheet" href="../css/listings.css" />
+    <script>
+      var t = localStorage.getItem('theme');
+      var f = localStorage.getItem('font');
+      var m = localStorage.getItem('motion');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+      if (f) document.documentElement.setAttribute('data-font', f);
+      if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
+    </script>
+  </head>
 
-  <link
-    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
-    rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link rel="stylesheet" href="../css/noir.css" />
-  <link rel="stylesheet" href="../css/auth.css" />
-  <script>
-    var t = localStorage.getItem('theme');
-    var f = localStorage.getItem('font');
-    var m = localStorage.getItem('motion');
-    if (t) document.documentElement.setAttribute('data-theme', t);
-    if (f) document.documentElement.setAttribute('data-font', f);
-    if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
-  </script>
-</head>
+  <body>
+    <nav class="nav">
+      <div class="logo">GitMart</div>
 
-<body>
-  <nav class="nav">
-    <div class="logo">GitMart</div>
+      <ul class="nav-links">
+        <li><a href="noir.html">Home</a></li>
+        <li><a href="products.html">Products</a></li>
+        <li><a href="listings.html">Listings</a></li>
+        <li><a href="listing-create.html">Create Listing</a></li>
+      </ul>
 
-    <ul class="nav-links">
-      <li><a href="noir.html">Home</a></li>
-      <li><a href="products.html">Products</a></li>
-      <li><a href="listings.html">Listings</a></li>
-      <li><a href="listing-create.html">Create Listing</a></li>
-    </ul>
+      <div class="nav-right">
+        <a class="icon-btn" id="btn-account" href="login.html" title="Login"
+          ><i class="bi bi-person"></i
+        ></a>
+        <button class="icon-btn" id="btn-wishlist" title="Wishlist">
+          <i class="bi bi-heart"></i>
+        </button>
+        <a class="icon-btn" href="checkout.html" title="Cart"><i class="bi bi-bag"></i></a>
+        <a class="icon-btn" href="chats.html" title="Chats"><i class="bi bi-chat-left-dots"></i></a>
+        <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
+      </div>
+    </nav>
 
-    <div class="nav-right">
-      <a class="icon-btn" id="btn-account" href="login.html" title="Login"><i class="bi bi-person"></i></a>
-      <button class="icon-btn" id="btn-wishlist" title="Wishlist"><i class="bi bi-heart"></i></button>
-      <a class="icon-btn" href="checkout.html" title="Cart"><i class="bi bi-bag"></i></a>
-      <a class="icon-btn" href="chats.html" title="Chats"><i class="bi bi-chat-left-dots"></i></a>
-      <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
-    </div>
-  </nav>
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="hero-tag">Marketplace</div>
+          <h2 class="section-title">User Listings</h2>
+        </div>
 
-  <section class="section">
-    <div class="section-header">
-      <div>
-        <div class="hero-tag">Marketplace</div>
-        <h2 class="section-title">User Listings</h2>
+        <a href="listing-create.html" class="see-all">Create Listing →</a>
       </div>
 
-      <a href="listing-create.html" class="see-all">Create Listing →</a>
+      <div class="search-filter-bar">
+        <input
+          class="search-filter-input"
+          type="text"
+          id="search-input"
+          placeholder="Search listings…"
+        />
+        <input
+          class="search-filter-price"
+          type="number"
+          id="min-price"
+          placeholder="Min $"
+          min="0"
+        />
+        <input
+          class="search-filter-price"
+          type="number"
+          id="max-price"
+          placeholder="Max $"
+          min="0"
+        />
+        <select class="search-filter-select" id="sort-select">
+          <option value="newest">Newest</option>
+          <option value="cheapest">Cheapest</option>
+          <option value="expensive">Most Expensive</option>
+        </select>
+      </div>
+
+      <div id="warningCard" class="auth-alert d-none">
+        <span id="warningText"></span>
+      </div>
+
+      <div class="products" id="listingsGrid">
+        <p class="status-text">Loading listings...</p>
+      </div>
+
+      <div id="most-viewed-section" style="margin-top: 36px">
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 24px 0" />
+        <div class="hero-tag" style="margin-bottom: 8px">Trending</div>
+        <h3
+          style="
+            font-size: 1rem;
+            margin-bottom: 16px;
+            color: var(--muted);
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+          "
+        >
+          Most Viewed
+        </h3>
+        <div class="products" id="mostViewedGrid"></div>
+      </div>
+    </section>
+
+    <!-- ── LISTING ACTION MODAL ── -->
+    <div class="listing-modal d-none" id="listingModal">
+      <div class="listing-modal-card">
+        <h3 id="listingModalTitle">Edit Listing</h3>
+        <p id="listingModalMessage" class="listing-modal-message"></p>
+
+        <div id="editListingFields" class="listing-modal-fields d-none">
+          <div class="form-group">
+            <label for="editTitle">Title</label>
+            <input id="editTitle" type="text" />
+          </div>
+
+          <div class="form-group">
+            <label for="editDescription">Description</label>
+            <input id="editDescription" type="text" />
+          </div>
+
+          <div class="form-group">
+            <label for="editPrice">Price</label>
+            <input id="editPrice" type="number" min="0.01" step="0.01" />
+          </div>
+        </div>
+
+        <div class="listing-modal-actions">
+          <button type="button" class="btn-secondary" id="btnCancelListingModal">Cancel</button>
+          <button type="button" class="btn-primary" id="btnConfirmListingModal">Confirm</button>
+        </div>
+      </div>
     </div>
 
-    <div id="warningCard" class="auth-alert d-none">
-      <span id="warningText"></span>
-    </div>
+    <div class="toast" id="toast"></div>
 
-    <div class="products" id="listingsGrid">
-      <p class="status-text">Loading listings...</p>
-    </div>
-  </section>
-
-  <div class="toast" id="toast"></div>
-
-  <script src="../js/prefs.js"></script>
-  <script src="../js/api.js"></script>
-  <script src="../js/listings.js"></script>
-</body>
-
+    <script src="../js/prefs.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/listings.js"></script>
+  </body>
 </html>
