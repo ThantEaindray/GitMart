@@ -1,5 +1,6 @@
 var uId = localStorage.getItem('loggedInUserId');
-
+//one of you touched my code and im not too fond of that
+// if only there were some sort of person thajt could write it and actually leave comments on the code instead of whatever this was 
 function loadChat(data) {
   document.getElementById('messages').innerHTML = '';
   data.forEach(function (e) {
@@ -15,7 +16,7 @@ function loadChat(data) {
         <div class="msg ${side}">
           <img class="msg-img" src="${e.imagecontent}" />
         </div>
-      `;
+      `
     }
   });
   var el = document.getElementById('messages');

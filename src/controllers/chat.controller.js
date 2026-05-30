@@ -54,20 +54,19 @@ module.exports.toLoad = (req, res, next) => {
 
 module.exports.formatList = (req, res, next) => {
   let namesicons = res.locals.namesImgs
-  console.log("format", namesicons)
   // for my sake lets split these up first like i said not ideal but i can think clearer that way
   //ok so basically were trying to do an array of objects type deal here
   // ok so how fun were all bringing back for loops in 2026
   let chatIds = res.locals.chatIds
-  let chatlist=new Array
+  let chatlist = new Array
   //basically we do a for loop so that way we can get a counter for our thing to make it easier to use across multiple arrays
   for (x = 0; x < chatIds.length; x++) { 
     //so we wanna create a new object
     let data = {
       chat: chatIds[x],
-      pfp: namesicons[0][x].icon,
-      username: namesicons[0]
-      [x].username
+      //pfp: namesicons[0][x].icon,
+      //uncomment the pfp part when we add support for that (next sprint probably)
+      username: namesicons[x][0].username
     }
     chatlist.push(data)
   }
@@ -158,6 +157,11 @@ module.exports.hasChat = (req, res, next) => {
     id2: req.body.id
   }
 
+  //make sure the user isnt trying to make a chat with themself
+  if (data.id1 == data.id2) {
+    return res.status(409).json({})
+  }
+  
   const callback = (err, results, fields) => {
     if (err) {
       console.error("problem checking for duplicate chat", err)

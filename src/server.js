@@ -27,7 +27,6 @@ webS.on('connection', ws => {
   ws.on('close', () => console.log('client disconnected'))
   ws.on('message', data => {
     webS.clients.forEach(client => {
-      console.log(`new message:`, JSON.parse(data))
       client.send(JSON.stringify(data))
     })
   })

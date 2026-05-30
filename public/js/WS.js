@@ -1,17 +1,15 @@
 //so this one will solely be for handling websocket stuff since the chats page will probably end up a bit too chaotic if i let it have everything in there
 const token = localStorage.getItem('token')
-const uId = localStorage.getItem('loggedInUserId')
-let openChat = localStorage.getItem('openChat')
+uId = localStorage.getItem('loggedInUserId')
 const webSocket = new WebSocket('ws://localhost:443/');
 webSocket.onmessage = (event) => {
   //so the event is the message content basically, in this case itll be an object with a recipient
   //so we need to unwrap it first and determine if its for our user
   //we need to deserialise it since the WS only accepts JSON
-  
+  let openChat = localStorage.getItem('openChat')
   let raw = JSON.parse(event.data)
   reconstituted = String.fromCharCode.apply(null, raw.data);
   let content = JSON.parse(reconstituted)
-  console.log("message:",content)
   if (content.chat !== openChat) {
     return
   }
@@ -21,22 +19,16 @@ webSocket.onmessage = (event) => {
   //ok so theres 2 types of messages, images and text. obviously theyll need to be displayed differently
 
   //we need to do basically what we did on the history loading part should be easy enough
-  let position = "justify-content-end"
-  let cardcolour= "text-bg-success"
+  let position = "sent"
   //this is if were the sender
   if (content.user !== uId) {
-    position = "justify-content-start"
-    cardcolour = "text-bg-secondary text-end"
+    position = "received"
   }
   
   if (content.textcontent !== undefined)
   document.getElementById("messages").innerHTML += `
-    <div class="row p-2 ${position}">
-      <div class="col-4">
-        <div class="card p-2 ${cardcolour}" >
-          <p class="p-1">${content.textcontent}</p>
-        </div>
-      </div>
+    <div class="msg ${position}">
+          <span class="msg-bubble">${content.textcontent}</span>
     </div>
   `
 }
