@@ -642,19 +642,60 @@
         padding: 22px 24px 24px;
       }
 
-      .apple-pay-steps {
-        margin: 0 0 18px 1.2rem;
-        color: var(--muted);
-        line-height: 1.6;
+      .apple-pay-sheet {
+        border: 1px solid var(--border);
+        background: var(--surface);
       }
 
-      .apple-pay-total-row,
-      .apple-pay-status {
-        display: flex;
-        justify-content: space-between;
+      .apple-pay-sheet .apple-pay-total-row {
+        padding: 12px 20px;
+      }
+
+      .apple-pay-total-row {
+        display: grid;
+        grid-template-columns: minmax(130px, 0.45fr) minmax(0, 1fr);
+        align-items: center;
         gap: 16px;
         padding: 12px 0;
         border-top: 1px solid var(--border);
+      }
+
+      .apple-pay-total-row .price-label {
+        white-space: nowrap;
+      }
+
+      .apple-pay-total-row .price-value {
+        min-width: 0;
+        text-align: right;
+      }
+
+      .apple-pay-delivery-lines {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        line-height: 1.45;
+      }
+
+      .apple-pay-delivery-name {
+        color: var(--text);
+      }
+
+      .apple-pay-delivery-meta {
+        color: var(--muted);
+        font-size: 0.9em;
+      }
+
+      .apple-pay-sheet .apple-pay-total-row:first-child {
+        border-top: none;
+      }
+
+      .apple-pay-total-row.total {
+        align-items: baseline;
+      }
+
+      .apple-pay-total-row.total .price-value {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.6rem;
       }
 
       .apple-pay-status {
@@ -663,7 +704,8 @@
         letter-spacing: 0.06em;
       }
 
-      .apple-pay-support-note {
+      .apple-pay-support-note,
+      .apple-pay-context {
         margin: 14px 0 0;
         padding: 12px 14px;
         border: 1px solid var(--border);
@@ -671,6 +713,10 @@
         color: var(--muted);
         font-size: 0.82em;
         line-height: 1.6;
+      }
+
+      .apple-pay-context {
+        margin: 0 0 16px;
       }
 
       .apple-pay-actions {
@@ -1127,29 +1173,40 @@
           </button>
         </div>
         <div class="apple-pay-body">
-          <ol class="apple-pay-steps">
-            <li>Confirm order details and total amount.</li>
-            <li>
-              Apple Pay is only fully supported on Safari/macOS, or by approving with a nearby
-              iPhone/Apple Watch.
-            </li>
-            <li>Approve the payment using Touch ID, Face ID, or Apple Watch.</li>
-            <li>
-              After approval, the payment successful state appears and the order can be placed.
-            </li>
-          </ol>
+          <p class="apple-pay-context">
+            Review the Apple Pay sheet, then approve with Touch ID, Face ID, or Apple Watch.
+          </p>
 
-          <div class="apple-pay-total-row">
-            <span class="price-label">Total amount</span>
-            <span class="price-value" id="applePayTotal">$0.00</span>
+          <div class="apple-pay-sheet">
+            <div class="apple-pay-total-row">
+              <span class="price-label">Merchant</span>
+              <span class="price-value">GitMart</span>
+            </div>
+            <div class="apple-pay-total-row">
+              <span class="price-label">Payment method</span>
+              <span class="price-value">Apple Pay</span>
+            </div>
+            <div class="apple-pay-total-row">
+              <span class="price-label">Delivery</span>
+              <span class="price-value apple-pay-delivery-lines" id="applePayDelivery">
+                <span class="apple-pay-delivery-name">Standard Delivery</span>
+                <span class="apple-pay-delivery-meta">3-5 business days · FREE</span>
+              </span>
+            </div>
+            <div class="apple-pay-total-row total">
+              <span class="price-label">Total</span>
+              <span class="price-value" id="applePayTotal">$0.00</span>
+            </div>
           </div>
           <p class="apple-pay-support-note" id="applePaySupportNote"></p>
-          <div class="apple-pay-status" id="applePayStatus">Ready for Apple Pay authorization.</div>
+          <div class="apple-pay-status" id="applePayStatus">Ready to pay with Apple Pay.</div>
 
           <div class="apple-pay-actions">
-            <button type="button" class="btn-outline" id="applePayCancel">Cancel</button>
+            <button type="button" class="btn-outline" id="applePayCancel">
+              Choose another method
+            </button>
             <button type="button" class="btn-place-order" id="applePayContinue">
-              Continue with Apple Pay
+              Pay with Apple Pay
             </button>
           </div>
         </div>

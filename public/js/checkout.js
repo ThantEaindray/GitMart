@@ -16,6 +16,7 @@ const applePayCancel = document.getElementById('applePayCancel');
 const applePayContinue = document.getElementById('applePayContinue');
 const applePayStatus = document.getElementById('applePayStatus');
 const applePayTotal = document.getElementById('applePayTotal');
+const applePayDelivery = document.getElementById('applePayDelivery');
 const applePaySupportNote = document.getElementById('applePaySupportNote');
 const googlePayModal = document.getElementById('googlePayModal');
 const googlePayClose = document.getElementById('googlePayClose');
@@ -542,20 +543,50 @@ function getCheckoutOrderData() {
   };
 }
 
+function getSelectedDeliveryDetails() {
+  const selectedDelivery = document.querySelector('input[name="delivery"]:checked');
+  const deliveryOption = selectedDelivery?.closest('.delivery-option');
+
+  return {
+    name:
+      deliveryOption?.querySelector('.delivery-name')?.textContent.trim() || 'Standard Delivery',
+    eta:
+      deliveryOption?.querySelector('.delivery-eta')?.textContent.replace(/\s+/g, ' ').trim() || '',
+    price: deliveryOption?.querySelector('.delivery-price')?.textContent.trim() || 'FREE',
+  };
+}
+
+function updateApplePayDeliveryDetails() {
+  if (!applePayDelivery) return;
+
+  const delivery = getSelectedDeliveryDetails();
+  const deliveryName = document.createElement('span');
+  const deliveryMeta = document.createElement('span');
+
+  deliveryName.className = 'apple-pay-delivery-name';
+  deliveryName.textContent = delivery.name;
+
+  deliveryMeta.className = 'apple-pay-delivery-meta';
+  deliveryMeta.textContent = [delivery.eta, delivery.price].filter(Boolean).join(' · ');
+
+  applePayDelivery.replaceChildren(deliveryName, deliveryMeta);
+}
+
 function openApplePayModal(orderData) {
   pendingApplePayOrderData = orderData;
   clearTimeout(applePayTimer);
 
   if (applePayTotal) applePayTotal.textContent = formatMoney(orderData.totalAmount);
-  if (applePayStatus) applePayStatus.textContent = 'Ready for Apple Pay authorization.';
+  updateApplePayDeliveryDetails();
+  if (applePayStatus) applePayStatus.textContent = 'Ready to pay with Apple Pay.';
   if (applePayContinue) {
     applePayContinue.disabled = false;
-    applePayContinue.textContent = 'Continue with Apple Pay';
+    applePayContinue.textContent = 'Pay with Apple Pay';
   }
   if (applePaySupportNote) {
     applePaySupportNote.textContent = isApplePaySupported()
-      ? 'Apple Pay support was detected on this browser or device.'
-      : 'Apple Pay may only work on Safari with a compatible Apple device. You can still choose Google Pay, GrabPay, or another payment method.';
+      ? 'Apple Pay is available on this browser or device.'
+      : 'Apple Pay works best on Safari with a compatible Apple device. You may still simulate approval for this checkout demo, or choose Google Pay, GrabPay, or another method.';
   }
 
   applePayModal?.classList.add('visible');
@@ -666,15 +697,19 @@ async function handleApplePayContinue() {
 
   pendingApplePayOrderData = getCheckoutOrderData();
   applePayContinue.disabled = true;
-  applePayStatus.textContent = 'Waiting for Apple Pay approval...';
+  applePayStatus.textContent = 'Checking Apple Pay availability...';
 
   applePayTimer = setTimeout(() => {
-    applePayStatus.textContent = 'Apple Pay approved successfully. Payment successful.';
+    applePayStatus.textContent = 'Waiting for Touch ID, Face ID, or Apple Watch approval...';
 
     applePayTimer = setTimeout(() => {
-      submitOrder(pendingApplePayOrderData);
-    }, 700);
-  }, 1400);
+      applePayStatus.textContent = 'Apple Pay approved successfully.';
+
+      applePayTimer = setTimeout(() => {
+        submitOrder(pendingApplePayOrderData);
+      }, 700);
+    }, 1200);
+  }, 700);
 }
 
 async function handleGooglePayContinue() {
