@@ -75,6 +75,7 @@ CREATE TABLE products (
   review_count INTEGER        DEFAULT 0,
   icon         TEXT           DEFAULT 'box-seam',
   image_url    TEXT,
+  is_sold      BOOLEAN        DEFAULT false,
   created_on   DATE           DEFAULT CURRENT_DATE
 );
 

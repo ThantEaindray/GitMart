@@ -35,6 +35,17 @@ body {
   background: var(--accent2);
 }
 
+.btn-primary:disabled,
+.btn-outline:disabled,
+.btn-unavailable {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.btn-primary:disabled:hover {
+  background: var(--accent);
+}
+
 .btn-outline {
   padding: 14px 36px;
   background: transparent;
@@ -54,6 +65,13 @@ body {
 .btn-outline:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.btn-outline:disabled:hover,
+.btn-outline.btn-unavailable:hover {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text);
 }
 
 .icon-btn {

@@ -107,6 +107,8 @@ function normalizeCartItem(item) {
 
   return {
     id: item.id ?? item.productId ?? item.name,
+    productId: item.productId ?? (!isOneOff ? item.id : null),
+    listingId: item.listingId ?? (isOneOff ? item.id : null),
     name: item.name ?? item.title ?? 'Cart item',
     price: Number.isFinite(price) ? price : 0,
     quantity: isOneOff ? 1 : Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
@@ -665,6 +667,7 @@ async function submitOrder(orderData) {
 
     closeApplePayModal();
     closeGooglePayModal();
+    localStorage.removeItem('purchasedItems');
     localStorage.removeItem('checkoutCart');
     localStorage.removeItem('cart');
     localStorage.removeItem('cartItems');

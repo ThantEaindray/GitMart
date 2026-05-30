@@ -1,5 +1,7 @@
 // ── TOAST ─────────────────────────────────────────────────────────────────
 
+/* global fetchMethod, formatPrice */
+
 var currentListing = null;
 
 function showToast(message) {
@@ -33,6 +35,11 @@ function errorView(message) {
 
 function addToCart() {
   if (!currentListing) return;
+  if (currentListing.isSold || currentListing.isClosed) {
+    showToast('This listing has already been sold.');
+    return;
+  }
+
   var raw = localStorage.getItem('cart');
   var cart = raw ? JSON.parse(raw) : [];
   var existing = cart.find(function (item) {
@@ -84,7 +91,7 @@ function renderListing(listing) {
 
   var cartBtn = isAvailable
     ? '<button class="btn-outline" id="btn-cart" onclick="addToCart()"><i class="bi bi-bag"></i> Add to Cart</button>'
-    : '';
+    : '<button class="btn-outline btn-unavailable" id="btn-cart" disabled>Unavailable</button>';
 
   section.innerHTML =
     '<div class="product-img">' +
@@ -172,7 +179,7 @@ function createChat(uId) {
   //now we can do the actual calling the chats part how fun we get to keep at it with our project always something new to do oh joy
   fetchMethod(
     `/api/chats/new`,
-    (stat, data) => {
+    (stat) => {
       if (stat == 500) {
         showToast('An Unknown error has occured');
         return;
@@ -191,5 +198,8 @@ function createChat(uId) {
     token,
   );
 }
+
+window.addToCart = addToCart;
+window.createChat = createChat;
 
 document.addEventListener('DOMContentLoaded', loadListing);

@@ -1,5 +1,17 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const model = require('../models/Listing.model');
+const { isListingSold } = require('../models/purchaseState');
+
+function applyRuntimeSoldState(listing) {
+  return {
+    ...listing,
+    isSold: Boolean(listing.isSold || isListingSold(listing.id)),
+  };
+}
+
+function applyRuntimeSoldStateToRows(rows) {
+  return rows.map(applyRuntimeSoldState);
+}
 
 // ── Gemini helper ─────────────────────────────────────────────────────────
 
@@ -46,7 +58,7 @@ module.exports.analyseImage = function (req, res) {
 module.exports.getMostViewed = (req, res) => {
   const callback = (error, result) => {
     if (error) return res.status(500).json({ message: 'Internal server error' });
-    return res.status(200).json(result.rows);
+    return res.status(200).json(applyRuntimeSoldStateToRows(result.rows));
   };
   model.getMostViewed(callback);
 };
@@ -54,15 +66,15 @@ module.exports.getMostViewed = (req, res) => {
 // GET /api/listings/search
 module.exports.searchListings = (req, res) => {
   const data = {
-    search:   req.query.search   || '',
+    search: req.query.search || '',
     minPrice: req.query.minPrice || null,
     maxPrice: req.query.maxPrice || null,
-    sort:     req.query.sort     || 'newest',
+    sort: req.query.sort || 'newest',
     category: req.query.category || '',
   };
   const callback = (error, result) => {
     if (error) return res.status(500).json({ message: 'Internal server error' });
-    return res.status(200).json(result.rows);
+    return res.status(200).json(applyRuntimeSoldStateToRows(result.rows));
   };
   model.searchListings(data, callback);
 };
@@ -101,8 +113,8 @@ module.exports.loadSellerCategoryBreakdown = (req, res, next) => {
 
 module.exports.sendDashboard = (req, res) => {
   return res.status(200).json({
-    stats:         res.locals.dashStats,
-    categories:    res.locals.dashCategories,
+    stats: res.locals.dashStats,
+    categories: res.locals.dashCategories,
     viewBreakdown: res.locals.dashViewBreakdown,
   });
 };
@@ -115,7 +127,7 @@ module.exports.getListingsByCategory = (req, res) => {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
     }
-    return res.status(200).json(result.rows);
+    return res.status(200).json(applyRuntimeSoldStateToRows(result.rows));
   };
   model.getListingsByCategory(data, callback);
 };
@@ -127,7 +139,7 @@ module.exports.getAllListings = (req, res) => {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
     }
-    return res.status(200).json(result.rows);
+    return res.status(200).json(applyRuntimeSoldStateToRows(result.rows));
   };
   model.getAllListings(callback);
 };
@@ -135,7 +147,7 @@ module.exports.getAllListings = (req, res) => {
 // GET /api/listings/:id
 module.exports.getListingById = (req, res) => {
   const data = {
-    id:     req.params.id,
+    id: req.params.id,
     userId: res.locals.userId || null,
   };
   const callback = (error, result) => {
@@ -146,7 +158,7 @@ module.exports.getListingById = (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Listing not found.' });
     }
-    return res.status(200).json(result.rows[0]);
+    return res.status(200).json(applyRuntimeSoldState(result.rows[0]));
   };
   if (data.userId) {
     model.getListingByIdWithView(data, callback);
@@ -163,7 +175,7 @@ module.exports.getListingsByOwner = (req, res) => {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
     }
-    return res.status(200).json(result.rows);
+    return res.status(200).json(applyRuntimeSoldStateToRows(result.rows));
   };
   model.getListingsByOwner(data, callback);
 };
@@ -224,7 +236,7 @@ module.exports.updateListing = (req, res) => {
   }
 
   const data = {
-    id:       req.params.id,
+    id: req.params.id,
     owner_id: res.locals.userId,
     title,
     description,
@@ -253,7 +265,7 @@ module.exports.updateListing = (req, res) => {
 // DELETE /api/listings/:id
 module.exports.deleteListing = (req, res) => {
   const data = {
-    id:       req.params.id,
+    id: req.params.id,
     owner_id: res.locals.userId,
   };
 

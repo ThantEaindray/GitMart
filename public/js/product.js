@@ -11,6 +11,11 @@ function renderProduct(product) {
   const section = document.getElementById('product-detail');
   document.title = `GitMart — ${product.name}`;
 
+  const isPurchased = product.isSold;
+  const cartButton = isPurchased
+    ? '<button class="btn-primary btn-unavailable" id="addToCartButton" disabled>Sold Out</button>'
+    : '<button class="btn-primary" id="addToCartButton">Add to Cart</button>';
+
   section.innerHTML = `
     <div class="product-img">
       ${product.imageUrl ? `<img src="${product.imageUrl}" alt="${product.name}" loading="lazy" />` : `<i class="bi bi-${product.icon ?? 'box-seam'}"></i>`}
@@ -25,18 +30,22 @@ function renderProduct(product) {
       </div>
       <p class="product-description">${product.description || ''}</p>
       <div class="product-actions">
-        <button class="btn-primary" id="addToCartButton">Add to Cart</button>
+        ${cartButton}
         <button class="btn-outline"><i class="bi bi-heart"></i> Wishlist</button>
       </div>
     </div>
   `;
 
-  document
-    .getElementById('addToCartButton')
-    .addEventListener('click', () => addProductToCart(product));
+  if (!isPurchased) {
+    document
+      .getElementById('addToCartButton')
+      .addEventListener('click', () => addProductToCart(product));
+  }
 }
 
 function addProductToCart(product) {
+  if (product.isSold) return;
+
   let cart;
 
   try {

@@ -2,6 +2,9 @@ const express = require('express');
 
 const router = express.Router();
 const { createOrder, getAllOrders, updateOrderStatus } = require('../models/orderModel');
+const { verifyToken } = require('../middleware/jwtMiddleware');
+
+router.use(verifyToken);
 
 // Allowed order statuses for status updates
 const allowedStatuses = ['Pending', 'Processing', 'Delivered', 'Cancelled'];
@@ -54,13 +57,16 @@ router.post('/', (req, res, next) => {
     });
   }
 
-  createOrder(orderData)
+  createOrder({
+    ...orderData,
+    userId: res.locals.userId,
+  })
     .then((order) => res.status(201).json(order))
     .catch(next);
 });
 
 router.get('/', (req, res, next) => {
-  getAllOrders()
+  getAllOrders(res.locals.userId)
     .then((orders) => res.status(200).json(orders))
     .catch(next);
 });
@@ -80,7 +86,7 @@ router.put('/:id', (req, res, next) => {
     });
   }
 
-  updateOrderStatus(req.params.id, status)
+  updateOrderStatus(req.params.id, status, res.locals.userId)
     .then((order) => {
       if (!order) {
         return res.status(404).json({

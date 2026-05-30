@@ -1,4 +1,12 @@
 const model = require('../models/product.model');
+const { isProductSold } = require('../models/purchaseState');
+
+function applyRuntimeSoldState(product) {
+  return {
+    ...product,
+    isSold: isProductSold(product.id),
+  };
+}
 
 module.exports.readProducts = (req, res, next) => {
   const callback = (error, result) => {
@@ -7,7 +15,7 @@ module.exports.readProducts = (req, res, next) => {
       return res.status(500).json({ message: 'Internal server error' });
     }
     res.locals.statusCode = 200;
-    res.locals.results = result.rows;
+    res.locals.results = result.rows.map(applyRuntimeSoldState);
     next();
   };
 
@@ -36,7 +44,7 @@ module.exports.readProductById = (req, res, next) => {
       return res.status(404).json({ message: 'Product not found.' });
     }
     res.locals.statusCode = 200;
-    res.locals.results = result.rows[0];
+    res.locals.results = applyRuntimeSoldState(result.rows[0]);
     next();
   };
 
