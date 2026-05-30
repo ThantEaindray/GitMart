@@ -743,7 +743,9 @@
       }
 
       .google-pay-details[hidden],
-      .google-pay-confirm[hidden] {
+      .google-pay-confirm[hidden],
+      .grab-pay-details[hidden],
+      .grab-pay-otp[hidden] {
         display: none;
       }
 
@@ -759,6 +761,37 @@
 
       .google-pay-card-form .form-group {
         margin-bottom: 0;
+      }
+
+      .grab-pay-otp {
+        display: grid;
+        gap: 10px;
+        margin-top: 16px;
+        padding: 14px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+      }
+
+      .grab-pay-otp .form-group {
+        margin-bottom: 0;
+      }
+
+      .grab-pay-resend {
+        color: var(--muted);
+        font-size: 0.86em;
+        letter-spacing: 0.04em;
+        margin: 0;
+      }
+
+      .grab-pay-resend-button {
+        background: none;
+        border: none;
+        color: var(--accent);
+        cursor: pointer;
+        font: inherit;
+        padding: 0;
+        text-decoration: underline;
+        text-underline-offset: 3px;
       }
 
       /* ── PROGRESS STEPS ── */
@@ -1310,6 +1343,93 @@
               hidden
             >
               Confirm payment
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="apple-pay-modal" id="grabPayModal" aria-hidden="true">
+      <div class="apple-pay-dialog" role="dialog" aria-modal="true" aria-labelledby="grabPayTitle">
+        <div class="apple-pay-header">
+          <h2 class="apple-pay-title" id="grabPayTitle">
+            <i class="bi bi-phone"></i>
+            GrabPay
+          </h2>
+          <button
+            type="button"
+            class="apple-pay-close"
+            id="grabPayClose"
+            aria-label="Close GrabPay"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="apple-pay-body">
+          <p class="apple-pay-context">
+            Confirm your order total, then approve the payment in the Grab app using your wallet
+            balance or linked card.
+          </p>
+
+          <div class="apple-pay-sheet">
+            <div class="apple-pay-total-row">
+              <span class="price-label">Merchant</span>
+              <span class="price-value">GitMart</span>
+            </div>
+            <div class="apple-pay-total-row">
+              <span class="price-label">Payment method</span>
+              <span class="price-value">GrabPay</span>
+            </div>
+            <div class="apple-pay-total-row total">
+              <span class="price-label">Total</span>
+              <span class="price-value" id="grabPayTotal">$0.00</span>
+            </div>
+          </div>
+
+          <p class="apple-pay-support-note">
+            GrabPay may require the Grab app or a supported mobile browser. You can still choose
+            Apple Pay, Google Pay, or another payment method.
+          </p>
+
+          <div class="grab-pay-otp" id="grabPayOtpPanel" hidden>
+            <p class="apple-pay-support-note" id="grabPayOtpMessage">
+              Enter the 6-digit OTP sent to your phone number.
+            </p>
+            <div class="form-group">
+              <label class="form-label" for="grabPayOtp">GrabPay OTP</label>
+              <input
+                class="form-input"
+                type="text"
+                id="grabPayOtp"
+                inputmode="numeric"
+                maxlength="6"
+                placeholder="XXXXXX"
+              />
+              <span class="field-error" data-error-for="grabPayOtp"></span>
+            </div>
+            <p class="grab-pay-resend">
+              Didn't receive OTP?
+              <button type="button" class="grab-pay-resend-button" id="grabPayResend">
+                Resend OTP.
+              </button>
+            </p>
+            <!-- Demo GrabPay OTP for testing: 123456 -->
+          </div>
+
+          <div class="apple-pay-status" id="grabPayStatus">Ready for GrabPay.</div>
+
+          <div class="apple-pay-actions">
+            <button type="button" class="btn-outline" id="grabPayCancel">Cancel</button>
+            <button type="button" class="btn-place-order" id="grabPayContinue">
+              Continue with GrabPay
+            </button>
+            <button
+              type="button"
+              class="btn-place-order google-pay-confirm"
+              id="grabPayVerify"
+              hidden
+            >
+              Verify OTP
             </button>
           </div>
         </div>

@@ -10,6 +10,7 @@ const cardDetails = document.querySelector('.card-details');
 const cardPaymentRadio = document.getElementById('cardPayment');
 const applePayRadio = document.getElementById('applePay');
 const googlePayRadio = document.getElementById('googlePay');
+const grabPayRadio = document.getElementById('grabPay');
 const applePayModal = document.getElementById('applePayModal');
 const applePayClose = document.getElementById('applePayClose');
 const applePayCancel = document.getElementById('applePayCancel');
@@ -32,6 +33,17 @@ const googlePayCardNumber = document.getElementById('googlePayCardNumber');
 const googlePayExpiryDate = document.getElementById('googlePayExpiryDate');
 const googlePayCvv = document.getElementById('googlePayCvv');
 const googlePayCard = document.getElementById('googlePayCard');
+const grabPayModal = document.getElementById('grabPayModal');
+const grabPayClose = document.getElementById('grabPayClose');
+const grabPayCancel = document.getElementById('grabPayCancel');
+const grabPayContinue = document.getElementById('grabPayContinue');
+const grabPayVerify = document.getElementById('grabPayVerify');
+const grabPayResend = document.getElementById('grabPayResend');
+const grabPayStatus = document.getElementById('grabPayStatus');
+const grabPayTotal = document.getElementById('grabPayTotal');
+const grabPayOtpPanel = document.getElementById('grabPayOtpPanel');
+const grabPayOtpMessage = document.getElementById('grabPayOtpMessage');
+const grabPayOtp = document.getElementById('grabPayOtp');
 const orderItemsEl = document.getElementById('orderItems');
 const subtotalPriceText = document.getElementById('subtotalPrice');
 const deliveryFeeText = document.getElementById('deliveryFee');
@@ -49,6 +61,8 @@ let pendingApplePayOrderData = null;
 let applePayTimer = null;
 let pendingGooglePayOrderData = null;
 let googlePayTimer = null;
+let pendingGrabPayOrderData = null;
+let grabPayTimer = null;
 
 function showToast(message) {
   const toast = document.getElementById('toast');
@@ -631,6 +645,36 @@ function closeGooglePayModal() {
   googlePayModal?.setAttribute('aria-hidden', 'true');
 }
 
+function openGrabPayModal(orderData) {
+  pendingGrabPayOrderData = orderData;
+  clearTimeout(grabPayTimer);
+
+  if (grabPayTotal) grabPayTotal.textContent = formatMoney(orderData.totalAmount);
+  if (grabPayStatus) grabPayStatus.textContent = 'Ready for GrabPay.';
+  if (grabPayOtp) grabPayOtp.value = '';
+  setFieldError('grabPayOtp', '');
+  grabPayOtpPanel?.setAttribute('hidden', '');
+  if (grabPayContinue) {
+    grabPayContinue.hidden = false;
+    grabPayContinue.disabled = false;
+    grabPayContinue.textContent = 'Continue with GrabPay';
+  }
+  if (grabPayVerify) {
+    grabPayVerify.hidden = true;
+    grabPayVerify.disabled = false;
+  }
+
+  grabPayModal?.classList.add('visible');
+  grabPayModal?.setAttribute('aria-hidden', 'false');
+}
+
+function closeGrabPayModal() {
+  clearTimeout(grabPayTimer);
+  pendingGrabPayOrderData = null;
+  grabPayModal?.classList.remove('visible');
+  grabPayModal?.setAttribute('aria-hidden', 'true');
+}
+
 async function submitOrder(orderData) {
   placeOrderButton.disabled = true;
 
@@ -667,6 +711,7 @@ async function submitOrder(orderData) {
 
     closeApplePayModal();
     closeGooglePayModal();
+    closeGrabPayModal();
     localStorage.removeItem('purchasedItems');
     localStorage.removeItem('checkoutCart');
     localStorage.removeItem('cart');
@@ -767,6 +812,69 @@ async function handleGooglePayConfirm() {
   }, 700);
 }
 
+async function handleGrabPayContinue() {
+  if (!pendingGrabPayOrderData || !grabPayContinue || !grabPayStatus) return;
+
+  if (!localStorage.getItem('token')) {
+    closeGrabPayModal();
+    showToast('Please log in before checking out.');
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 900);
+    return;
+  }
+
+  renderOrderSummary();
+  if (!validateCheckout()) {
+    closeGrabPayModal();
+    return;
+  }
+
+  pendingGrabPayOrderData = getCheckoutOrderData();
+  if (grabPayTotal) {
+    grabPayTotal.textContent = formatMoney(pendingGrabPayOrderData.totalAmount);
+  }
+
+  grabPayContinue.disabled = true;
+  grabPayStatus.textContent = 'Opening GrabPay...';
+
+  grabPayTimer = setTimeout(() => {
+    const phoneNumber = pendingGrabPayOrderData.phoneNumber || 'your phone number';
+    if (grabPayOtpMessage) {
+      grabPayOtpMessage.textContent = `Enter the 6-digit OTP sent to ${phoneNumber}.`;
+    }
+    grabPayOtpPanel?.removeAttribute('hidden');
+    grabPayContinue.hidden = true;
+    if (grabPayVerify) grabPayVerify.hidden = false;
+    grabPayOtp?.focus();
+    grabPayStatus.textContent = 'OTP sent. Enter the code to approve GrabPay.';
+  }, 900);
+}
+
+async function handleGrabPayVerify() {
+  if (!pendingGrabPayOrderData || !grabPayVerify || !grabPayStatus) return;
+
+  // Demo GrabPay OTP for testing: 123456
+  const otp = grabPayOtp?.value.trim() || '';
+  if (otp !== '123456') {
+    setFieldError('grabPayOtp', 'Invalid OTP. Please try again.');
+    grabPayStatus.textContent = 'Invalid OTP. Please try again.';
+    return;
+  }
+
+  setFieldError('grabPayOtp', '');
+  grabPayVerify.disabled = true;
+  grabPayStatus.textContent = 'Verifying GrabPay OTP...';
+
+  grabPayTimer = setTimeout(() => {
+    grabPayStatus.textContent = 'GrabPay approved successfully.';
+
+    grabPayTimer = setTimeout(() => {
+      submitOrder(pendingGrabPayOrderData);
+    }, 700);
+  }, 900);
+}
+
 async function handlePlaceOrder() {
   if (!localStorage.getItem('token')) {
     showToast('Please log in before checking out.');
@@ -790,6 +898,11 @@ async function handlePlaceOrder() {
     return;
   }
 
+  if (grabPayRadio?.checked) {
+    openGrabPayModal(orderData);
+    return;
+  }
+
   await submitOrder(orderData);
 }
 
@@ -807,13 +920,20 @@ function initCheckout() {
       updateCardDetailsVisibility();
       if (option.id === 'applePay' && option.checked) {
         closeGooglePayModal();
+        closeGrabPayModal();
         openApplePayModal(getCheckoutOrderData());
       } else if (option.id === 'googlePay' && option.checked) {
         closeApplePayModal();
+        closeGrabPayModal();
         openGooglePayModal(getCheckoutOrderData());
+      } else if (option.id === 'grabPay' && option.checked) {
+        closeApplePayModal();
+        closeGooglePayModal();
+        openGrabPayModal(getCheckoutOrderData());
       } else {
         closeApplePayModal();
         closeGooglePayModal();
+        closeGrabPayModal();
       }
     });
   });
@@ -827,6 +947,12 @@ function initCheckout() {
   document.querySelector('[data-payment="googlePay"]')?.addEventListener('click', () => {
     setTimeout(() => {
       if (googlePayRadio?.checked) openGooglePayModal(getCheckoutOrderData());
+    }, 0);
+  });
+
+  document.querySelector('[data-payment="grabPay"]')?.addEventListener('click', () => {
+    setTimeout(() => {
+      if (grabPayRadio?.checked) openGrabPayModal(getCheckoutOrderData());
     }, 0);
   });
 
@@ -850,6 +976,30 @@ function initCheckout() {
   googlePayCancel?.addEventListener('click', closeGooglePayModal);
   googlePayModal?.addEventListener('click', (event) => {
     if (event.target === googlePayModal) closeGooglePayModal();
+  });
+  grabPayContinue?.addEventListener('click', handleGrabPayContinue);
+  grabPayVerify?.addEventListener('click', handleGrabPayVerify);
+  grabPayClose?.addEventListener('click', closeGrabPayModal);
+  grabPayCancel?.addEventListener('click', closeGrabPayModal);
+  grabPayModal?.addEventListener('click', (event) => {
+    if (event.target === grabPayModal) closeGrabPayModal();
+  });
+  grabPayOtp?.addEventListener('input', () => {
+    grabPayOtp.value = grabPayOtp.value.replace(/\D/g, '').substring(0, 6);
+    setFieldError('grabPayOtp', '');
+  });
+  grabPayResend?.addEventListener('click', () => {
+    if (grabPayOtp) grabPayOtp.value = '';
+    setFieldError('grabPayOtp', '');
+    if (grabPayStatus) grabPayStatus.textContent = 'OTP resent. Enter the code to approve GrabPay.';
+    showToast('OTP resend successfully.');
+    grabPayOtp?.focus();
+  });
+  grabPayOtp?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleGrabPayVerify();
+    }
   });
   googlePayCardNumber?.addEventListener('input', () => {
     googlePayCardNumber.value = formatCardNumber(googlePayCardNumber.value);
