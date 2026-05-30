@@ -935,6 +935,119 @@
         margin: 0;
       }
 
+      .nets-bank-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin: 16px 0;
+      }
+
+      .nets-bank-option {
+        display: grid;
+        grid-template-columns: 58px minmax(0, 1fr);
+        align-items: center;
+        gap: 14px;
+        min-height: 72px;
+        min-width: 0;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
+        font: inherit;
+        letter-spacing: 0.04em;
+        text-align: left;
+        transition:
+          border-color 0.18s,
+          color 0.18s,
+          background 0.18s;
+      }
+
+      .nets-bank-option.active {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .nets-bank-mark {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2px;
+        width: 58px;
+        height: 42px;
+        padding: 6px 7px;
+        border: 1px solid currentColor;
+        background: rgba(255, 255, 255, 0.03);
+        font-size: 0.72em;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        line-height: 1;
+        text-transform: uppercase;
+      }
+
+      .nets-bank-mark small {
+        color: var(--muted);
+        font-size: 0.64em;
+        font-weight: 500;
+        letter-spacing: 0;
+        text-transform: none;
+      }
+
+      .nets-bank-name {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .nets-bank-name strong {
+        display: block;
+        color: inherit;
+        font-size: 0.96em;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        line-height: 1.15;
+        text-transform: uppercase;
+      }
+
+      .nets-bank-name span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.74em;
+        letter-spacing: 0.04em;
+        line-height: 1.2;
+        margin-top: 4px;
+      }
+
+      .nets-auth-panel[hidden],
+      .nets-confirmation[hidden],
+      .nets-approve[hidden] {
+        display: none;
+      }
+
+      .nets-auth-panel {
+        display: grid;
+        gap: 12px;
+        margin: 16px 0 0;
+        padding: 14px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+      }
+
+      .nets-auth-title {
+        color: var(--text);
+        font-size: 0.86em;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        margin: 0;
+        text-transform: uppercase;
+      }
+
+      .nets-auth-note {
+        color: var(--muted);
+        font-size: 0.86em;
+        line-height: 1.5;
+        margin: 0;
+      }
+
       @media (max-width: 620px) {
         .paynow-qr-box {
           grid-template-columns: 1fr;
@@ -942,6 +1055,10 @@
 
         .paynow-card {
           margin: 0 auto;
+        }
+
+        .nets-bank-grid {
+          grid-template-columns: 1fr;
         }
       }
 
@@ -1386,9 +1503,7 @@
           <div class="apple-pay-status" id="applePayStatus">Ready to pay with Apple Pay.</div>
 
           <div class="apple-pay-actions">
-            <button type="button" class="btn-outline" id="applePayCancel">
-              Choose another method
-            </button>
+            <button type="button" class="btn-outline" id="applePayCancel">Cancel</button>
             <button type="button" class="btn-place-order" id="applePayContinue">
               Pay with Apple Pay
             </button>
@@ -1654,6 +1769,105 @@
             <button type="button" class="btn-outline" id="payNowCancel">Cancel</button>
             <button type="button" class="btn-place-order" id="payNowComplete">
               I have completed payment
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="apple-pay-modal" id="netsModal" aria-hidden="true">
+      <div class="apple-pay-dialog" role="dialog" aria-modal="true" aria-labelledby="netsTitle">
+        <div class="apple-pay-header">
+          <h2 class="apple-pay-title" id="netsTitle">
+            <i class="bi bi-bank"></i>
+            NETS
+          </h2>
+          <button type="button" class="apple-pay-close" id="netsClose" aria-label="Close NETS">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="apple-pay-body">
+          <p class="apple-pay-context">
+            Select your bank, sign in with your demo banking credentials, then approve the
+            transaction in your banking app.
+          </p>
+
+          <div class="nets-bank-grid" id="netsBankGrid" aria-label="Select bank for NETS payment">
+            <button type="button" class="nets-bank-option active" data-bank="DBS / POSB">
+              <span class="nets-bank-mark bank-dbs">DBS<small>POSB</small></span>
+              <span class="nets-bank-name">
+                <strong>DBS / POSB</strong>
+                <span>Digital banking</span>
+              </span>
+            </button>
+            <button type="button" class="nets-bank-option" data-bank="OCBC">
+              <span class="nets-bank-mark bank-ocbc">OCBC<small>Bank</small></span>
+              <span class="nets-bank-name">
+                <strong>OCBC</strong>
+                <span>Online banking</span>
+              </span>
+            </button>
+            <button type="button" class="nets-bank-option" data-bank="UOB">
+              <span class="nets-bank-mark bank-uob">UOB<small>Bank</small></span>
+              <span class="nets-bank-name">
+                <strong>UOB</strong>
+                <span>Mobile banking</span>
+              </span>
+            </button>
+            <button type="button" class="nets-bank-option" data-bank="Maybank">
+              <span class="nets-bank-mark bank-may">MAY<small>Bank</small></span>
+              <span class="nets-bank-name">
+                <strong>Maybank</strong>
+                <span>Secure banking</span>
+              </span>
+            </button>
+          </div>
+
+          <div class="nets-auth-panel" id="netsAuthPanel" hidden>
+            <p class="nets-auth-title" id="netsAuthTitle">Bank authentication</p>
+            <p class="nets-auth-note">
+              Enter your banking credentials, then continue to receive a mobile approval request.
+            </p>
+            <div class="form-group">
+              <label class="form-label" for="netsUserId">Bank User ID</label>
+              <input class="form-input" type="text" id="netsUserId" placeholder="e.g. S1234567A" />
+              <span class="field-error" data-error-for="netsUserId"></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="netsPin">PIN / Password</label>
+              <input class="form-input" type="password" id="netsPin" placeholder="••••••" />
+              <span class="field-error" data-error-for="netsPin"></span>
+            </div>
+          </div>
+
+          <div class="apple-pay-sheet nets-confirmation" id="netsConfirmation" hidden>
+            <div class="apple-pay-total-row">
+              <span class="price-label">Merchant</span>
+              <span class="price-value">GitMart</span>
+            </div>
+            <div class="apple-pay-total-row">
+              <span class="price-label">Bank</span>
+              <span class="price-value" id="netsSelectedBank">DBS / POSB</span>
+            </div>
+            <div class="apple-pay-total-row">
+              <span class="price-label">Reference</span>
+              <span class="price-value" id="netsReference">NETS-000000</span>
+            </div>
+            <div class="apple-pay-total-row total">
+              <span class="price-label">Total</span>
+              <span class="price-value" id="netsTotal">$0.00</span>
+            </div>
+          </div>
+
+          <div class="apple-pay-status" id="netsStatus">Select your bank to continue.</div>
+
+          <div class="apple-pay-actions">
+            <button type="button" class="btn-outline" id="netsCancel">Cancel</button>
+            <button type="button" class="btn-place-order" id="netsContinue">
+              Continue with NETS
+            </button>
+            <button type="button" class="btn-place-order nets-approve" id="netsApprove" hidden>
+              Approve Payment
             </button>
           </div>
         </div>

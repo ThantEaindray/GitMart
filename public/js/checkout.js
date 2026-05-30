@@ -12,6 +12,7 @@ const applePayRadio = document.getElementById('applePay');
 const googlePayRadio = document.getElementById('googlePay');
 const grabPayRadio = document.getElementById('grabPay');
 const payNowRadio = document.getElementById('payNow');
+const netsRadio = document.getElementById('nets');
 const applePayModal = document.getElementById('applePayModal');
 const applePayClose = document.getElementById('applePayClose');
 const applePayCancel = document.getElementById('applePayCancel');
@@ -53,6 +54,21 @@ const payNowStatus = document.getElementById('payNowStatus');
 const payNowTotal = document.getElementById('payNowTotal');
 const payNowReference = document.getElementById('payNowReference');
 const payNowAmountLine = document.getElementById('payNowAmountLine');
+const netsModal = document.getElementById('netsModal');
+const netsClose = document.getElementById('netsClose');
+const netsCancel = document.getElementById('netsCancel');
+const netsContinue = document.getElementById('netsContinue');
+const netsApprove = document.getElementById('netsApprove');
+const netsStatus = document.getElementById('netsStatus');
+const netsTotal = document.getElementById('netsTotal');
+const netsReference = document.getElementById('netsReference');
+const netsAuthPanel = document.getElementById('netsAuthPanel');
+const netsAuthTitle = document.getElementById('netsAuthTitle');
+const netsUserId = document.getElementById('netsUserId');
+const netsPin = document.getElementById('netsPin');
+const netsConfirmation = document.getElementById('netsConfirmation');
+const netsSelectedBank = document.getElementById('netsSelectedBank');
+const netsBankGrid = document.getElementById('netsBankGrid');
 const orderItemsEl = document.getElementById('orderItems');
 const subtotalPriceText = document.getElementById('subtotalPrice');
 const deliveryFeeText = document.getElementById('deliveryFee');
@@ -74,6 +90,9 @@ let pendingGrabPayOrderData = null;
 let grabPayTimer = null;
 let pendingPayNowOrderData = null;
 let payNowTimer = null;
+let pendingNetsOrderData = null;
+let netsTimer = null;
+let selectedNetsBank = 'DBS / POSB';
 
 function showToast(message) {
   const toast = document.getElementById('toast');
@@ -691,6 +710,11 @@ function createPayNowReference() {
   return `GM-${timestamp}`;
 }
 
+function createNetsReference() {
+  const timestamp = new Date().toISOString().replace(/\D/g, '').slice(4, 14);
+  return `NETS-${timestamp}`;
+}
+
 function openPayNowModal(orderData) {
   pendingPayNowOrderData = orderData;
   clearTimeout(payNowTimer);
@@ -710,6 +734,41 @@ function openPayNowModal(orderData) {
 
   payNowModal?.classList.add('visible');
   payNowModal?.setAttribute('aria-hidden', 'false');
+}
+
+function openNetsModal(orderData) {
+  pendingNetsOrderData = orderData;
+  clearTimeout(netsTimer);
+
+  if (netsTotal) netsTotal.textContent = formatMoney(orderData.totalAmount);
+  if (netsReference) netsReference.textContent = createNetsReference();
+  if (netsSelectedBank) netsSelectedBank.textContent = selectedNetsBank;
+  netsAuthPanel?.setAttribute('hidden', '');
+  netsConfirmation?.setAttribute('hidden', '');
+  if (netsUserId) netsUserId.value = '';
+  if (netsPin) netsPin.value = '';
+  setFieldError('netsUserId', '');
+  setFieldError('netsPin', '');
+  if (netsStatus) netsStatus.textContent = 'Select your bank to continue.';
+  if (netsContinue) {
+    netsContinue.hidden = false;
+    netsContinue.disabled = false;
+    netsContinue.textContent = 'Continue with NETS';
+  }
+  if (netsApprove) {
+    netsApprove.hidden = true;
+    netsApprove.disabled = false;
+  }
+
+  netsModal?.classList.add('visible');
+  netsModal?.setAttribute('aria-hidden', 'false');
+}
+
+function closeNetsModal() {
+  clearTimeout(netsTimer);
+  pendingNetsOrderData = null;
+  netsModal?.classList.remove('visible');
+  netsModal?.setAttribute('aria-hidden', 'true');
 }
 
 function closePayNowModal() {
@@ -757,6 +816,7 @@ async function submitOrder(orderData) {
     closeGooglePayModal();
     closeGrabPayModal();
     closePayNowModal();
+    closeNetsModal();
     localStorage.removeItem('purchasedItems');
     localStorage.removeItem('checkoutCart');
     localStorage.removeItem('cart');
@@ -953,6 +1013,93 @@ async function handlePayNowComplete() {
   }, 1200);
 }
 
+async function handleNetsContinue() {
+  if (!pendingNetsOrderData || !netsContinue || !netsStatus) return;
+
+  if (netsAuthPanel && !netsAuthPanel.hasAttribute('hidden')) {
+    if (!validateNetsAuth()) return;
+
+    netsContinue.disabled = true;
+    netsStatus.textContent = 'Sending mobile approval request...';
+
+    netsTimer = setTimeout(() => {
+      netsAuthPanel?.setAttribute('hidden', '');
+      netsConfirmation?.removeAttribute('hidden');
+      netsContinue.hidden = true;
+      if (netsApprove) netsApprove.hidden = false;
+      netsStatus.textContent = `Push notification sent. Approve this payment in your ${selectedNetsBank} banking app.`;
+    }, 900);
+    return;
+  }
+
+  if (!localStorage.getItem('token')) {
+    closeNetsModal();
+    showToast('Please log in before checking out.');
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 900);
+    return;
+  }
+
+  renderOrderSummary();
+  if (!validateCheckout()) {
+    closeNetsModal();
+    return;
+  }
+
+  pendingNetsOrderData = getCheckoutOrderData();
+  if (netsTotal) netsTotal.textContent = formatMoney(pendingNetsOrderData.totalAmount);
+  if (netsSelectedBank) netsSelectedBank.textContent = selectedNetsBank;
+
+  netsContinue.disabled = true;
+  netsStatus.textContent = 'Redirecting to bank authentication...';
+
+  netsTimer = setTimeout(() => {
+    netsAuthPanel?.removeAttribute('hidden');
+    if (netsAuthTitle) netsAuthTitle.textContent = `${selectedNetsBank} authentication`;
+    netsContinue.disabled = false;
+    netsContinue.textContent = 'Continue to mobile approval';
+    netsStatus.textContent = `Enter your ${selectedNetsBank} banking credentials.`;
+    netsUserId?.focus();
+  }, 900);
+}
+
+async function handleNetsApprove() {
+  if (!pendingNetsOrderData || !netsApprove || !netsStatus) return;
+
+  netsApprove.disabled = true;
+  netsStatus.textContent = 'Waiting for bank approval...';
+
+  netsTimer = setTimeout(() => {
+    netsStatus.textContent = 'NETS payment approved successfully.';
+
+    netsTimer = setTimeout(() => {
+      submitOrder(pendingNetsOrderData);
+    }, 700);
+  }, 1200);
+}
+
+function validateNetsAuth() {
+  let isValid = true;
+  const userId = netsUserId?.value.trim() || '';
+  const pin = netsPin?.value.trim() || '';
+
+  setFieldError('netsUserId', '');
+  setFieldError('netsPin', '');
+
+  if (!userId) {
+    setFieldError('netsUserId', 'Bank User ID is required.');
+    isValid = false;
+  }
+
+  if (!pin) {
+    setFieldError('netsPin', 'PIN or password is required.');
+    isValid = false;
+  }
+
+  return isValid;
+}
+
 async function handlePlaceOrder() {
   if (!localStorage.getItem('token')) {
     showToast('Please log in before checking out.');
@@ -986,6 +1133,11 @@ async function handlePlaceOrder() {
     return;
   }
 
+  if (netsRadio?.checked) {
+    openNetsModal(orderData);
+    return;
+  }
+
   await submitOrder(orderData);
 }
 
@@ -1005,27 +1157,38 @@ function initCheckout() {
         closeGooglePayModal();
         closeGrabPayModal();
         closePayNowModal();
+        closeNetsModal();
         openApplePayModal(getCheckoutOrderData());
       } else if (option.id === 'googlePay' && option.checked) {
         closeApplePayModal();
         closeGrabPayModal();
         closePayNowModal();
+        closeNetsModal();
         openGooglePayModal(getCheckoutOrderData());
       } else if (option.id === 'grabPay' && option.checked) {
         closeApplePayModal();
         closeGooglePayModal();
         closePayNowModal();
+        closeNetsModal();
         openGrabPayModal(getCheckoutOrderData());
       } else if (option.id === 'payNow' && option.checked) {
         closeApplePayModal();
         closeGooglePayModal();
         closeGrabPayModal();
+        closeNetsModal();
         openPayNowModal(getCheckoutOrderData());
+      } else if (option.id === 'nets' && option.checked) {
+        closeApplePayModal();
+        closeGooglePayModal();
+        closeGrabPayModal();
+        closePayNowModal();
+        openNetsModal(getCheckoutOrderData());
       } else {
         closeApplePayModal();
         closeGooglePayModal();
         closeGrabPayModal();
         closePayNowModal();
+        closeNetsModal();
       }
     });
   });
@@ -1051,6 +1214,12 @@ function initCheckout() {
   document.querySelector('[data-payment="payNow"]')?.addEventListener('click', () => {
     setTimeout(() => {
       if (payNowRadio?.checked) openPayNowModal(getCheckoutOrderData());
+    }, 0);
+  });
+
+  document.querySelector('[data-payment="nets"]')?.addEventListener('click', () => {
+    setTimeout(() => {
+      if (netsRadio?.checked) openNetsModal(getCheckoutOrderData());
     }, 0);
   });
 
@@ -1087,6 +1256,53 @@ function initCheckout() {
   payNowCancel?.addEventListener('click', closePayNowModal);
   payNowModal?.addEventListener('click', (event) => {
     if (event.target === payNowModal) closePayNowModal();
+  });
+  netsContinue?.addEventListener('click', handleNetsContinue);
+  netsApprove?.addEventListener('click', handleNetsApprove);
+  netsClose?.addEventListener('click', closeNetsModal);
+  netsCancel?.addEventListener('click', closeNetsModal);
+  netsModal?.addEventListener('click', (event) => {
+    if (event.target === netsModal) closeNetsModal();
+  });
+  netsBankGrid?.addEventListener('click', (event) => {
+    const bankButton = event.target.closest('.nets-bank-option');
+    if (!bankButton) return;
+
+    clearTimeout(netsTimer);
+    selectedNetsBank = bankButton.dataset.bank || 'DBS / POSB';
+    netsBankGrid
+      .querySelectorAll('.nets-bank-option')
+      .forEach((button) => button.classList.remove('active'));
+    bankButton.classList.add('active');
+    if (netsSelectedBank) netsSelectedBank.textContent = selectedNetsBank;
+    netsAuthPanel?.setAttribute('hidden', '');
+    netsConfirmation?.setAttribute('hidden', '');
+    if (netsUserId) netsUserId.value = '';
+    if (netsPin) netsPin.value = '';
+    setFieldError('netsUserId', '');
+    setFieldError('netsPin', '');
+    if (netsContinue) {
+      netsContinue.hidden = false;
+      netsContinue.disabled = false;
+      netsContinue.textContent = 'Continue with NETS';
+    }
+    if (netsApprove) {
+      netsApprove.hidden = true;
+      netsApprove.disabled = false;
+    }
+    if (netsStatus) netsStatus.textContent = `${selectedNetsBank} selected.`;
+  });
+  netsUserId?.addEventListener('input', () => {
+    setFieldError('netsUserId', '');
+  });
+  netsPin?.addEventListener('input', () => {
+    setFieldError('netsPin', '');
+  });
+  netsPin?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleNetsContinue();
+    }
   });
   grabPayOtp?.addEventListener('input', () => {
     grabPayOtp.value = grabPayOtp.value.replace(/\D/g, '').substring(0, 6);
