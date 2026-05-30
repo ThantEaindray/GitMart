@@ -87,6 +87,7 @@ function parseMoney(value) {
 }
 
 function normalizeCartItem(item) {
+  const isOneOff = Boolean(item.isOneOff || item.listingId || (item.title && !item.productId));
   const quantity = Number(item.quantity ?? item.qty ?? 1);
   const price = parseMoney(
     item.price ??
@@ -101,7 +102,8 @@ function normalizeCartItem(item) {
     id: item.id ?? item.productId ?? item.name,
     name: item.name ?? item.title ?? 'Cart item',
     price: Number.isFinite(price) ? price : 0,
-    quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
+    quantity: isOneOff ? 1 : Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
+    isOneOff,
   };
 }
 
@@ -161,13 +163,15 @@ function updateCartQuantity(index, nextQuantity) {
   const nextItems = [...state.rawItems];
   const item = nextItems[index];
   if (!item) return;
+  const normalizedItem = normalizeCartItem(item);
 
   if (nextQuantity <= 0) {
     nextItems.splice(index, 1);
   } else {
     nextItems[index] = {
       ...item,
-      quantity: nextQuantity,
+      quantity: normalizedItem.isOneOff ? 1 : nextQuantity,
+      isOneOff: item.isOneOff || normalizedItem.isOneOff,
     };
   }
 
@@ -227,10 +231,14 @@ function renderOrderSummary() {
       const row = document.createElement('div');
       row.className = 'order-item';
       row.dataset.cartIndex = String(index);
-      row.innerHTML = `
-        <div class="order-item-info">
-          <p class="order-item-name">${item.name}</p>
-          <div class="order-item-controls" aria-label="${item.name} quantity controls">
+      const quantityControls = item.isOneOff
+        ? `
+            <span class="order-item-qty">x1</span>
+            <button type="button" class="order-remove-btn" data-cart-action="remove" aria-label="Remove ${item.name}">
+              Remove
+            </button>
+          `
+        : `
             <button type="button" class="order-qty-btn" data-cart-action="decrease" aria-label="Decrease ${item.name} quantity">
               <i class="bi bi-dash"></i>
             </button>
@@ -241,6 +249,12 @@ function renderOrderSummary() {
             <button type="button" class="order-remove-btn" data-cart-action="remove" aria-label="Remove ${item.name}">
               Remove
             </button>
+          `;
+      row.innerHTML = `
+        <div class="order-item-info">
+          <p class="order-item-name">${item.name}</p>
+          <div class="order-item-controls" aria-label="${item.name} quantity controls">
+            ${quantityControls}
           </div>
         </div>
         <p class="order-item-price">${formatMoney(item.price * item.quantity)}</p>

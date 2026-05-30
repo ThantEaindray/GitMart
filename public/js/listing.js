@@ -21,7 +21,9 @@ function parseResponse(response) {
 function errorView(message) {
   return (
     '<div class="product-error">' +
-    '<p class="status-text">' + message + '</p>' +
+    '<p class="status-text">' +
+    message +
+    '</p>' +
     '<a href="listings.html" class="breadcrumb-back"><i class="bi bi-arrow-left"></i> Back to Listings</a>' +
     '</div>'
   );
@@ -33,19 +35,25 @@ function addToCart() {
   if (!currentListing) return;
   var raw = localStorage.getItem('cart');
   var cart = raw ? JSON.parse(raw) : [];
-  var existing = cart.find(function (item) { return item.id === currentListing.id; });
+  var existing = cart.find(function (item) {
+    return item.id === currentListing.id;
+  });
   if (existing) {
-    existing.quantity = Number(existing.quantity || 1) + 1;
+    existing.quantity = 1;
+    existing.isOneOff = true;
+    existing.listingId = currentListing.id;
     localStorage.setItem('cart', JSON.stringify(cart));
-    showToast('Added another to cart.');
+    showToast('This one-off listing is already in cart.');
     return;
   }
   cart.push({
-    id:       currentListing.id,
-    title:    currentListing.title,
-    price:    currentListing.price,
+    id: currentListing.id,
+    listingId: currentListing.id,
+    title: currentListing.title,
+    price: currentListing.price,
     category: currentListing.category,
     quantity: 1,
+    isOneOff: true,
   });
   localStorage.setItem('cart', JSON.stringify(cart));
   showToast('Added to cart.');
@@ -67,7 +75,11 @@ function renderListing(listing) {
   });
 
   const listingImage = listing.image_url
-    ? '<img src="' + listing.image_url + '" alt="' + listing.title + '" class="listing-detail-image" />'
+    ? '<img src="' +
+      listing.image_url +
+      '" alt="' +
+      listing.title +
+      '" class="listing-detail-image" />'
     : '<i class="bi bi-tag"></i>';
 
   var cartBtn = isAvailable
@@ -75,15 +87,36 @@ function renderListing(listing) {
     : '';
 
   section.innerHTML =
-    '<div class="product-img">' + listingImage + '</div>' +
+    '<div class="product-img">' +
+    listingImage +
+    '</div>' +
     '<div class="product-info">' +
-    '<div class="card-cat" style="color:' + statusColor + ';">' + status + ' &nbsp;·&nbsp; Listed ' + date + (listing.view_count > 0 ? ' &nbsp;·&nbsp; <i class="bi bi-eye"></i> ' + listing.view_count + ' views' : '') + '</div>' +
-    '<h1 class="product-name">' + listing.title + '</h1>' +
-    '<div class="product-price" data-price="' + listing.price + '">' + formatPrice(Number(listing.price)) + '</div>' +
-    '<p class="product-description">' + listing.description + '</p>' +
+    '<div class="card-cat" style="color:' +
+    statusColor +
+    ';">' +
+    status +
+    ' &nbsp;·&nbsp; Listed ' +
+    date +
+    (listing.view_count > 0
+      ? ' &nbsp;·&nbsp; <i class="bi bi-eye"></i> ' + listing.view_count + ' views'
+      : '') +
+    '</div>' +
+    '<h1 class="product-name">' +
+    listing.title +
+    '</h1>' +
+    '<div class="product-price" data-price="' +
+    listing.price +
+    '">' +
+    formatPrice(Number(listing.price)) +
+    '</div>' +
+    '<p class="product-description">' +
+    listing.description +
+    '</p>' +
     '<div class="product-actions">' +
-      '<button class="btn-primary" id="btn-contact" onclick="createChat(' + listing.owner_id + ')">Contact Seller</button>' +
-      cartBtn +
+    '<button class="btn-primary" id="btn-contact" onclick="createChat(' +
+    listing.owner_id +
+    ')">Contact Seller</button>' +
+    cartBtn +
     '</div>' +
     '</div>';
 }
@@ -116,38 +149,47 @@ function loadListing() {
   }
 
   var token = localStorage.getItem('token');
-  var options = token ? { headers: { 'Authorization': 'Bearer ' + token } } : {};
-  fetch('/api/listings/' + id, options).then(parseResponse).then(onListingLoaded).catch(onListingError);
+  var options = token ? { headers: { Authorization: 'Bearer ' + token } } : {};
+  fetch('/api/listings/' + id, options)
+    .then(parseResponse)
+    .then(onListingLoaded)
+    .catch(onListingError);
 }
 
 function createChat(uId) {
   //ok so we wanna just make a fetchmethod call to the create chat endpoint easy sneesy
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('token');
   //redirect to the login page if the user dosent have a token already
   if (!token) {
-    window.location.href = 'login.html'
+    window.location.href = 'login.html';
 
-    return
+    return;
   }
   //format the data into an object for the req to work
   const data = {
-    id: uId
-  }
+    id: uId,
+  };
   //now we can do the actual calling the chats part how fun we get to keep at it with our project always something new to do oh joy
-  fetchMethod(`/api/chats/new`, (stat, data) => {
-    if (stat == 500) {
-      showToast("An Unknown error has occured")
-      return
-    }
-    //then if the token is invalid
-    if (stat == 401) {
-      return window.location.href = "login.html"
-    }
-    //and then we need to redirect to the chats page when the chat is actually made or if one already exists
-    if (stat == 201 || stat == 409) {
-      window.location.href = "chats.html"
-    }
-  }, "POST", data, token)
+  fetchMethod(
+    `/api/chats/new`,
+    (stat, data) => {
+      if (stat == 500) {
+        showToast('An Unknown error has occured');
+        return;
+      }
+      //then if the token is invalid
+      if (stat == 401) {
+        return (window.location.href = 'login.html');
+      }
+      //and then we need to redirect to the chats page when the chat is actually made or if one already exists
+      if (stat == 201 || stat == 409) {
+        window.location.href = 'chats.html';
+      }
+    },
+    'POST',
+    data,
+    token,
+  );
 }
 
 document.addEventListener('DOMContentLoaded', loadListing);
