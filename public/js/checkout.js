@@ -66,6 +66,8 @@ const netsAuthPanel = document.getElementById('netsAuthPanel');
 const netsAuthTitle = document.getElementById('netsAuthTitle');
 const netsUserId = document.getElementById('netsUserId');
 const netsPin = document.getElementById('netsPin');
+const netsUserIdLabel = document.querySelector('label[for="netsUserId"]');
+const netsPinLabel = document.querySelector('label[for="netsPin"]');
 const netsConfirmation = document.getElementById('netsConfirmation');
 const netsSelectedBank = document.getElementById('netsSelectedBank');
 const netsBankGrid = document.getElementById('netsBankGrid');
@@ -93,6 +95,49 @@ let payNowTimer = null;
 let pendingNetsOrderData = null;
 let netsTimer = null;
 let selectedNetsBank = 'DBS / POSB';
+
+const NETS_BANK_AUTH_CONFIG = {
+  'DBS / POSB': {
+    userLabel: 'Username / User ID',
+    userPlaceholder: 'e.g. S1234567A',
+    secretLabel: '6-digit PIN',
+    secretPlaceholder: '000000',
+    secretInputMode: 'numeric',
+    secretMaxLength: 6,
+    secretPattern: /^[0-9]{6}$/,
+    secretError: 'PIN must be exactly 6 digits.',
+  },
+  OCBC: {
+    userLabel: 'Access Code',
+    userPlaceholder: 'e.g. 1234567890',
+    secretLabel: '6-digit PIN',
+    secretPlaceholder: '000000',
+    secretInputMode: 'numeric',
+    secretMaxLength: 6,
+    secretPattern: /^[0-9]{6}$/,
+    secretError: 'PIN must be exactly 6 digits.',
+  },
+  UOB: {
+    userLabel: 'Username',
+    userPlaceholder: 'e.g. uobuser',
+    secretLabel: 'Password',
+    secretPlaceholder: 'Enter password',
+    secretInputMode: 'text',
+    secretMaxLength: 32,
+    secretPattern: /^.{6,32}$/,
+    secretError: 'Password must be at least 6 characters.',
+  },
+  Maybank: {
+    userLabel: 'Username / Access ID',
+    userPlaceholder: 'e.g. maybankid',
+    secretLabel: 'Password / PIN',
+    secretPlaceholder: 'Enter password or PIN',
+    secretInputMode: 'text',
+    secretMaxLength: 32,
+    secretPattern: /^.{4,32}$/,
+    secretError: 'Password or PIN must be at least 4 characters.',
+  },
+};
 
 function showToast(message) {
   const toast = document.getElementById('toast');
@@ -715,6 +760,24 @@ function createNetsReference() {
   return `NETS-${timestamp}`;
 }
 
+function getNetsAuthConfig() {
+  return NETS_BANK_AUTH_CONFIG[selectedNetsBank] || NETS_BANK_AUTH_CONFIG['DBS / POSB'];
+}
+
+function applyNetsAuthConfig() {
+  const config = getNetsAuthConfig();
+
+  if (netsUserIdLabel) netsUserIdLabel.textContent = config.userLabel;
+  if (netsUserId) netsUserId.placeholder = config.userPlaceholder;
+  if (netsPinLabel) netsPinLabel.textContent = config.secretLabel;
+  if (netsPin) {
+    netsPin.placeholder = config.secretPlaceholder;
+    netsPin.inputMode = config.secretInputMode;
+    netsPin.maxLength = config.secretMaxLength;
+    netsPin.value = '';
+  }
+}
+
 function openPayNowModal(orderData) {
   pendingPayNowOrderData = orderData;
   clearTimeout(payNowTimer);
@@ -743,6 +806,7 @@ function openNetsModal(orderData) {
   if (netsTotal) netsTotal.textContent = formatMoney(orderData.totalAmount);
   if (netsReference) netsReference.textContent = createNetsReference();
   if (netsSelectedBank) netsSelectedBank.textContent = selectedNetsBank;
+  applyNetsAuthConfig();
   netsAuthPanel?.setAttribute('hidden', '');
   netsConfirmation?.setAttribute('hidden', '');
   if (netsUserId) netsUserId.value = '';
@@ -1081,6 +1145,7 @@ async function handleNetsApprove() {
 
 function validateNetsAuth() {
   let isValid = true;
+  const config = getNetsAuthConfig();
   const userId = netsUserId?.value.trim() || '';
   const pin = netsPin?.value.trim() || '';
 
@@ -1093,7 +1158,10 @@ function validateNetsAuth() {
   }
 
   if (!pin) {
-    setFieldError('netsPin', 'PIN or password is required.');
+    setFieldError('netsPin', `${config.secretLabel} is required.`);
+    isValid = false;
+  } else if (!config.secretPattern.test(pin)) {
+    setFieldError('netsPin', config.secretError);
     isValid = false;
   }
 
@@ -1275,6 +1343,7 @@ function initCheckout() {
       .forEach((button) => button.classList.remove('active'));
     bankButton.classList.add('active');
     if (netsSelectedBank) netsSelectedBank.textContent = selectedNetsBank;
+    applyNetsAuthConfig();
     netsAuthPanel?.setAttribute('hidden', '');
     netsConfirmation?.setAttribute('hidden', '');
     if (netsUserId) netsUserId.value = '';
@@ -1296,6 +1365,9 @@ function initCheckout() {
     setFieldError('netsUserId', '');
   });
   netsPin?.addEventListener('input', () => {
+    if (getNetsAuthConfig().secretInputMode === 'numeric') {
+      netsPin.value = netsPin.value.replace(/\D/g, '').substring(0, 6);
+    }
     setFieldError('netsPin', '');
   });
   netsPin?.addEventListener('keydown', (event) => {
