@@ -701,6 +701,20 @@
         display: none;
       }
 
+      .google-pay-card-form {
+        display: grid;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .google-pay-card-form[hidden] {
+        display: none;
+      }
+
+      .google-pay-card-form .form-group {
+        margin-bottom: 0;
+      }
+
       /* ── PROGRESS STEPS ── */
       .checkout-progress {
         display: flex;
@@ -1164,9 +1178,55 @@
         </div>
         <div class="apple-pay-body">
           <p class="apple-pay-support-note">
-            Review your Google Pay payment details, confirm the selected card, then approve the
-            payment to place your order.
+            Enter your card details for Google Pay, review the total, then confirm the payment to
+            place your order.
           </p>
+
+          <div class="google-pay-card-form" id="googlePayCardForm">
+            <div class="form-group">
+              <label class="form-label" for="googlePayCardName">Name on Card</label>
+              <input class="form-input" type="text" id="googlePayCardName" placeholder="Jane Doe" />
+              <span class="field-error" data-error-for="googlePayCardName"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="googlePayCardNumber">Card Number</label>
+              <input
+                class="form-input"
+                type="text"
+                id="googlePayCardNumber"
+                placeholder="1234 5678 9012 3456"
+                maxlength="19"
+              />
+              <span class="field-error" data-error-for="googlePayCardNumber"></span>
+            </div>
+
+            <div class="card-row">
+              <div class="form-group">
+                <label class="form-label" for="googlePayExpiryDate">Expiry Date</label>
+                <input
+                  class="form-input"
+                  type="text"
+                  id="googlePayExpiryDate"
+                  placeholder="MM/YY"
+                  maxlength="5"
+                />
+                <span class="field-error" data-error-for="googlePayExpiryDate"></span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="googlePayCvv">CVV</label>
+                <input
+                  class="form-input"
+                  type="password"
+                  id="googlePayCvv"
+                  placeholder="•••"
+                  maxlength="4"
+                />
+                <span class="field-error" data-error-for="googlePayCvv"></span>
+              </div>
+            </div>
+          </div>
 
           <div class="google-pay-details" id="googlePayDetails" hidden>
             <div class="apple-pay-total-row">

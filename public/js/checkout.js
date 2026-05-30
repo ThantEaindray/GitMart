@@ -25,6 +25,12 @@ const googlePayConfirm = document.getElementById('googlePayConfirm');
 const googlePayStatus = document.getElementById('googlePayStatus');
 const googlePayDetails = document.getElementById('googlePayDetails');
 const googlePayTotal = document.getElementById('googlePayTotal');
+const googlePayCardForm = document.getElementById('googlePayCardForm');
+const googlePayCardName = document.getElementById('googlePayCardName');
+const googlePayCardNumber = document.getElementById('googlePayCardNumber');
+const googlePayExpiryDate = document.getElementById('googlePayExpiryDate');
+const googlePayCvv = document.getElementById('googlePayCvv');
+const googlePayCard = document.getElementById('googlePayCard');
 const orderItemsEl = document.getElementById('orderItems');
 const subtotalPriceText = document.getElementById('subtotalPrice');
 const deliveryFeeText = document.getElementById('deliveryFee');
@@ -202,6 +208,72 @@ function formatUnitNumber(value) {
   const floor = digits.slice(0, 2);
   const unit = digits.slice(2, 6);
   return digits.length >= 2 ? `#${floor}-${unit}` : `#${floor}`;
+}
+
+function formatCardNumber(value) {
+  const digits = value.replace(/\D/g, '').substring(0, 16);
+  return digits.replace(/(.{4})/g, '$1 ').trim();
+}
+
+function formatExpiryDate(value) {
+  let digits = value.replace(/\D/g, '').substring(0, 4);
+  if (digits.length >= 2) digits = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return digits;
+}
+
+function getCardBrand(cardNumber) {
+  const digits = cardNumber.replace(/\D/g, '');
+  if (/^4/.test(digits)) return 'Visa';
+  if (/^5[1-5]/.test(digits) || /^2[2-7]/.test(digits)) return 'Mastercard';
+  if (/^3[47]/.test(digits)) return 'Amex';
+  return 'Card';
+}
+
+function clearGooglePayErrors() {
+  ['googlePayCardName', 'googlePayCardNumber', 'googlePayExpiryDate', 'googlePayCvv'].forEach(
+    (fieldId) => setFieldError(fieldId, ''),
+  );
+}
+
+function validateGooglePayCardDetails() {
+  clearGooglePayErrors();
+
+  let isValid = true;
+  const cardName = googlePayCardName?.value.trim() || '';
+  const cardNumber = googlePayCardNumber?.value.replace(/\D/g, '') || '';
+  const expiryDate = googlePayExpiryDate?.value.trim() || '';
+  const cvv = googlePayCvv?.value.replace(/\D/g, '') || '';
+
+  if (!cardName) {
+    setFieldError('googlePayCardName', 'Name on card is required.');
+    isValid = false;
+  }
+
+  if (!cardNumber) {
+    setFieldError('googlePayCardNumber', 'Card number is required.');
+    isValid = false;
+  } else if (!/^[0-9]{16}$/.test(cardNumber)) {
+    setFieldError('googlePayCardNumber', 'Card number must contain exactly 16 digits.');
+    isValid = false;
+  }
+
+  if (!expiryDate) {
+    setFieldError('googlePayExpiryDate', 'Expiry date is required.');
+    isValid = false;
+  } else if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiryDate)) {
+    setFieldError('googlePayExpiryDate', 'Expiry date must follow MM/YY format.');
+    isValid = false;
+  }
+
+  if (!cvv) {
+    setFieldError('googlePayCvv', 'CVV is required.');
+    isValid = false;
+  } else if (!/^[0-9]{3}$/.test(cvv)) {
+    setFieldError('googlePayCvv', 'CVV must be a 3-digit number.');
+    isValid = false;
+  }
+
+  return isValid;
 }
 
 function getSelectedDeliveryFee() {
@@ -511,7 +583,9 @@ function openGooglePayModal(orderData) {
     googlePayConfirm.hidden = true;
     googlePayConfirm.disabled = false;
   }
+  googlePayCardForm?.removeAttribute('hidden');
   googlePayDetails?.setAttribute('hidden', '');
+  clearGooglePayErrors();
 
   googlePayModal?.classList.add('visible');
   googlePayModal?.setAttribute('aria-hidden', 'false');
@@ -621,15 +695,22 @@ async function handleGooglePayContinue() {
     return;
   }
 
+  if (!validateGooglePayCardDetails()) return;
+
   pendingGooglePayOrderData = getCheckoutOrderData();
   if (googlePayTotal) {
     googlePayTotal.textContent = formatMoney(pendingGooglePayOrderData.totalAmount);
+  }
+  if (googlePayCard && googlePayCardNumber) {
+    const digits = googlePayCardNumber.value.replace(/\D/g, '');
+    googlePayCard.textContent = `${getCardBrand(digits)} •••• ${digits.slice(-4)}`;
   }
 
   googlePayContinue.disabled = true;
   googlePayStatus.textContent = 'Opening Google Pay...';
 
   googlePayTimer = setTimeout(() => {
+    googlePayCardForm?.setAttribute('hidden', '');
     googlePayDetails?.removeAttribute('hidden');
     googlePayContinue.hidden = true;
     if (googlePayConfirm) googlePayConfirm.hidden = false;
@@ -731,6 +812,21 @@ function initCheckout() {
   googlePayCancel?.addEventListener('click', closeGooglePayModal);
   googlePayModal?.addEventListener('click', (event) => {
     if (event.target === googlePayModal) closeGooglePayModal();
+  });
+  googlePayCardNumber?.addEventListener('input', () => {
+    googlePayCardNumber.value = formatCardNumber(googlePayCardNumber.value);
+    setFieldError('googlePayCardNumber', '');
+  });
+  googlePayExpiryDate?.addEventListener('input', () => {
+    googlePayExpiryDate.value = formatExpiryDate(googlePayExpiryDate.value);
+    setFieldError('googlePayExpiryDate', '');
+  });
+  googlePayCvv?.addEventListener('input', () => {
+    googlePayCvv.value = googlePayCvv.value.replace(/\D/g, '').substring(0, 3);
+    setFieldError('googlePayCvv', '');
+  });
+  googlePayCardName?.addEventListener('input', () => {
+    setFieldError('googlePayCardName', '');
   });
 
   orderItemsEl.addEventListener('click', (event) => {
