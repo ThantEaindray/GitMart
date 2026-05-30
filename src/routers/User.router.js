@@ -58,14 +58,7 @@ router.put('/me/notifications', jwtMiddleware.verifyToken, userController.update
 router.delete('/me', jwtMiddleware.verifyToken, userController.deleteAccount);
 
 // Change Password
-router.put(
-  '/me/password',
-  jwtMiddleware.verifyToken,
-  userController.getPasswordHash,
-  bcryptMiddleware.compareCurrentPassword,
-  bcryptMiddleware.hashNewPassword,
-  userController.updatePassword,
-);
+router.put('/me/password', jwtMiddleware.verifyToken, userController.getPasswordHash,  bcryptMiddleware.compareCurrentPassword, bcryptMiddleware.hashNewPassword, userController.updatePassword,);
 
 // Logout — revoke refresh token from DB and clear cookie
 router.post('/logout', userController.logout);

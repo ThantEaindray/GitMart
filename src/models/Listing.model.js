@@ -51,7 +51,7 @@ module.exports.getListingByIdWithView = (data, callback) => {
     UPDATE listings
     SET view_count = view_count + (CASE WHEN EXISTS(SELECT 1 FROM maybe_view) THEN 1 ELSE 0 END)
     WHERE id = $1::integer
-    RETURNING id, owner_id, price, created_on, title, description, category, view_count, "isSold", "isClosed"
+    RETURNING id, owner_id, price, created_on, title, description, category, image_url, view_count, "isSold", "isClosed"
   `;
   const VALUES = [data.id, data.userId];
   pool.query(SQLSTATEMENT, VALUES, callback);
