@@ -1,6 +1,4 @@
 var uId = localStorage.getItem('loggedInUserId');
-//one of you touched my code and im not too fond of that
-// if only there were some sort of person thajt could write it and actually leave comments on the code instead of whatever this was 
 function loadChat(data) {
   document.getElementById('messages').innerHTML = '';
   data.forEach(function (e) {
@@ -24,7 +22,6 @@ function loadChat(data) {
 }
 
 function viewChat(cId) {
-  //we also wanna do some sort of like greying out/feedback like with an active property like we do with the navbar
   //ok so we need to get the stuff from one specific chat now
   // so the chat id will be pulled from the request in the function and then we get the users id from inside of the thing itself
   //we also wanna pass the chat id into the localStorage for future use
@@ -39,7 +36,7 @@ function viewChat(cId) {
   }, "GET")
 }
 
-//so we need to get the users chats now which is sorta annoying but this is what you signed up for keep it together
+//so we need to get the users chats
 function renderChats(results) {
   //this will assemble everything into its bits of info with the functions to call to load their individual chats as well
   //in a perfect world itd be async but time
@@ -54,7 +51,6 @@ function renderChats(results) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  //so first things first we need to do the most basic of calling the api to get the users chats to load in, first things first\
   //check for a logged in user
   const token = localStorage.getItem('token')
   if (!token) {
@@ -63,14 +59,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   document.getElementById('input-form').addEventListener('submit', (event) => {
-    //ok so we need to figure out how the actual sending a message part goes now which should in theory be easy enough
     event.preventDefault()
     sendTxt(document.getElementById('message').value)
   })
 
-
-  //its by no means my finest work but itll do the trick
-  //now we need to make the part where it actually calls the api :pensive:
   fetchMethod("/api/chats", (stat, data) => {
     if (stat == 200) {
       renderChats(data)

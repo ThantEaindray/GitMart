@@ -13,9 +13,7 @@ webSocket.onmessage = (event) => {
   if (content.chat !== openChat) {
     return
   }
-  //now that we can be sure that its for our user here (security be damned im doing this rough and fast)
-  //either our user or they sent it i think it will still broadcast to everyone regardless of if they sent it
-  //ok so theres 2 types of messages, images and text. obviously theyll need to be displayed differently
+  //ok so theres 2 types of messages, images and text theyll need to be displayed differently
 
   //we need to do basically what we did on the history loading part should be easy enough
   let position = "sent"
@@ -32,8 +30,7 @@ webSocket.onmessage = (event) => {
   `
 }
 
-//so what do we need to do when the user wants to send a message (lets just get text working first and then we can sort out the images later)
-// this is gonna be horribly painful to do isnt it
+//so what do we need to do when the user wants to send a message 
 
 function sendTxt(content) { 
   let openChat = localStorage.getItem('openChat')
