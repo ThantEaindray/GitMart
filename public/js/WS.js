@@ -13,7 +13,6 @@ webSocket.onmessage = (event) => {
   if (content.chat !== openChat) {
     return
   }
-  console.log(content)
   //now that we can be sure that its for our user here (security be damned im doing this rough and fast)
   //either our user or they sent it i think it will still broadcast to everyone regardless of if they sent it
   //ok so theres 2 types of messages, images and text. obviously theyll need to be displayed differently
@@ -37,6 +36,7 @@ webSocket.onmessage = (event) => {
 // this is gonna be horribly painful to do isnt it
 
 function sendTxt(content) { 
+  let openChat = localStorage.getItem('openChat')
   let cont = {
     chat: openChat,
     user: uId,
