@@ -3,16 +3,20 @@
 const GST_RATE = 0.09;
 const CART_STORAGE_KEYS = ['cart', 'checkoutCart', 'cartItems'];
 
+// Main checkout controls
 const placeOrderButton = document.getElementById('placeOrderButton');
 const deliveryOptions = document.querySelectorAll('input[name="delivery"]');
 const paymentOptions = document.querySelectorAll('input[name="payment"]');
+
+// Card payment fields
 const cardDetails = document.querySelector('.card-details');
 const cardPaymentRadio = document.getElementById('cardPayment');
+const cardNumberInput = document.getElementById('cardNumber');
+const expiryInput = document.getElementById('expiryDate');
+const cvvInput = document.getElementById('cvv');
+
+// Apple Pay modal elements
 const applePayRadio = document.getElementById('applePay');
-const googlePayRadio = document.getElementById('googlePay');
-const grabPayRadio = document.getElementById('grabPay');
-const payNowRadio = document.getElementById('payNow');
-const netsRadio = document.getElementById('nets');
 const applePayModal = document.getElementById('applePayModal');
 const applePayClose = document.getElementById('applePayClose');
 const applePayCancel = document.getElementById('applePayCancel');
@@ -21,6 +25,9 @@ const applePayStatus = document.getElementById('applePayStatus');
 const applePayTotal = document.getElementById('applePayTotal');
 const applePayDelivery = document.getElementById('applePayDelivery');
 const applePaySupportNote = document.getElementById('applePaySupportNote');
+
+// Google Pay modal elements
+const googlePayRadio = document.getElementById('googlePay');
 const googlePayModal = document.getElementById('googlePayModal');
 const googlePayClose = document.getElementById('googlePayClose');
 const googlePayCancel = document.getElementById('googlePayCancel');
@@ -35,6 +42,9 @@ const googlePayCardNumber = document.getElementById('googlePayCardNumber');
 const googlePayExpiryDate = document.getElementById('googlePayExpiryDate');
 const googlePayCvv = document.getElementById('googlePayCvv');
 const googlePayCard = document.getElementById('googlePayCard');
+
+// GrabPay modal elements
+const grabPayRadio = document.getElementById('grabPay');
 const grabPayModal = document.getElementById('grabPayModal');
 const grabPayClose = document.getElementById('grabPayClose');
 const grabPayCancel = document.getElementById('grabPayCancel');
@@ -46,6 +56,9 @@ const grabPayTotal = document.getElementById('grabPayTotal');
 const grabPayOtpPanel = document.getElementById('grabPayOtpPanel');
 const grabPayOtpMessage = document.getElementById('grabPayOtpMessage');
 const grabPayOtp = document.getElementById('grabPayOtp');
+
+// PayNow modal elements
+const payNowRadio = document.getElementById('payNow');
 const payNowModal = document.getElementById('payNowModal');
 const payNowClose = document.getElementById('payNowClose');
 const payNowCancel = document.getElementById('payNowCancel');
@@ -54,6 +67,9 @@ const payNowStatus = document.getElementById('payNowStatus');
 const payNowTotal = document.getElementById('payNowTotal');
 const payNowReference = document.getElementById('payNowReference');
 const payNowAmountLine = document.getElementById('payNowAmountLine');
+
+// NETS modal elements
+const netsRadio = document.getElementById('nets');
 const netsModal = document.getElementById('netsModal');
 const netsClose = document.getElementById('netsClose');
 const netsCancel = document.getElementById('netsCancel');
@@ -71,19 +87,28 @@ const netsPinLabel = document.querySelector('label[for="netsPin"]');
 const netsConfirmation = document.getElementById('netsConfirmation');
 const netsSelectedBank = document.getElementById('netsSelectedBank');
 const netsBankGrid = document.getElementById('netsBankGrid');
+
+// Order summary elements
 const orderItemsEl = document.getElementById('orderItems');
 const subtotalPriceText = document.getElementById('subtotalPrice');
 const deliveryFeeText = document.getElementById('deliveryFee');
 const gstPriceText = document.getElementById('gstPrice');
 const totalPriceText = document.getElementById('totalPrice');
 
+// Cart and price totals
 let cartItems = [];
 let subtotal = 0;
 let gst = 0;
+
+// Remember which localStorage cart format was found.
 let cartStorageKey = 'cart';
 let cartStorageContainer = null;
+
+// Keep the sticky order summary aligned while scrolling.
 let summaryHeightObserver;
 let summaryScrollFrame;
+
+// Payment flow state and timers
 let pendingApplePayOrderData = null;
 let applePayTimer = null;
 let pendingGooglePayOrderData = null;
@@ -96,6 +121,7 @@ let pendingNetsOrderData = null;
 let netsTimer = null;
 let selectedNetsBank = 'DBS / POSB';
 
+// NETS fields change based on the selected bank.
 const NETS_BANK_AUTH_CONFIG = {
   'DBS / POSB': {
     userLabel: 'Username / User ID',
@@ -139,6 +165,7 @@ const NETS_BANK_AUTH_CONFIG = {
   },
 };
 
+// Show short feedback messages.
 function showToast(message) {
   const toast = document.getElementById('toast');
   if (!toast) return;
@@ -148,6 +175,7 @@ function showToast(message) {
   toast._timer = setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
+// Show or clear a field validation message.
 function setFieldError(fieldId, message) {
   const field = document.getElementById(fieldId);
   const error = document.querySelector(`[data-error-for="${fieldId}"]`);
@@ -156,6 +184,7 @@ function setFieldError(fieldId, message) {
   if (error) error.textContent = message;
 }
 
+// Clear all validation messages on the page.
 function clearFieldErrors() {
   document.querySelectorAll('.field-error').forEach((error) => {
     error.textContent = '';
@@ -165,14 +194,17 @@ function clearFieldErrors() {
   });
 }
 
+// Read a text field safely.
 function getFieldValue(fieldId) {
   return document.getElementById(fieldId).value.trim();
 }
 
+// Format prices for display.
 function formatMoney(amount) {
   return `$${Number(amount).toFixed(2)}`;
 }
 
+// Convert stored price values into numbers.
 function parseMoney(value) {
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
@@ -182,6 +214,7 @@ function parseMoney(value) {
   return Number(value ?? 0);
 }
 
+// Normalize cart items from different localStorage shapes.
 function normalizeCartItem(item) {
   const isOneOff = Boolean(item.isOneOff || item.listingId || (item.title && !item.productId));
   const quantity = Number(item.quantity ?? item.qty ?? 1);
@@ -205,6 +238,7 @@ function normalizeCartItem(item) {
   };
 }
 
+// Find the active cart storage key.
 function readCartState() {
   for (const key of CART_STORAGE_KEYS) {
     const raw = localStorage.getItem(key);
@@ -234,6 +268,7 @@ function readCartState() {
   };
 }
 
+// Return normalized cart items for checkout.
 function readCartItems() {
   const state = readCartState();
   cartStorageKey = state.key;
@@ -241,6 +276,7 @@ function readCartItems() {
   return state.items;
 }
 
+// Save cart items back to their original storage format.
 function writeCartItems(nextItems) {
   if (cartStorageContainer) {
     localStorage.setItem(
@@ -256,6 +292,7 @@ function writeCartItems(nextItems) {
   localStorage.setItem(cartStorageKey, JSON.stringify(nextItems));
 }
 
+// Change or remove an item from the order summary.
 function updateCartQuantity(index, nextQuantity) {
   const state = readCartState();
   const nextItems = [...state.rawItems];
@@ -279,6 +316,7 @@ function updateCartQuantity(index, nextQuantity) {
   renderOrderSummary();
 }
 
+// Format Singapore phone numbers as +65 1234 5678.
 function formatPhoneNumber(value) {
   let digits = value.replace(/\D/g, '');
   if (!digits) return '';
@@ -293,6 +331,7 @@ function formatPhoneNumber(value) {
   return ['+65', firstBlock, secondBlock].filter(Boolean).join(' ');
 }
 
+// Format unit numbers as #12-345.
 function formatUnitNumber(value) {
   const digits = value.replace(/\D/g, '').slice(0, 6);
   if (!digits) return value.startsWith('#') ? '#' : '';
@@ -302,17 +341,20 @@ function formatUnitNumber(value) {
   return digits.length >= 2 ? `#${floor}-${unit}` : `#${floor}`;
 }
 
+// Add spaces to card numbers while typing.
 function formatCardNumber(value) {
   const digits = value.replace(/\D/g, '').substring(0, 16);
   return digits.replace(/(.{4})/g, '$1 ').trim();
 }
 
+// Format card expiry dates as MM/YY.
 function formatExpiryDate(value) {
   let digits = value.replace(/\D/g, '').substring(0, 4);
   if (digits.length >= 2) digits = `${digits.slice(0, 2)}/${digits.slice(2)}`;
   return digits;
 }
 
+// Guess a card brand from the card number.
 function getCardBrand(cardNumber) {
   const digits = cardNumber.replace(/\D/g, '');
   if (/^4/.test(digits)) return 'Visa';
@@ -321,12 +363,14 @@ function getCardBrand(cardNumber) {
   return 'Card';
 }
 
+// Clear Google Pay card field errors.
 function clearGooglePayErrors() {
   ['googlePayCardName', 'googlePayCardNumber', 'googlePayExpiryDate', 'googlePayCvv'].forEach(
     (fieldId) => setFieldError(fieldId, ''),
   );
 }
 
+// Validate Google Pay card details before confirming.
 function validateGooglePayCardDetails() {
   clearGooglePayErrors();
 
@@ -368,11 +412,13 @@ function validateGooglePayCardDetails() {
   return isValid;
 }
 
+// Read the chosen delivery fee.
 function getSelectedDeliveryFee() {
   const selectedDelivery = document.querySelector('input[name="delivery"]:checked');
   return selectedDelivery ? Number(selectedDelivery.value) : 0;
 }
 
+// Detect whether the browser exposes Apple Pay.
 function isApplePaySupported() {
   return Boolean(
     window.ApplePaySession &&
@@ -381,6 +427,7 @@ function isApplePaySupported() {
   );
 }
 
+// Render cart items and totals in the order summary.
 function renderOrderSummary() {
   cartItems = readCartItems();
   subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -431,6 +478,7 @@ function renderOrderSummary() {
   placeOrderButton.disabled = cartItems.length === 0;
 }
 
+// Recalculate subtotal, delivery, GST, and total.
 function updateCheckoutTotals() {
   const deliveryFee = getSelectedDeliveryFee();
   const total = subtotal + gst + deliveryFee;
@@ -441,6 +489,7 @@ function updateCheckoutTotals() {
   totalPriceText.textContent = formatMoney(total);
 }
 
+// Show card fields only for card payment.
 function updateCardDetailsVisibility() {
   const isCardPayment = Boolean(cardPaymentRadio?.checked);
   cardDetails?.classList.toggle('is-visible', isCardPayment);
@@ -453,6 +502,18 @@ function updateCardDetailsVisibility() {
   }
 }
 
+// Keep selected delivery/payment cards highlighted.
+function updateOptionSelectionClasses() {
+  deliveryOptions.forEach((option) => {
+    option.closest('.delivery-option')?.classList.toggle('selected', option.checked);
+  });
+
+  paymentOptions.forEach((option) => {
+    option.closest('.payment-option')?.classList.toggle('selected', option.checked);
+  });
+}
+
+// Match the order summary height to the form area.
 function syncOrderSummaryHeight() {
   const shippingSection = document.getElementById('step-shipping')?.closest('.checkout-section');
   const orderSummary = document.querySelector('.order-summary');
@@ -463,6 +524,7 @@ function syncOrderSummaryHeight() {
   updateOrderSummaryPosition();
 }
 
+// Keep the summary sticky without overlapping the payment section.
 function updateOrderSummaryPosition() {
   const orderSummary = document.querySelector('.order-summary');
   const shippingSection = document.getElementById('step-shipping')?.closest('.checkout-section');
@@ -489,6 +551,7 @@ function updateOrderSummaryPosition() {
   orderSummary.style.setProperty('--order-summary-top', `${Math.round(nextTop)}px`);
 }
 
+// Throttle sticky summary updates during scroll.
 function requestOrderSummaryPosition() {
   if (summaryScrollFrame) return;
   summaryScrollFrame = requestAnimationFrame(() => {
@@ -497,6 +560,7 @@ function requestOrderSummaryPosition() {
   });
 }
 
+// Watch checkout layout changes that affect sticky summary height.
 function watchOrderSummaryHeight() {
   syncOrderSummaryHeight();
 
@@ -510,6 +574,7 @@ function watchOrderSummaryHeight() {
   window.addEventListener('scroll', requestOrderSummaryPosition, { passive: true });
 }
 
+// Validate the checkout form before opening payment flows.
 function validateCheckout() {
   clearFieldErrors();
 
@@ -611,6 +676,7 @@ function validateCheckout() {
   return isValid;
 }
 
+// Build the order payload sent to the backend.
 function getCheckoutOrderData() {
   const selectedDelivery = document.querySelector('input[name="delivery"]:checked');
   const selectedPayment = document.querySelector('input[name="payment"]:checked');
@@ -634,6 +700,7 @@ function getCheckoutOrderData() {
   };
 }
 
+// Read the selected delivery text for wallet modals.
 function getSelectedDeliveryDetails() {
   const selectedDelivery = document.querySelector('input[name="delivery"]:checked');
   const deliveryOption = selectedDelivery?.closest('.delivery-option');
@@ -647,6 +714,7 @@ function getSelectedDeliveryDetails() {
   };
 }
 
+// Update delivery lines inside the Apple Pay modal.
 function updateApplePayDeliveryDetails() {
   if (!applePayDelivery) return;
 
@@ -654,15 +722,16 @@ function updateApplePayDeliveryDetails() {
   const deliveryName = document.createElement('span');
   const deliveryMeta = document.createElement('span');
 
-  deliveryName.className = 'apple-pay-delivery-name';
+  deliveryName.className = 'payment-delivery-name';
   deliveryName.textContent = delivery.name;
 
-  deliveryMeta.className = 'apple-pay-delivery-meta';
+  deliveryMeta.className = 'payment-delivery-meta';
   deliveryMeta.textContent = [delivery.eta, delivery.price].filter(Boolean).join(' · ');
 
   applePayDelivery.replaceChildren(deliveryName, deliveryMeta);
 }
 
+// Prepare and show the Apple Pay modal.
 function openApplePayModal(orderData) {
   pendingApplePayOrderData = orderData;
   clearTimeout(applePayTimer);
@@ -684,6 +753,7 @@ function openApplePayModal(orderData) {
   applePayModal?.setAttribute('aria-hidden', 'false');
 }
 
+// Close Apple Pay and clear pending state.
 function closeApplePayModal() {
   clearTimeout(applePayTimer);
   pendingApplePayOrderData = null;
@@ -691,6 +761,7 @@ function closeApplePayModal() {
   applePayModal?.setAttribute('aria-hidden', 'true');
 }
 
+// Prepare and show the Google Pay modal.
 function openGooglePayModal(orderData) {
   pendingGooglePayOrderData = orderData;
   clearTimeout(googlePayTimer);
@@ -713,6 +784,7 @@ function openGooglePayModal(orderData) {
   googlePayModal?.setAttribute('aria-hidden', 'false');
 }
 
+// Close Google Pay and clear pending state.
 function closeGooglePayModal() {
   clearTimeout(googlePayTimer);
   pendingGooglePayOrderData = null;
@@ -720,6 +792,7 @@ function closeGooglePayModal() {
   googlePayModal?.setAttribute('aria-hidden', 'true');
 }
 
+// Prepare and show the GrabPay modal.
 function openGrabPayModal(orderData) {
   pendingGrabPayOrderData = orderData;
   clearTimeout(grabPayTimer);
@@ -743,6 +816,7 @@ function openGrabPayModal(orderData) {
   grabPayModal?.setAttribute('aria-hidden', 'false');
 }
 
+// Close GrabPay and clear pending state.
 function closeGrabPayModal() {
   clearTimeout(grabPayTimer);
   pendingGrabPayOrderData = null;
@@ -750,20 +824,24 @@ function closeGrabPayModal() {
   grabPayModal?.setAttribute('aria-hidden', 'true');
 }
 
+// Create a demo PayNow reference number.
 function createPayNowReference() {
   const timestamp = new Date().toISOString().replace(/\D/g, '').slice(0, 12);
   return `GM-${timestamp}`;
 }
 
+// Create a demo NETS reference number.
 function createNetsReference() {
   const timestamp = new Date().toISOString().replace(/\D/g, '').slice(4, 14);
   return `NETS-${timestamp}`;
 }
 
+// Read auth settings for the selected NETS bank.
 function getNetsAuthConfig() {
   return NETS_BANK_AUTH_CONFIG[selectedNetsBank] || NETS_BANK_AUTH_CONFIG['DBS / POSB'];
 }
 
+// Update NETS labels and input rules for the selected bank.
 function applyNetsAuthConfig() {
   const config = getNetsAuthConfig();
 
@@ -778,6 +856,7 @@ function applyNetsAuthConfig() {
   }
 }
 
+// Prepare and show the PayNow modal.
 function openPayNowModal(orderData) {
   pendingPayNowOrderData = orderData;
   clearTimeout(payNowTimer);
@@ -799,6 +878,7 @@ function openPayNowModal(orderData) {
   payNowModal?.setAttribute('aria-hidden', 'false');
 }
 
+// Prepare and show the NETS modal.
 function openNetsModal(orderData) {
   pendingNetsOrderData = orderData;
   clearTimeout(netsTimer);
@@ -828,6 +908,7 @@ function openNetsModal(orderData) {
   netsModal?.setAttribute('aria-hidden', 'false');
 }
 
+// Close NETS and clear pending state.
 function closeNetsModal() {
   clearTimeout(netsTimer);
   pendingNetsOrderData = null;
@@ -835,6 +916,7 @@ function closeNetsModal() {
   netsModal?.setAttribute('aria-hidden', 'true');
 }
 
+// Close PayNow and clear pending state.
 function closePayNowModal() {
   clearTimeout(payNowTimer);
   pendingPayNowOrderData = null;
@@ -842,6 +924,7 @@ function closePayNowModal() {
   payNowModal?.setAttribute('aria-hidden', 'true');
 }
 
+// Submit the final order to the backend.
 async function submitOrder(orderData) {
   placeOrderButton.disabled = true;
 
@@ -894,6 +977,7 @@ async function submitOrder(orderData) {
   }
 }
 
+// Simulate Apple Pay approval, then place the order.
 async function handleApplePayContinue() {
   if (!pendingApplePayOrderData || !applePayContinue || !applePayStatus) return;
 
@@ -929,6 +1013,7 @@ async function handleApplePayContinue() {
   }, 700);
 }
 
+// Move Google Pay from card entry to payment review.
 async function handleGooglePayContinue() {
   if (!pendingGooglePayOrderData || !googlePayContinue || !googlePayStatus) return;
 
@@ -970,6 +1055,7 @@ async function handleGooglePayContinue() {
   }, 900);
 }
 
+// Confirm Google Pay and place the order.
 async function handleGooglePayConfirm() {
   if (!pendingGooglePayOrderData || !googlePayConfirm || !googlePayStatus) return;
 
@@ -981,6 +1067,7 @@ async function handleGooglePayConfirm() {
   }, 700);
 }
 
+// Start GrabPay and show the OTP panel.
 async function handleGrabPayContinue() {
   if (!pendingGrabPayOrderData || !grabPayContinue || !grabPayStatus) return;
 
@@ -1020,6 +1107,7 @@ async function handleGrabPayContinue() {
   }, 900);
 }
 
+// Verify the demo GrabPay OTP.
 async function handleGrabPayVerify() {
   if (!pendingGrabPayOrderData || !grabPayVerify || !grabPayStatus) return;
 
@@ -1044,6 +1132,7 @@ async function handleGrabPayVerify() {
   }, 900);
 }
 
+// Simulate PayNow verification after the user scans.
 async function handlePayNowComplete() {
   if (!pendingPayNowOrderData || !payNowComplete || !payNowStatus) return;
 
@@ -1077,6 +1166,7 @@ async function handlePayNowComplete() {
   }, 1200);
 }
 
+// Move NETS through bank login and mobile approval.
 async function handleNetsContinue() {
   if (!pendingNetsOrderData || !netsContinue || !netsStatus) return;
 
@@ -1128,6 +1218,7 @@ async function handleNetsContinue() {
   }, 900);
 }
 
+// Simulate final NETS approval and place the order.
 async function handleNetsApprove() {
   if (!pendingNetsOrderData || !netsApprove || !netsStatus) return;
 
@@ -1143,6 +1234,7 @@ async function handleNetsApprove() {
   }, 1200);
 }
 
+// Validate NETS bank login fields.
 function validateNetsAuth() {
   let isValid = true;
   const config = getNetsAuthConfig();
@@ -1168,6 +1260,7 @@ function validateNetsAuth() {
   return isValid;
 }
 
+// Route the place order button to the selected payment flow.
 async function handlePlaceOrder() {
   if (!localStorage.getItem('token')) {
     showToast('Please log in before checking out.');
@@ -1209,17 +1302,23 @@ async function handlePlaceOrder() {
   await submitOrder(orderData);
 }
 
+// Attach all checkout event listeners.
 function initCheckout() {
   renderOrderSummary();
   updateCardDetailsVisibility();
+  updateOptionSelectionClasses();
   watchOrderSummaryHeight();
 
   deliveryOptions.forEach((option) => {
-    option.addEventListener('change', updateCheckoutTotals);
+    option.addEventListener('change', () => {
+      updateOptionSelectionClasses();
+      updateCheckoutTotals();
+    });
   });
 
   paymentOptions.forEach((option) => {
     option.addEventListener('change', () => {
+      updateOptionSelectionClasses();
       updateCardDetailsVisibility();
       if (option.id === 'applePay' && option.checked) {
         closeGooglePayModal();
@@ -1294,8 +1393,22 @@ function initCheckout() {
   ['cardName', 'cardNumber', 'expiryDate', 'cvv'].forEach((fieldId) => {
     document.getElementById(fieldId).addEventListener('input', () => {
       cardPaymentRadio.checked = true;
+      updateOptionSelectionClasses();
       updateCardDetailsVisibility();
     });
+  });
+
+  cardNumberInput?.addEventListener('input', () => {
+    cardNumberInput.value = formatCardNumber(cardNumberInput.value);
+    setFieldError('cardNumber', '');
+  });
+  expiryInput?.addEventListener('input', () => {
+    expiryInput.value = formatExpiryDate(expiryInput.value);
+    setFieldError('expiryDate', '');
+  });
+  cvvInput?.addEventListener('input', () => {
+    cvvInput.value = cvvInput.value.replace(/\D/g, '').substring(0, 3);
+    setFieldError('cvv', '');
   });
 
   placeOrderButton.addEventListener('click', handlePlaceOrder);
@@ -1447,5 +1560,4 @@ function initCheckout() {
   });
 }
 
-window.updateCheckoutTotals = updateCheckoutTotals;
 document.addEventListener('DOMContentLoaded', initCheckout);

@@ -1,14 +1,17 @@
 /* global authFetch */
 
+// Order history page elements
 const ordersList = document.getElementById('ordersList');
 const ordersCount = document.getElementById('ordersCount');
 const ordersPending = document.getElementById('ordersPending');
 const ordersSpend = document.getElementById('ordersSpend');
 const refreshOrdersButton = document.getElementById('refreshOrders');
 
+// Current orders shown on the page
 let allOrders = [];
 let activeFilter = 'all';
 
+// Show short feedback messages.
 function showToast(message) {
   const toast = document.getElementById('toast');
   if (!toast) return;
@@ -18,14 +21,17 @@ function showToast(message) {
   toast._timer = setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
+// Format prices for display.
 function formatMoney(value) {
   return `$${Number(value || 0).toFixed(2)}`;
 }
 
+// Keep status comparisons consistent.
 function normalizeStatus(status) {
   return String(status || 'Pending').toLowerCase();
 }
 
+// Show dates in Singapore time.
 function formatDate(value) {
   if (!value) return '-';
   return new Date(value).toLocaleString('en-SG', {
@@ -35,6 +41,7 @@ function formatDate(value) {
   });
 }
 
+// Render the item rows inside a single order.
 function renderItems(items = []) {
   if (!Array.isArray(items) || items.length === 0) {
     return '<p class="orders-status">No item details were saved for this order.</p>';
@@ -55,6 +62,7 @@ function renderItems(items = []) {
     .join('');
 }
 
+// Build the status dropdown choices.
 function createStatusOptions(currentStatus) {
   const options = ['Pending', 'Processing', 'Delivered', 'Cancelled'];
   return options
@@ -65,6 +73,7 @@ function createStatusOptions(currentStatus) {
     .join('');
 }
 
+// Render one expandable order card.
 function renderOrder(order) {
   const status = normalizeStatus(order.status);
   const total = Number(order.totalAmount || order.total || 0);
@@ -80,7 +89,7 @@ function renderOrder(order) {
           <span class="status-badge ${status}">${status}</span>
         </div>
         <div class="order-date">${formatDate(order.createdAt)}</div>
-        <div class="order-address">${order.fullName || 'Customer'} · ${order.address || 'No address'} ${order.unitNumber || ''}</div>
+        <div class="order-address">${order.fullName || 'Customer'} - ${order.address || 'No address'} ${order.unitNumber || ''}</div>
       </div>
       <div class="order-side">
         <span class="order-total">${formatMoney(total)}</span>
@@ -141,16 +150,19 @@ function renderOrder(order) {
     </div>
   `;
 
+  // Let users open and close the order details.
   card.querySelector('.order-card-header').addEventListener('click', () => {
     card.classList.toggle('open');
   });
 
+  // Let keyboard users open and close the order details.
   card.querySelector('.order-card-header').addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     event.preventDefault();
     card.classList.toggle('open');
   });
 
+  // Update order status from the dropdown.
   const statusDropdown = card.querySelector('.status-dropdown');
   statusDropdown.addEventListener('click', (event) => event.stopPropagation());
   statusDropdown.addEventListener('change', async () => {
@@ -174,6 +186,7 @@ function renderOrder(order) {
   return card;
 }
 
+// Update the summary numbers at the top of the page.
 function updateSummary() {
   const pendingCount = allOrders.filter(
     (order) => normalizeStatus(order.status) === 'pending',
@@ -188,6 +201,7 @@ function updateSummary() {
   ordersSpend.textContent = formatMoney(spend);
 }
 
+// Render the order list using the active filter.
 function renderOrders() {
   updateSummary();
   const filtered =
@@ -207,6 +221,7 @@ function renderOrders() {
   });
 }
 
+// Load the current user's order history.
 async function loadOrders() {
   if (!localStorage.getItem('token')) {
     showToast('Please log in to view orders.');
@@ -231,6 +246,7 @@ async function loadOrders() {
   }
 }
 
+// Wire up filters and initial order loading.
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.orders-tab').forEach((tab) => {
     tab.addEventListener('click', () => {

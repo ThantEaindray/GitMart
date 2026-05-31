@@ -1,7 +1,9 @@
 const { markPurchasedItemsSold } = require('./purchaseState');
 
+// Demo in-memory order storage.
 const orders = [];
 
+// Create an order and mark one-off listings as sold.
 module.exports.createOrder = function createOrder(orderData) {
   const newOrder = {
     id: orders.length + 1,
@@ -15,10 +17,12 @@ module.exports.createOrder = function createOrder(orderData) {
   return Promise.resolve(newOrder);
 };
 
+// Return only orders for the logged-in user.
 module.exports.getAllOrders = function getAllOrders(userId) {
   return Promise.resolve(orders.filter((order) => String(order.userId) === String(userId)));
 };
 
+// Update one order if it belongs to the logged-in user.
 module.exports.updateOrderStatus = function updateOrderStatus(id, status, userId) {
   const order = orders.find(
     (item) => item.id === Number(id) && String(item.userId) === String(userId),
