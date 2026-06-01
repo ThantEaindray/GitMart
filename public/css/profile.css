@@ -56,7 +56,8 @@
 .profile-image-upload,
 .profile-upload-btn,
 .profile-dashboard-btn,
-.profile-logout-btn {
+.profile-logout-btn,
+.profile-orders-btn {
   width: 260px;
   min-height: 54px;
   box-sizing: border-box;

@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>Checkout — GitMart</title>
+    <title>Checkout - GitMart</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
       rel="stylesheet"
@@ -16,6 +16,9 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
     />
     <link rel="stylesheet" href="../css/noir.css" />
+    <link rel="stylesheet" href="../css/checkout.css" />
+
+    <!-- Apply saved display settings before the page paints. -->
     <script>
       var t = localStorage.getItem('theme');
       var f = localStorage.getItem('font');
@@ -24,586 +27,10 @@
       if (f) document.documentElement.setAttribute('data-font', f);
       if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
     </script>
-    <style>
-      /* ── CHECKOUT LAYOUT ── */
-      .checkout-page {
-        padding: 60px 60px 100px;
-        max-width: 1100px;
-        margin: 0 auto;
-      }
-
-      .checkout-heading {
-        font-family: 'Playfair Display', serif;
-        font-size: 36px;
-        color: var(--text);
-        margin-bottom: 4px;
-      }
-
-      .checkout-sub {
-        font-size: 0.87em;
-        color: var(--muted);
-        letter-spacing: 0.06em;
-        margin-bottom: 48px;
-      }
-
-      .checkout-grid {
-        display: grid;
-        grid-template-columns: 1fr 380px;
-        gap: 40px;
-        align-items: start;
-      }
-
-      @media (max-width: 860px) {
-        .checkout-grid {
-          grid-template-columns: 1fr;
-        }
-        .checkout-page {
-          padding: 40px 24px 80px;
-        }
-      }
-
-      /* ── SECTIONS ── */
-      .checkout-section {
-        border: 1px solid var(--border);
-        background: var(--card);
-        margin-bottom: 24px;
-      }
-
-      .checkout-section-header {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 20px 24px;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .section-step {
-        width: 28px;
-        height: 28px;
-        border: 1px solid var(--accent);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.75em;
-        letter-spacing: 0.05em;
-        color: var(--accent);
-        flex-shrink: 0;
-      }
-
-      .section-step.complete {
-        background: var(--accent);
-        color: var(--surface);
-      }
-
-      .checkout-section-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 18px;
-        color: var(--text);
-        margin: 0;
-      }
-
-      .checkout-section-body {
-        padding: 24px;
-      }
-
-      /* ── FORM FIELDS ── */
-      .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
-
-      .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        margin-bottom: 14px;
-      }
-
-      .form-group:last-child {
-        margin-bottom: 0;
-      }
-
-      .form-label {
-        font-size: 0.73em;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--muted);
-      }
-
-      .form-input,
-      .form-textarea {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        color: var(--text);
-        font-family: 'Jost', sans-serif;
-        font-size: 0.87em;
-        letter-spacing: 0.04em;
-        padding: 10px 14px;
-        outline: none;
-        transition: border-color 0.2s;
-        width: 100%;
-        box-sizing: border-box;
-      }
-
-      .form-input::placeholder,
-      .form-textarea::placeholder {
-        color: var(--muted);
-        opacity: 0.6;
-      }
-
-      .form-input:focus,
-      .form-textarea:focus {
-        border-color: var(--accent);
-      }
-
-      .form-input.error,
-      .form-textarea.error {
-        border-color: #c04040;
-      }
-
-      .form-textarea {
-        resize: vertical;
-        min-height: 80px;
-      }
-
-      .field-error {
-        font-size: 0.73em;
-        letter-spacing: 0.06em;
-        color: #c04040;
-        min-height: 1em;
-        display: block;
-      }
-
-      /* ── DELIVERY OPTIONS ── */
-      .delivery-options {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-      }
-
-      .delivery-option {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        padding: 16px 0;
-        border-bottom: 1px solid var(--border);
-        cursor: pointer;
-        transition: background 0.15s;
-      }
-
-      .delivery-option:last-child {
-        border-bottom: none;
-        padding-bottom: 0;
-      }
-
-      .delivery-option:first-child {
-        padding-top: 0;
-      }
-
-      .delivery-option input[type='radio'] {
-        display: none;
-      }
-
-      .delivery-radio {
-        width: 18px;
-        height: 18px;
-        border: 1px solid var(--border);
-        border-radius: 50%;
-        flex-shrink: 0;
-        position: relative;
-        transition: border-color 0.2s;
-      }
-
-      .delivery-radio::after {
-        content: '';
-        position: absolute;
-        width: 8px;
-        height: 8px;
-        background: var(--accent);
-        border-radius: 50%;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(0);
-        transition: transform 0.2s;
-      }
-
-      .delivery-option input[type='radio']:checked ~ .delivery-radio,
-      .delivery-option.selected .delivery-radio {
-        border-color: var(--accent);
-      }
-
-      .delivery-option input[type='radio']:checked ~ .delivery-radio::after,
-      .delivery-option.selected .delivery-radio::after {
-        transform: translate(-50%, -50%) scale(1);
-      }
-
-      .delivery-info {
-        flex: 1;
-      }
-
-      .delivery-name {
-        font-size: 0.87em;
-        color: var(--text);
-        letter-spacing: 0.04em;
-        margin-bottom: 2px;
-      }
-
-      .delivery-eta {
-        font-size: 0.75em;
-        color: var(--muted);
-        letter-spacing: 0.06em;
-      }
-
-      .delivery-price {
-        font-size: 0.87em;
-        color: var(--accent);
-        letter-spacing: 0.06em;
-        font-weight: 600;
-        white-space: nowrap;
-      }
-
-      /* ── PAYMENT OPTIONS ── */
-      .payment-group-title {
-        font-size: 0.73em;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin: 0 0 12px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .payment-group + .payment-group {
-        margin-top: 24px;
-      }
-
-      .payment-option {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 10px 0;
-        cursor: pointer;
-      }
-
-      .payment-option input[type='radio'] {
-        display: none;
-      }
-
-      .payment-radio {
-        width: 18px;
-        height: 18px;
-        border: 1px solid var(--border);
-        border-radius: 50%;
-        flex-shrink: 0;
-        position: relative;
-        transition: border-color 0.2s;
-      }
-
-      .payment-radio::after {
-        content: '';
-        position: absolute;
-        width: 8px;
-        height: 8px;
-        background: var(--accent);
-        border-radius: 50%;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(0);
-        transition: transform 0.2s;
-      }
-
-      .payment-option.selected .payment-radio {
-        border-color: var(--accent);
-      }
-
-      .payment-option.selected .payment-radio::after {
-        transform: translate(-50%, -50%) scale(1);
-      }
-
-      .payment-icon {
-        font-size: 1.1em;
-        color: var(--muted);
-        width: 20px;
-        text-align: center;
-      }
-
-      .payment-label {
-        font-size: 0.87em;
-        color: var(--text);
-        letter-spacing: 0.04em;
-      }
-
-      /* ── CARD DETAILS ── */
-      .card-details {
-        margin-top: 16px;
-        padding: 20px;
-        border: 1px solid var(--border);
-        background: var(--surface);
-        display: none;
-      }
-
-      .card-details.visible {
-        display: block;
-      }
-
-      .card-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
-
-      /* ── ORDER SUMMARY (sticky sidebar) ── */
-      .order-summary {
-        position: sticky;
-        top: 100px;
-      }
-
-      .order-items {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-      }
-
-      .order-item {
-        display: flex;
-        gap: 14px;
-        padding: 14px 0;
-        border-bottom: 1px solid var(--border);
-        align-items: center;
-      }
-
-      .order-item:last-child {
-        border-bottom: none;
-      }
-
-      .order-item-img {
-        width: 56px;
-        height: 56px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.65em;
-        color: var(--muted);
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        text-align: center;
-      }
-
-      .order-item-info {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .order-item-name {
-        font-size: 0.87em;
-        color: var(--text);
-        letter-spacing: 0.04em;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        margin-bottom: 3px;
-      }
-
-      .order-item-qty {
-        font-size: 0.73em;
-        color: var(--muted);
-        letter-spacing: 0.08em;
-      }
-
-      .order-item-price {
-        font-size: 0.87em;
-        color: var(--text);
-        letter-spacing: 0.04em;
-        white-space: nowrap;
-        font-weight: 600;
-      }
-
-      /* ── PRICE BREAKDOWN ── */
-      .price-breakdown {
-        margin-top: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .price-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .price-label {
-        font-size: 0.8em;
-        color: var(--muted);
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-
-      .price-value {
-        font-size: 0.87em;
-        color: var(--text);
-        letter-spacing: 0.04em;
-      }
-
-      .price-divider {
-        border: none;
-        border-top: 1px solid var(--border);
-        margin: 8px 0;
-      }
-
-      .price-total-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        margin-top: 4px;
-      }
-
-      .price-total-label {
-        font-family: 'Playfair Display', serif;
-        font-size: 16px;
-        color: var(--text);
-      }
-
-      .price-total-value {
-        font-family: 'Playfair Display', serif;
-        font-size: 22px;
-        color: var(--text);
-      }
-
-      /* ── PLACE ORDER BUTTON ── */
-      .btn-place-order {
-        width: 100%;
-        padding: 16px;
-        background: var(--accent);
-        color: var(--surface);
-        border: none;
-        font-family: 'Jost', sans-serif;
-        font-size: 0.8em;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        font-weight: 600;
-        cursor: pointer;
-        transition:
-          opacity 0.2s,
-          transform 0.15s;
-        margin-top: 24px;
-      }
-
-      .btn-place-order:hover:not(:disabled) {
-        opacity: 0.85;
-      }
-
-      .btn-place-order:active:not(:disabled) {
-        transform: scale(0.99);
-      }
-
-      .btn-place-order:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-      }
-
-      .secure-note {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        margin-top: 12px;
-        font-size: 0.73em;
-        color: var(--muted);
-        letter-spacing: 0.08em;
-      }
-
-      /* ── EMPTY CART ── */
-      .empty-cart-note {
-        font-size: 0.87em;
-        color: var(--muted);
-        letter-spacing: 0.06em;
-        padding: 8px 0;
-      }
-
-      /* ── TOAST (reuse theme pattern) ── */
-      .toast {
-        position: fixed;
-        bottom: 32px;
-        left: 50%;
-        transform: translateX(-50%) translateY(12px);
-        background: var(--surface);
-        border: 1px solid var(--accent);
-        color: var(--text);
-        padding: 12px 28px;
-        font-size: 0.87em;
-        letter-spacing: 0.08em;
-        opacity: 0;
-        transition:
-          opacity 0.25s,
-          transform 0.25s;
-        z-index: 999;
-        pointer-events: none;
-      }
-
-      .toast.show {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-      }
-
-      /* ── PROGRESS STEPS ── */
-      .checkout-progress {
-        display: flex;
-        align-items: center;
-        gap: 0;
-        margin-bottom: 48px;
-      }
-
-      .progress-step {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 0.73em;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--muted);
-      }
-
-      .progress-step.active {
-        color: var(--accent);
-      }
-
-      .progress-step.done {
-        color: var(--text);
-      }
-
-      .progress-dot {
-        width: 8px;
-        height: 8px;
-        border: 1px solid currentColor;
-        border-radius: 50%;
-        flex-shrink: 0;
-      }
-
-      .progress-step.active .progress-dot {
-        background: var(--accent);
-      }
-
-      .progress-step.done .progress-dot {
-        background: var(--text);
-      }
-
-      .progress-line {
-        flex: 1;
-        height: 1px;
-        background: var(--border);
-        margin: 0 14px;
-        max-width: 48px;
-      }
-    </style>
   </head>
 
   <body class="checkout-body">
-    <!-- ── NAVIGATION ── -->
+    <!-- Main site navigation -->
     <nav class="nav">
       <div class="logo">GitMart</div>
       <ul class="nav-links">
@@ -631,7 +58,7 @@
       <h1 class="checkout-heading">Checkout</h1>
       <p class="checkout-sub">Complete your order below</p>
 
-      <!-- Progress indicator -->
+      <!-- Shows the user's position in the checkout flow. -->
       <div class="checkout-progress">
         <div class="progress-step done">
           <span class="progress-dot"></span>
@@ -650,9 +77,9 @@
       </div>
 
       <div class="checkout-grid">
-        <!-- ── LEFT COLUMN ── -->
+        <!-- Left column: shipping, delivery, and payment choices. -->
         <div class="checkout-left">
-          <!-- Shipping -->
+          <!-- Shipping form -->
           <div class="checkout-section">
             <div class="checkout-section-header">
               <div class="section-step" id="step-shipping">1</div>
@@ -660,6 +87,7 @@
             </div>
             <div class="checkout-section-body">
               <form id="checkoutForm" novalidate>
+                <!-- Customer name and email used for the order record. -->
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label" for="fullName">Full Name</label>
@@ -678,6 +106,7 @@
                   </div>
                 </div>
 
+                <!-- Phone and postal code are validated before checkout can continue. -->
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label" for="phoneNumber">Phone Number</label>
@@ -686,6 +115,7 @@
                       type="tel"
                       id="phoneNumber"
                       placeholder="+65 9123 4567"
+                      maxlength="13"
                     />
                     <span class="field-error" data-error-for="phoneNumber"></span>
                   </div>
@@ -696,6 +126,7 @@
                   </div>
                 </div>
 
+                <!-- Delivery address and unit number are required for shipping. -->
                 <div class="form-group">
                   <label class="form-label" for="address">Address</label>
                   <input
@@ -707,28 +138,34 @@
                   <span class="field-error" data-error-for="address"></span>
                 </div>
 
+                <!-- Optional instructions shown in the order history. -->
                 <div class="form-group">
-                  <label class="form-label" for="unitNumber"
-                    >Unit Number <span style="opacity: 0.5">(optional)</span></label
-                  >
-                  <input class="form-input" type="text" id="unitNumber" placeholder="#12-345" />
+                  <label class="form-label" for="unitNumber">Unit Number</label>
+                  <input
+                    class="form-input"
+                    type="text"
+                    id="unitNumber"
+                    placeholder="#12-345"
+                    maxlength="8"
+                  />
+                  <span class="field-error" data-error-for="unitNumber"></span>
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="deliveryNotes"
-                    >Delivery Notes <span style="opacity: 0.5">(optional)</span></label
-                  >
+                  <label class="form-label" for="deliveryNotes">
+                    Delivery Notes <span class="optional-label">(optional)</span>
+                  </label>
                   <textarea
                     class="form-textarea"
                     id="deliveryNotes"
-                    placeholder="Leave at door, ring bell twice…"
+                    placeholder="Leave at door, ring bell twice..."
                   ></textarea>
                 </div>
               </form>
             </div>
           </div>
 
-          <!-- Delivery Method -->
+          <!-- Delivery method choices -->
           <div class="checkout-section">
             <div class="checkout-section-header">
               <div class="section-step" id="step-delivery">2</div>
@@ -736,55 +173,53 @@
             </div>
             <div class="checkout-section-body">
               <div class="delivery-options">
+                <!-- Free default delivery option. -->
                 <label class="delivery-option selected" id="delivery-standard">
                   <input type="radio" name="delivery" value="0" checked />
                   <span class="delivery-radio"></span>
                   <div class="delivery-info">
                     <div class="delivery-name">Standard Delivery</div>
-                    <div class="delivery-eta">
-                      3–5 business days &nbsp;·&nbsp; Est. 18 Sep – 20 Sep
-                    </div>
+                    <div class="delivery-eta">3-5 business days - Est. 18 Sep - 20 Sep</div>
                   </div>
                   <span class="delivery-price">FREE</span>
                 </label>
 
+                <!-- Paid faster delivery option. -->
                 <label class="delivery-option" id="delivery-express">
                   <input type="radio" name="delivery" value="9.99" />
                   <span class="delivery-radio"></span>
                   <div class="delivery-info">
                     <div class="delivery-name">Express Delivery</div>
-                    <div class="delivery-eta">
-                      1–2 business days &nbsp;·&nbsp; Est. 16 Sep – 17 Sep
-                    </div>
+                    <div class="delivery-eta">1-2 business days - Est. 16 Sep - 17 Sep</div>
                   </div>
                   <span class="delivery-price">$9.99</span>
                 </label>
 
+                <!-- Paid same-day delivery option. -->
                 <label class="delivery-option" id="delivery-sameday">
                   <input type="radio" name="delivery" value="19.99" />
                   <span class="delivery-radio"></span>
                   <div class="delivery-info">
                     <div class="delivery-name">Same Day Delivery</div>
-                    <div class="delivery-eta">Order before 12 pm &nbsp;·&nbsp; Arrives today</div>
+                    <div class="delivery-eta">Order before 12 pm - Arrives today</div>
                   </div>
                   <span class="delivery-price">$19.99</span>
                 </label>
               </div>
-              <span
-                class="field-error"
-                data-error-for="delivery"
-                style="margin-top: 8px; display: block"
-              ></span>
+
+              <!-- Delivery validation error appears here. -->
+              <span class="field-error field-error-spaced" data-error-for="delivery"></span>
             </div>
           </div>
 
-          <!-- Payment -->
+          <!-- Payment method choices -->
           <div class="checkout-section">
             <div class="checkout-section-header">
               <div class="section-step" id="step-payment">3</div>
               <h2 class="checkout-section-title">Payment Method</h2>
             </div>
             <div class="checkout-section-body">
+              <!-- Card payment: shows card detail fields when selected. -->
               <div class="payment-group">
                 <p class="payment-group-title">Card Payment</p>
                 <label class="payment-option" data-payment="cardPayment">
@@ -794,6 +229,7 @@
                   <span class="payment-label">Visa / Mastercard</span>
                 </label>
 
+                <!-- These card fields only show after selecting Visa / Mastercard. -->
                 <div class="card-details" id="cardDetails">
                   <div class="form-group">
                     <label class="form-label" for="cardName">Name on Card</label>
@@ -829,7 +265,7 @@
                         class="form-input"
                         type="password"
                         id="cvv"
-                        placeholder="•••"
+                        placeholder="123"
                         maxlength="4"
                       />
                       <span class="field-error" data-error-for="cvv"></span>
@@ -838,6 +274,7 @@
                 </div>
               </div>
 
+              <!-- Digital wallets: opens the matching wallet approval flow. -->
               <div class="payment-group">
                 <p class="payment-group-title">Digital Wallets</p>
                 <label class="payment-option" data-payment="applePay">
@@ -860,6 +297,7 @@
                 </label>
               </div>
 
+              <!-- Local methods: opens PayNow QR or NETS bank approval flow. -->
               <div class="payment-group">
                 <p class="payment-group-title">Local Payment Methods</p>
                 <label class="payment-option" data-payment="payNow">
@@ -876,29 +314,28 @@
                 </label>
               </div>
 
-              <span
-                class="field-error"
-                data-error-for="payment"
-                style="margin-top: 12px; display: block"
-              ></span>
+              <!-- Payment validation error appears here. -->
+              <span class="field-error field-error-spaced-lg" data-error-for="payment"></span>
             </div>
           </div>
         </div>
 
-        <!-- ── RIGHT COLUMN: ORDER SUMMARY ── -->
+        <!-- Right column: cart items and final totals. -->
         <div class="order-summary">
           <div class="checkout-section">
             <div class="checkout-section-header">
               <div class="section-step">
-                <i class="bi bi-bag" style="font-size: 12px"></i>
+                <i class="bi bi-bag order-summary-icon"></i>
               </div>
               <h2 class="checkout-section-title">Order Summary</h2>
             </div>
             <div class="checkout-section-body">
+              <!-- checkout.js renders the cart items into this container. -->
               <div class="order-items" id="orderItems">
                 <p class="empty-cart-note">Your cart is empty.</p>
               </div>
 
+              <!-- Live price totals updated when cart or delivery changes. -->
               <div class="price-breakdown">
                 <div class="price-row">
                   <span class="price-label">Subtotal</span>
@@ -919,12 +356,10 @@
                 </div>
               </div>
 
-              <span
-                class="field-error"
-                data-error-for="cart"
-                style="margin-top: 8px; display: block"
-              ></span>
+              <!-- Cart validation error appears here. -->
+              <span class="field-error field-error-spaced" data-error-for="cart"></span>
 
+              <!-- Opens the selected payment flow after validation. -->
               <button type="button" id="placeOrderButton" class="btn-place-order">
                 Place Order
               </button>
@@ -939,92 +374,431 @@
     </main>
 
     <div class="toast" id="toast"></div>
+    <!-- Apple Pay simulated approval flow -->
+    <div class="payment-modal" id="applePayModal" aria-hidden="true">
+      <div class="payment-dialog" role="dialog" aria-modal="true" aria-labelledby="applePayTitle">
+        <div class="payment-header">
+          <h2 class="payment-title" id="applePayTitle">
+            <i class="bi bi-apple"></i>
+            Apple Pay
+          </h2>
+          <button
+            type="button"
+            class="payment-close"
+            id="applePayClose"
+            aria-label="Close Apple Pay"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="payment-body">
+          <p class="payment-context">
+            Review the Apple Pay sheet, then approve with Touch ID, Face ID, or Apple Watch.
+          </p>
+
+          <!-- Apple Pay order details shown before simulated approval. -->
+          <div class="payment-sheet">
+            <div class="payment-total-row">
+              <span class="price-label">Merchant</span>
+              <span class="price-value">GitMart</span>
+            </div>
+            <div class="payment-total-row">
+              <span class="price-label">Payment method</span>
+              <span class="price-value">Apple Pay</span>
+            </div>
+            <div class="payment-total-row">
+              <span class="price-label">Delivery</span>
+              <span class="price-value payment-delivery-lines" id="applePayDelivery">
+                <span class="payment-delivery-name">Standard Delivery</span>
+                <span class="payment-delivery-meta">3-5 business days - FREE</span>
+              </span>
+            </div>
+            <div class="payment-total-row total">
+              <span class="price-label">Total</span>
+              <span class="price-value" id="applePayTotal">$0.00</span>
+            </div>
+          </div>
+          <!-- Apple Pay support note and progress status are updated by checkout.js. -->
+          <p class="payment-support-note" id="applePaySupportNote"></p>
+          <div class="payment-status" id="applePayStatus">Ready to pay with Apple Pay.</div>
+
+          <div class="payment-actions">
+            <button type="button" class="btn-outline" id="applePayCancel">Cancel</button>
+            <button type="button" class="btn-place-order" id="applePayContinue">
+              Pay with Apple Pay
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Google Pay card review and confirmation flow -->
+    <div class="payment-modal" id="googlePayModal" aria-hidden="true">
+      <div class="payment-dialog" role="dialog" aria-modal="true" aria-labelledby="googlePayTitle">
+        <div class="payment-header">
+          <h2 class="payment-title" id="googlePayTitle">
+            <i class="bi bi-google"></i>
+            Google Pay
+          </h2>
+          <button
+            type="button"
+            class="payment-close"
+            id="googlePayClose"
+            aria-label="Close Google Pay"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="payment-body">
+          <p class="payment-support-note">
+            Enter your card details for Google Pay, review the total, then confirm the payment to
+            place your order.
+          </p>
+
+          <!-- Google Pay card fields are validated before payment review. -->
+          <div class="google-pay-card-form" id="googlePayCardForm">
+            <div class="form-group">
+              <label class="form-label" for="googlePayCardName">Name on Card</label>
+              <input class="form-input" type="text" id="googlePayCardName" placeholder="Jane Doe" />
+              <span class="field-error" data-error-for="googlePayCardName"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="googlePayCardNumber">Card Number</label>
+              <input
+                class="form-input"
+                type="text"
+                id="googlePayCardNumber"
+                placeholder="1234 5678 9012 3456"
+                maxlength="19"
+              />
+              <span class="field-error" data-error-for="googlePayCardNumber"></span>
+            </div>
+
+            <div class="card-row">
+              <div class="form-group">
+                <label class="form-label" for="googlePayExpiryDate">Expiry Date</label>
+                <input
+                  class="form-input"
+                  type="text"
+                  id="googlePayExpiryDate"
+                  placeholder="MM/YY"
+                  maxlength="5"
+                />
+                <span class="field-error" data-error-for="googlePayExpiryDate"></span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="googlePayCvv">CVV</label>
+                <input
+                  class="form-input"
+                  type="password"
+                  id="googlePayCvv"
+                  placeholder="123"
+                  maxlength="4"
+                />
+                <span class="field-error" data-error-for="googlePayCvv"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Google Pay review panel shown after card details are accepted. -->
+          <div class="google-pay-details" id="googlePayDetails" hidden>
+            <div class="payment-total-row">
+              <span class="price-label">Total amount</span>
+              <span class="price-value" id="googlePayTotal">$0.00</span>
+            </div>
+            <div class="payment-total-row">
+              <span class="price-label">Selected card</span>
+              <span class="price-value" id="googlePayCard">Visa **** 4242</span>
+            </div>
+          </div>
+
+          <div class="payment-status" id="googlePayStatus">Ready for Google Pay.</div>
+
+          <div class="payment-actions">
+            <button type="button" class="btn-outline" id="googlePayCancel">Cancel</button>
+            <button type="button" class="btn-place-order" id="googlePayContinue">
+              Continue with Google Pay
+            </button>
+            <button
+              type="button"
+              class="btn-place-order google-pay-confirm"
+              id="googlePayConfirm"
+              hidden
+            >
+              Confirm payment
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GrabPay OTP verification flow -->
+    <div class="payment-modal" id="grabPayModal" aria-hidden="true">
+      <div class="payment-dialog" role="dialog" aria-modal="true" aria-labelledby="grabPayTitle">
+        <div class="payment-header">
+          <h2 class="payment-title" id="grabPayTitle">
+            <i class="bi bi-phone"></i>
+            GrabPay
+          </h2>
+          <button type="button" class="payment-close" id="grabPayClose" aria-label="Close GrabPay">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="payment-body">
+          <p class="payment-context">
+            Confirm your order total, then approve the payment in the Grab app using your wallet
+            balance or linked card.
+          </p>
+
+          <!-- GrabPay order total shown before OTP verification. -->
+          <div class="payment-sheet">
+            <div class="payment-total-row">
+              <span class="price-label">Merchant</span>
+              <span class="price-value">GitMart</span>
+            </div>
+            <div class="payment-total-row">
+              <span class="price-label">Payment method</span>
+              <span class="price-value">GrabPay</span>
+            </div>
+            <div class="payment-total-row total">
+              <span class="price-label">Total</span>
+              <span class="price-value" id="grabPayTotal">$0.00</span>
+            </div>
+          </div>
+
+          <p class="payment-support-note">
+            GrabPay may require the Grab app or a supported mobile browser. You can still choose
+            Apple Pay, Google Pay, or another payment method.
+          </p>
+
+          <!-- Hidden until the user starts the GrabPay flow. -->
+          <div class="grab-pay-otp" id="grabPayOtpPanel" hidden>
+            <p class="payment-support-note" id="grabPayOtpMessage">
+              Enter the 6-digit OTP sent to your phone number.
+            </p>
+            <div class="form-group">
+              <label class="form-label" for="grabPayOtp">GrabPay OTP</label>
+              <input
+                class="form-input"
+                type="text"
+                id="grabPayOtp"
+                inputmode="numeric"
+                maxlength="6"
+                placeholder="XXXXXX"
+              />
+              <span class="field-error" data-error-for="grabPayOtp"></span>
+            </div>
+            <p class="grab-pay-resend">
+              Didn't receive OTP?
+              <button type="button" class="grab-pay-resend-button" id="grabPayResend">
+                Resend OTP.
+              </button>
+            </p>
+            <!-- Demo GrabPay OTP for testing: 123456 -->
+          </div>
+
+          <div class="payment-status" id="grabPayStatus">Ready for GrabPay.</div>
+
+          <div class="payment-actions">
+            <button type="button" class="btn-outline" id="grabPayCancel">Cancel</button>
+            <button type="button" class="btn-place-order" id="grabPayContinue">
+              Continue with GrabPay
+            </button>
+            <button
+              type="button"
+              class="btn-place-order google-pay-confirm"
+              id="grabPayVerify"
+              hidden
+            >
+              Verify OTP
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PayNow QR scan flow -->
+    <div class="payment-modal" id="payNowModal" aria-hidden="true">
+      <div class="payment-dialog" role="dialog" aria-modal="true" aria-labelledby="payNowTitle">
+        <div class="payment-header">
+          <h2 class="payment-title" id="payNowTitle">
+            <i class="bi bi-qr-code"></i>
+            PayNow
+          </h2>
+          <button type="button" class="payment-close" id="payNowClose" aria-label="Close PayNow">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="payment-body">
+          <p class="payment-context">
+            Scan the PayNow QR code with your banking app, confirm the total amount, then return
+            here once payment is complete.
+          </p>
+
+          <!-- PayNow order total shown above the QR card. -->
+          <div class="payment-sheet">
+            <div class="payment-total-row">
+              <span class="price-label">Merchant</span>
+              <span class="price-value">GitMart</span>
+            </div>
+            <div class="payment-total-row">
+              <span class="price-label">Payment method</span>
+              <span class="price-value">PayNow</span>
+            </div>
+            <div class="payment-total-row total">
+              <span class="price-label">Total</span>
+              <span class="price-value" id="payNowTotal">$0.00</span>
+            </div>
+          </div>
+
+          <!-- Demo PayNow QR card and reference details. -->
+          <div class="paynow-qr-box" aria-label="PayNow payment details">
+            <div class="paynow-card" aria-hidden="true">
+              <div class="paynow-card-header">
+                <span class="paynow-card-merchant">GitMart</span>
+                PayNow payment request
+              </div>
+              <div class="paynow-qr">
+                <span class="paynow-finder top-left"></span>
+                <span class="paynow-finder top-right"></span>
+                <span class="paynow-finder bottom-left"></span>
+                <span class="paynow-logo">Pay<br />Now</span>
+              </div>
+              <div class="paynow-scan-band">Scan to Pay</div>
+              <div class="paynow-card-foot">
+                Confirm merchant, amount, and reference in your banking app.
+              </div>
+            </div>
+            <div class="paynow-info">
+              <p class="paynow-info-title">Scan to pay</p>
+              <p class="paynow-info-line">PayNow UEN: 202612345G</p>
+              <p class="paynow-info-line" id="payNowAmountLine">Amount: $0.00</p>
+              <p class="paynow-reference" id="payNowReference">Reference: GM-000000</p>
+              <p class="paynow-info-note">
+                Use your banking app to scan, check the amount and reference, then confirm payment.
+              </p>
+            </div>
+          </div>
+          <div class="payment-status" id="payNowStatus">
+            PayNow QR generated. Scan with your banking app.
+          </div>
+
+          <div class="payment-actions">
+            <button type="button" class="btn-outline" id="payNowCancel">Cancel</button>
+            <button type="button" class="btn-place-order" id="payNowComplete">
+              I have completed payment
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NETS bank login and mobile approval flow -->
+    <div class="payment-modal" id="netsModal" aria-hidden="true">
+      <div class="payment-dialog" role="dialog" aria-modal="true" aria-labelledby="netsTitle">
+        <div class="payment-header">
+          <h2 class="payment-title" id="netsTitle">
+            <i class="bi bi-bank"></i>
+            NETS
+          </h2>
+          <button type="button" class="payment-close" id="netsClose" aria-label="Close NETS">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="payment-body">
+          <p class="payment-context">
+            Select your bank, sign in with your demo banking credentials, then approve the
+            transaction in your banking app.
+          </p>
+
+          <!-- Bank buttons decide which NETS login fields are shown. -->
+          <div class="nets-bank-grid" id="netsBankGrid" aria-label="Select bank for NETS payment">
+            <button type="button" class="nets-bank-option active" data-bank="DBS / POSB">
+              <span class="nets-bank-mark bank-dbs">DBS<small>POSB</small></span>
+              <span class="nets-bank-name">
+                <strong>DBS / POSB</strong>
+                <span>Digital banking</span>
+              </span>
+            </button>
+            <button type="button" class="nets-bank-option" data-bank="OCBC">
+              <span class="nets-bank-mark bank-ocbc">OCBC<small>Bank</small></span>
+              <span class="nets-bank-name">
+                <strong>OCBC</strong>
+                <span>Online banking</span>
+              </span>
+            </button>
+            <button type="button" class="nets-bank-option" data-bank="UOB">
+              <span class="nets-bank-mark bank-uob">UOB<small>Bank</small></span>
+              <span class="nets-bank-name">
+                <strong>UOB</strong>
+                <span>Mobile banking</span>
+              </span>
+            </button>
+            <button type="button" class="nets-bank-option" data-bank="Maybank">
+              <span class="nets-bank-mark bank-may">MAY<small>Bank</small></span>
+              <span class="nets-bank-name">
+                <strong>Maybank</strong>
+                <span>Secure banking</span>
+              </span>
+            </button>
+          </div>
+
+          <!-- Hidden until a bank is selected and the user continues. -->
+          <div class="nets-auth-panel" id="netsAuthPanel" hidden>
+            <p class="nets-auth-title" id="netsAuthTitle">Bank authentication</p>
+            <p class="nets-auth-note">
+              Enter your banking credentials, then continue to receive a mobile approval request.
+            </p>
+            <div class="form-group">
+              <label class="form-label" for="netsUserId">Username / User ID</label>
+              <input class="form-input" type="text" id="netsUserId" placeholder="e.g. S1234567A" />
+              <span class="field-error" data-error-for="netsUserId"></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="netsPin">6-digit PIN</label>
+              <input class="form-input" type="password" id="netsPin" placeholder="000000" />
+              <span class="field-error" data-error-for="netsPin"></span>
+            </div>
+          </div>
+
+          <!-- Hidden until the user enters bank login details. -->
+          <div class="payment-sheet nets-confirmation" id="netsConfirmation" hidden>
+            <div class="payment-total-row">
+              <span class="price-label">Merchant</span>
+              <span class="price-value">GitMart</span>
+            </div>
+            <div class="payment-total-row">
+              <span class="price-label">Bank</span>
+              <span class="price-value" id="netsSelectedBank">DBS / POSB</span>
+            </div>
+            <div class="payment-total-row">
+              <span class="price-label">Reference</span>
+              <span class="price-value" id="netsReference">NETS-000000</span>
+            </div>
+            <div class="payment-total-row total">
+              <span class="price-label">Total</span>
+              <span class="price-value" id="netsTotal">$0.00</span>
+            </div>
+          </div>
+
+          <!-- NETS progress message updated during the simulated approval flow. -->
+          <div class="payment-status" id="netsStatus">Select your bank to continue.</div>
+
+          <div class="payment-actions">
+            <button type="button" class="btn-outline" id="netsCancel">Cancel</button>
+            <button type="button" class="btn-place-order" id="netsContinue">
+              Continue with NETS
+            </button>
+            <button type="button" class="btn-place-order nets-approve" id="netsApprove" hidden>
+              Approve Payment
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script src="../js/api.js"></script>
     <script src="../js/checkout.js"></script>
-    <script>
-      /* ── Interactive enhancements ── */
-
-      // Delivery option selection
-      document.querySelectorAll('.delivery-option').forEach((option) => {
-        option.addEventListener('click', () => {
-          document
-            .querySelectorAll('.delivery-option')
-            .forEach((o) => o.classList.remove('selected'));
-          option.classList.add('selected');
-          option.querySelector('input[type="radio"]').checked = true;
-          updateTotals();
-        });
-      });
-
-      // Payment option selection + card details toggle
-      document.querySelectorAll('.payment-option').forEach((option) => {
-        option.addEventListener('click', () => {
-          document
-            .querySelectorAll('.payment-option')
-            .forEach((o) => o.classList.remove('selected'));
-          option.classList.add('selected');
-          option.querySelector('input[type="radio"]').checked = true;
-
-          const cardDetails = document.getElementById('cardDetails');
-          if (option.dataset.payment === 'cardPayment') {
-            cardDetails.classList.add('visible');
-          } else {
-            cardDetails.classList.remove('visible');
-          }
-        });
-      });
-
-      // Card number formatting
-      const cardNumberInput = document.getElementById('cardNumber');
-      if (cardNumberInput) {
-        cardNumberInput.addEventListener('input', (e) => {
-          let v = e.target.value.replace(/\D/g, '').substring(0, 16);
-          e.target.value = v.replace(/(.{4})/g, '$1 ').trim();
-        });
-      }
-
-      // Expiry formatting
-      const expiryInput = document.getElementById('expiryDate');
-      if (expiryInput) {
-        expiryInput.addEventListener('input', (e) => {
-          let v = e.target.value.replace(/\D/g, '').substring(0, 4);
-          if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2);
-          e.target.value = v;
-        });
-      }
-
-      // Live input validation feedback
-      document.querySelectorAll('.form-input, .form-textarea').forEach((input) => {
-        input.addEventListener('blur', () => {
-          if (input.value.trim()) {
-            input.classList.remove('error');
-          }
-        });
-      });
-
-      // Pricing update based on delivery selection
-      function updateTotals() {
-        if (window.updateCheckoutTotals) window.updateCheckoutTotals();
-      }
-
-      // Section step completion indicators
-      function markStepComplete(stepId) {
-        const step = document.getElementById(stepId);
-        if (step) {
-          step.classList.add('complete');
-          step.innerHTML = '<i class="bi bi-check" style="font-size:14px"></i>';
-        }
-      }
-
-      // Toast helper (replicates theme pattern for use before checkout.js loads)
-      function showToast(msg) {
-        const t = document.getElementById('toast');
-        if (!t) return;
-        t.textContent = msg;
-        t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 3000);
-      }
-    </script>
   </body>
 </html>

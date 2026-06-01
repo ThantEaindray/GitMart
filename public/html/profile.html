@@ -1,101 +1,106 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitMart — Profile</title>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GitMart — Profile</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="stylesheet" href="../css/noir.css" />
+    <link rel="stylesheet" href="../css/auth.css" />
+    <link rel="stylesheet" href="../css/profile.css" />
+    <script>
+      var t = localStorage.getItem('theme');
+      var f = localStorage.getItem('font');
+      var m = localStorage.getItem('motion');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+      if (f) document.documentElement.setAttribute('data-font', f);
+      if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
+    </script>
+  </head>
 
-  <link
-    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
-    rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link rel="stylesheet" href="../css/noir.css" />
-  <link rel="stylesheet" href="../css/auth.css" />
-  <link rel="stylesheet" href="../css/profile.css" />
-  <script>
-    var t = localStorage.getItem('theme');
-    var f = localStorage.getItem('font');
-    var m = localStorage.getItem('motion');
-    if (t) document.documentElement.setAttribute('data-theme', t);
-    if (f) document.documentElement.setAttribute('data-font', f);
-    if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
-  </script>
-</head>
+  <body>
+    <!-- ── NAVIGATION ── -->
+    <nav class="nav">
+      <div class="logo">GitMart</div>
 
-<body>
-  <!-- ── NAVIGATION ── -->
-  <nav class="nav">
-    <div class="logo">GitMart</div>
+      <ul class="nav-links">
+        <li><a href="noir.html">Home</a></li>
+        <li><a href="products.html">Products</a></li>
+        <li><a href="listings.html">Listings</a></li>
+        <li><a href="listing-create.html">Create Listing</a></li>
+      </ul>
 
-    <ul class="nav-links">
-      <li><a href="noir.html">Home</a></li>
-      <li><a href="products.html">Products</a></li>
-      <li><a href="listings.html">Listings</a></li>
-      <li><a href="listing-create.html">Create Listing</a></li>
-    </ul>
-
-    <div class="nav-right">
-      <a class="icon-btn" id="btn-account" href="login.html" title="Login"><i class="bi bi-person"></i></a>
-      <button class="icon-btn" id="btn-wishlist" title="Wishlist"><i class="bi bi-heart"></i></button>
-      <a class="icon-btn" href="checkout.html" title="Cart"><i class="bi bi-bag"></i></a>
-      <a class="icon-btn" href="chats.html" title="Chats"><i class="bi bi-chat-left-dots"></i></a>
-      <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
-    </div>
-  </nav>
-
-  <!-- ── PROFILE SECTION ── -->
-  <main class="auth-page">
-    <section class="auth-intro">
-      <div class="hero-tag">Account Profile</div>
-      <h1>My GitMart Profile</h1>
-      <p>
-        View your account details and manage your current login session.
-      </p>
-    </section>
-
-    <section class="auth-card profile-card profile-wide-card">
-      <h2>Account</h2>
-
-      <div id="warningCard" class="auth-alert d-none">
-        <span id="warningText"></span>
+      <div class="nav-right">
+        <a class="icon-btn" id="btn-account" href="login.html" title="Login"
+          ><i class="bi bi-person"></i
+        ></a>
+        <button class="icon-btn" id="btn-wishlist" title="Wishlist">
+          <i class="bi bi-heart"></i>
+        </button>
+        <a class="icon-btn" href="checkout.html" title="Cart"><i class="bi bi-bag"></i></a>
+        <a class="icon-btn" href="chats.html" title="Chats"><i class="bi bi-chat-left-dots"></i></a>
+        <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
       </div>
+    </nav>
 
-      <div class="profile-layout">
-        <div class="profile-image-column">
-          <div class="profile-image-preview" id="profileImagePreview">
-            <i class="bi bi-person"></i>
-          </div>
+    <!-- ── PROFILE SECTION ── -->
+    <main class="auth-page">
+      <section class="auth-intro">
+        <div class="hero-tag">Account Profile</div>
+        <h1>My GitMart Profile</h1>
+        <p>View your account details and manage your current login session.</p>
+      </section>
 
-          <label class="btn-outline profile-image-upload">
-            Choose Profile Image
-            <input id="profileImageInput" type="file" accept="image/*" hidden />
-          </label>
+      <section class="auth-card profile-card profile-wide-card">
+        <h2>Account</h2>
 
-          <button id="uploadProfileImageBtn" class="btn-primary profile-upload-btn" type="button">
-            Upload Image
-          </button>
+        <div id="warningCard" class="auth-alert d-none">
+          <span id="warningText"></span>
+        </div>
 
-          <div class="profile-info">
-            <p><strong>Username:</strong> <span id="profileUsername">Loading...</span></p>
-            <p><strong>Email:</strong> <span id="profileEmail">Loading...</span></p>
-            <p><strong>Role:</strong> <span id="profileStaff">Loading...</span></p>
-            <p><strong>Created On:</strong> <span id="profileCreatedOn">Loading...</span></p>
-          </div>
+        <div class="profile-layout">
+          <div class="profile-image-column">
+            <div class="profile-image-preview" id="profileImagePreview">
+              <i class="bi bi-person"></i>
+            </div>
 
-          <div class="profile-actions">
-            <a href="dashboard.html" class="btn-primary profile-dashboard-btn">My Dashboard</a>
-            <button id="logoutBtn" class="btn-outline profile-logout-btn">Logout</button>
+            <label class="btn-outline profile-image-upload">
+              Choose Profile Image
+              <input id="profileImageInput" type="file" accept="image/*" hidden />
+            </label>
+
+            <button id="uploadProfileImageBtn" class="btn-primary profile-upload-btn" type="button">
+              Upload Image
+            </button>
+
+            <div class="profile-info">
+              <p><strong>Username:</strong> <span id="profileUsername">Loading...</span></p>
+              <p><strong>Email:</strong> <span id="profileEmail">Loading...</span></p>
+              <p><strong>Role:</strong> <span id="profileStaff">Loading...</span></p>
+              <p><strong>Created On:</strong> <span id="profileCreatedOn">Loading...</span></p>
+            </div>
+
+            <div class="profile-actions">
+              <a href="dashboard.html" class="btn-primary profile-dashboard-btn">My Dashboard</a>
+              <button id="logoutBtn" class="btn-outline profile-logout-btn">Logout</button>
+              <a href="orders.html" class="btn-outline profile-orders-btn">Orders</a>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
-  </main>
+      </section>
+    </main>
 
-  <script src="../js/prefs.js"></script>
-  <script src="../js/api.js"></script>
-  <script src="../js/profile.js"></script>
-  <script src="../js/logout.js"></script>
-</body>
-
+    <script src="../js/prefs.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/profile.js"></script>
+    <script src="../js/logout.js"></script>
+  </body>
 </html>
