@@ -298,13 +298,15 @@ module.exports.namesPictures = (req, res, next) => {
   }
   res.locals.namesImgs = new Array
   const callback = (err, results, fields) => {
-    console.log(results.rows[0])
     if (err) {
       console.error("problem getting chat user info", err)
       return res.status(500).json(err)
     }
     res.locals.namesImgs.push(results.rows)
-    next()
+    //now we wanna see if the result length is the same as the tolaod and if it is then we next since that means its done but if it isnt then we dont since its still going
+    if (res.locals.namesImgs.length == data.ids.length) {
+      next()
+    }
   }
   data.ids.forEach((e) => {
     model.namesPictures(e, callback)

@@ -11,6 +11,6 @@ router.post("/send", chatController.sendText)
 //router.post("/sendImg", jwt.verifyToken, chatController.chatExists, chatController.writeImg, chatController.sendMessage)
 //router.put("/{id}", jwt.verifyToken, chatController.chatExists, chatController.closeChat)
 //for saftey reasons wed want the chats to remain on the servers permanantly (prevent scams & abuse etc.)
-//commented out so i can run this for the barebones testing
+//commented out so i can run this
 
 module.exports=router

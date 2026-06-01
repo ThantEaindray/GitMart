@@ -54,20 +54,17 @@ module.exports.toLoad = (req, res, next) => {
 
 module.exports.formatList = (req, res, next) => {
   let namesicons = res.locals.namesImgs
-  console.log("format", namesicons)
-  // for my sake lets split these up first like i said not ideal but i can think clearer that way
   //ok so basically were trying to do an array of objects type deal here
-  // ok so how fun were all bringing back for loops in 2026
   let chatIds = res.locals.chatIds
-  let chatlist=new Array
+  let chatlist = new Array
   //basically we do a for loop so that way we can get a counter for our thing to make it easier to use across multiple arrays
   for (x = 0; x < chatIds.length; x++) { 
     //so we wanna create a new object
     let data = {
       chat: chatIds[x],
-      pfp: namesicons[0][x].icon,
-      username: namesicons[0]
-      [x].username
+      //pfp: namesicons[x][0].icon,
+      //uncomment the pfp part when we add support for that (next sprint probably)
+      username: namesicons[x][0].username
     }
     chatlist.push(data)
   }
@@ -111,7 +108,7 @@ module.exports.checkAccess = (req, res, next) => {
   if (data.chat[0].user_1 !== data.uid && data.chat[0].user_2 !== data.uid) {
     return res.status(403).json({message:'you dont have permission to view this chat'})
   }
-  //and then we can just next it without doing any sort of db query yippee 
+  //and then we can just next it without doing any sort of db query
   res.locals.openChat = data.chat[0].id
   next()
 }
@@ -132,9 +129,6 @@ module.exports.loadMessages = (req, res, next) => {
   model.loadMessages(data,callback)
 }
 
-//now comes the next big chunk of endpoints yippee yahooo
-//so for now it will just send the image file to a folder in the local area but on actual deployment youd want a cdn bear this in mind when going forward
-
 
 module.exports.sendText = (req, res, next) => {
   let data =req.body  
@@ -145,9 +139,8 @@ module.exports.sendText = (req, res, next) => {
       console.error("problem sending text", err)
       return res.status(500).json(err)      
     }
-    //we dont really even need to return anything for this one like all we need to do is just make it return a 201 the ws will do the rest
+    //we dont really even need to return anything for this one the ws will do the rest
     res.status(201).json({})
-    //and its literally that easy crazy i agree
   }
   model.sendText(data,callback)
 }
@@ -158,6 +151,11 @@ module.exports.hasChat = (req, res, next) => {
     id2: req.body.id
   }
 
+  //make sure the user isnt trying to make a chat with themself
+  if (data.id1 == data.id2) {
+    return res.status(409).json({})
+  }
+  
   const callback = (err, results, fields) => {
     if (err) {
       console.error("problem checking for duplicate chat", err)
@@ -169,7 +167,7 @@ module.exports.hasChat = (req, res, next) => {
       res.locals.chatid = results.id
       return res.status(409).json({})
     }
-    //and finally we can call a next yippeee
+    //and finally we can call a next
     next()
   }
   model.hasChat(data,callback)

@@ -127,6 +127,7 @@ function createChat(uId) {
 
     return
   }
+  
   //format the data into an object for the req to work
   const data = {
     id: uId
