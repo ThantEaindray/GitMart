@@ -1,4 +1,4 @@
-/* global authFetch */
+
 
 // Order history page elements
 const ordersList = document.getElementById('ordersList');

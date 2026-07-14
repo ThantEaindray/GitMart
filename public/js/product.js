@@ -1,4 +1,4 @@
-/* global formatPrice, getProductById, getProductsByCategory */
+
 
 function renderStars(rating) {
   const filled = Math.round(rating ?? 0);

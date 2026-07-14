@@ -19,33 +19,48 @@ describe('Person.model - getAllPersons', () => {
   });
 
   // Valid partition: multiple rows returned from DB
-  test('should return all persons from the database', async () => {
+  test('should return all persons from the database', (done) => {
     const fakePersons = [
       { id: 1, email: 'alice@example.com', name: 'Alice', avatar: null },
       { id: 2, email: 'bob@example.com', name: 'Bob', avatar: null },
     ];
-    pool.query.mockResolvedValue({ rows: fakePersons });
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(null, { rows: fakePersons });
+    });
 
-    const result = await getAllPersons();
-
-    expect(pool.query).toHaveBeenCalledTimes(1);
-    expect(pool.query).toHaveBeenCalledWith('SELECT * FROM "Person"');
-    expect(result).toEqual(fakePersons);
+    getAllPersons((err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledTimes(1);
+      expect(pool.query).toHaveBeenCalledWith('SELECT * FROM "Person"', [], expect.any(Function));
+      expect(result.rows).toEqual(fakePersons);
+      done();
+    });
   });
 
   // Boundary: zero rows – empty result set
-  test('should return an empty array when no persons exist', async () => {
-    pool.query.mockResolvedValue({ rows: [] });
+  test('should return an empty array when no persons exist', (done) => {
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(null, { rows: [] });
+    });
 
-    const result = await getAllPersons();
-
-    expect(result).toEqual([]);
+    getAllPersons((err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
   });
 
-  // Error handling: DB connection failure propagates to caller
-  test('should propagate database errors', async () => {
-    pool.query.mockRejectedValue(new Error('connection refused'));
+  // Error handling: DB connection failure propagates to callback
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('connection refused');
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(dbError, null);
+    });
 
-    await expect(getAllPersons()).rejects.toThrow('connection refused');
+    getAllPersons((err, result) => {
+      expect(err).toBe(dbError);
+      expect(result).toBeNull();
+      done();
+    });
   });
 });

@@ -103,4 +103,35 @@ export default [
       },
     },
   },
+
+  // ── Global rule overrides ──────────────────────────────
+  // Allow _-prefixed parameters to be unused (common Express/pg callback pattern)
+  {
+    rules: {
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
+  },
+
+  // ── Browser globals for public/js files ───────────────
+  // These files are loaded via <script> tags — functions defined in one
+  // file are available globally to others. ESLint can't see cross-file
+  // usage, so declare shared globals here and downgrade no-unused-vars
+  // to warn (browser script pattern makes it unavoidable).
+  {
+    files: ['public/**/*.js'],
+    languageOptions: {
+      globals: {
+        authFetch: 'writable',
+        fetchMethod: 'writable',
+        formatPrice: 'writable',
+        sendTxt: 'writable',
+        CURRENCIES: 'writable',
+        getProductById: 'writable',
+        getProductsByCategory: 'writable',
+      },
+    },
+    rules: {
+      'no-unused-vars': 'warn',
+    },
+  },
 ];

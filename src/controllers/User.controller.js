@@ -297,7 +297,7 @@ module.exports.namesPictures = (req, res, next) => {
     ids: res.locals.toLoad
   }
   res.locals.namesImgs = new Array
-  const callback = (err, results, fields) => {
+  const callback = (err, results, _fields) => {
     if (err) {
       console.error("problem getting chat user info", err)
       return res.status(500).json(err)

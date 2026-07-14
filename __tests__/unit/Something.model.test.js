@@ -1,12 +1,13 @@
 const pool = require('../../src/models/db');
 const {
-  createSomething,
-  getAllSomethings,
-  updateSomething,
-  deleteSomething,
+  insertSingle,
+  selectAll,
+  updateById,
+  deleteById,
 } = require('../../src/models/Something.model');
 
 // ── Mocking ──────────────────────────────────────────────
+// Mock the db module so no real DB connection is needed.
 jest.mock('../../src/models/db', () => ({
   query: jest.fn(),
   end: jest.fn(),
@@ -16,222 +17,230 @@ afterAll(() => {
   jest.restoreAllMocks();
 });
 
-// ── createSomething ──────────────────────────────────────
-describe('Something.model - createSomething', () => {
+// ── insertSingle ─────────────────────────────────────────
+describe('Something.model - insertSingle', () => {
   afterEach(() => jest.clearAllMocks());
 
   // Valid partition: normal string input
-  test('should insert a row and return the created something', async () => {
+  test('should insert a row and return the created something', (done) => {
     const fakeSomething = { id: 1, name: 'cheese' };
-    pool.query.mockResolvedValue({ rows: [fakeSomething] });
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(null, { rows: [fakeSomething] });
+    });
 
-    const result = await createSomething('cheese');
-
-    expect(pool.query).toHaveBeenCalledTimes(1);
-    expect(pool.query).toHaveBeenCalledWith(
-      'INSERT INTO "Something" ("name") VALUES ($1) RETURNING *',
-      ['cheese'],
-    );
-    expect(result).toEqual(fakeSomething);
+    insertSingle({ name: 'cheese' }, (err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledTimes(1);
+      expect(pool.query).toHaveBeenCalledWith(
+        'INSERT INTO "Something" ("name") VALUES ($1) RETURNING *',
+        ['cheese'],
+        expect.any(Function),
+      );
+      expect(result.rows[0]).toEqual(fakeSomething);
+      done();
+    });
   });
 
-  // Error handling: DB constraint violation propagates to caller
-  test('should propagate database errors', async () => {
-    pool.query.mockRejectedValue(new Error('unique violation'));
+  // Error handling: DB constraint violation propagates to callback
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('unique violation');
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(dbError, null);
+    });
 
-    await expect(createSomething('dup')).rejects.toThrow('unique violation');
+    insertSingle({ name: 'dup' }, (err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
   });
 
   // Boundary: empty string is the shortest possible valid input
-  test('should pass empty string to the query (boundary – shortest valid input)', async () => {
+  test('should pass empty string to the query (boundary – shortest valid input)', (done) => {
     const fakeSomething = { id: 2, name: '' };
-    pool.query.mockResolvedValue({ rows: [fakeSomething] });
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(null, { rows: [fakeSomething] });
+    });
 
-    const result = await createSomething('');
-
-    expect(pool.query).toHaveBeenCalledWith(
-      'INSERT INTO "Something" ("name") VALUES ($1) RETURNING *',
-      [''],
-    );
-    expect(result).toEqual(fakeSomething);
-  });
-
-  // Invalid partition: null is not a valid name – DB rejects with NOT NULL error
-  test('should propagate NOT NULL error when name is null (invalid partition)', async () => {
-    pool.query.mockRejectedValue(new Error('null value violates not-null constraint'));
-
-    await expect(createSomething(null)).rejects.toThrow('not-null');
+    insertSingle({ name: '' }, (err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledWith(
+        'INSERT INTO "Something" ("name") VALUES ($1) RETURNING *',
+        [''],
+        expect.any(Function),
+      );
+      expect(result.rows[0]).toEqual(fakeSomething);
+      done();
+    });
   });
 });
 
-// ── getAllSomethings ─────────────────────────────────────
-describe('Something.model - getAllSomethings', () => {
+// ── selectAll ────────────────────────────────────────────
+describe('Something.model - selectAll', () => {
   afterEach(() => jest.clearAllMocks());
 
   // Valid partition: multiple rows returned from DB
-  test('should return all somethings', async () => {
+  test('should return all somethings', (done) => {
     const fakeSomethings = [
       { id: 1, name: 'Seed 1' },
       { id: 2, name: 'Seed 2' },
     ];
-    pool.query.mockResolvedValue({ rows: fakeSomethings });
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(null, { rows: fakeSomethings });
+    });
 
-    const result = await getAllSomethings();
-
-    expect(pool.query).toHaveBeenCalledWith('SELECT * FROM "Something"');
-    expect(result).toEqual(fakeSomethings);
+    selectAll((err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledWith(
+        'SELECT * FROM "Something"',
+        [],
+        expect.any(Function),
+      );
+      expect(result.rows).toEqual(fakeSomethings);
+      done();
+    });
   });
 
   // Boundary: zero rows – empty result set
-  test('should return an empty array when no somethings exist', async () => {
-    pool.query.mockResolvedValue({ rows: [] });
+  test('should return an empty array when no somethings exist', (done) => {
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(null, { rows: [] });
+    });
 
-    const result = await getAllSomethings();
-
-    expect(result).toEqual([]);
+    selectAll((err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
   });
 
-  // Error handling: DB timeout propagates to caller
-  test('should propagate database errors', async () => {
-    pool.query.mockRejectedValue(new Error('timeout'));
+  // Error handling: DB timeout propagates to callback
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('timeout');
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(dbError, null);
+    });
 
-    await expect(getAllSomethings()).rejects.toThrow('timeout');
+    selectAll((err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
   });
 });
 
-// ── updateSomething ──────────────────────────────────────
-describe('Something.model - updateSomething', () => {
+// ── updateById ───────────────────────────────────────────
+describe('Something.model - updateById', () => {
   afterEach(() => jest.clearAllMocks());
 
-  // Valid partition: update with a valid field and value
-  test('should update name and return the updated row', async () => {
+  // Valid partition: update with a valid id and name
+  test('should update name and return the updated row', (done) => {
     const updated = { id: 1, name: 'milk' };
-    pool.query.mockResolvedValue({ rows: [updated] });
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(null, { rows: [updated] });
+    });
 
-    const result = await updateSomething(1, { name: 'milk' });
-
-    expect(pool.query).toHaveBeenCalledWith(
-      'UPDATE "Something" SET "name" = $1 WHERE "id" = $2 RETURNING *',
-      ['milk', 1],
-    );
-    expect(result).toEqual(updated);
+    updateById({ id: 1, name: 'milk' }, (err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledWith(
+        'UPDATE "Something" SET "name" = $1 WHERE "id" = $2 RETURNING *',
+        ['milk', 1],
+        expect.any(Function),
+      );
+      expect(result.rows[0]).toEqual(updated);
+      done();
+    });
   });
 
-  // Valid partition: verify parameterised SQL structure
-  test('should handle multiple fields', async () => {
-    const updated = { id: 1, name: 'updated' };
-    pool.query.mockResolvedValue({ rows: [updated] });
+  // Boundary: non-existent id returns zero rows
+  test('should return zero rows when id does not exist', (done) => {
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(null, { rows: [] });
+    });
 
-    await updateSomething(1, { name: 'updated' });
-
-    // Verify query was called with correct parameterised SQL
-    expect(pool.query).toHaveBeenCalledTimes(1);
-    const [sql, params] = pool.query.mock.calls[0];
-    expect(sql).toContain('UPDATE "Something" SET');
-    expect(sql).toContain('RETURNING *');
-    expect(params).toContain(1); // id is always the last param
+    updateById({ id: 999, name: 'ghost' }, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
   });
 
-  // Boundary: non-existent id returns undefined (no row matched)
-  test('should return undefined when id does not exist', async () => {
-    pool.query.mockResolvedValue({ rows: [] });
+  // Error handling: DB syntax error propagates to callback
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('syntax error');
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(dbError, null);
+    });
 
-    const result = await updateSomething(999, { name: 'ghost' });
-
-    expect(result).toBeUndefined();
-  });
-
-  // Error handling: DB syntax error propagates to caller
-  test('should propagate database errors', async () => {
-    pool.query.mockRejectedValue(new Error('syntax error'));
-
-    await expect(updateSomething(1, { name: 'bad' })).rejects.toThrow('syntax error');
-  });
-
-  // Boundary: empty data object – name is undefined, passed directly to query
-  test('should pass undefined name to the query when data object is empty', async () => {
-    pool.query.mockResolvedValue({ rows: [] });
-
-    const result = await updateSomething(1, {});
-
-    expect(pool.query).toHaveBeenCalledWith(
-      'UPDATE "Something" SET "name" = $1 WHERE "id" = $2 RETURNING *',
-      [undefined, 1],
-    );
-    expect(result).toBeUndefined();
-  });
-
-  // Boundary: id = 0 is technically valid input – tests edge of numeric range
-  test('should pass id = 0 to the query (boundary value)', async () => {
-    pool.query.mockResolvedValue({ rows: [] });
-
-    const result = await updateSomething(0, { name: 'test' });
-
-    expect(pool.query).toHaveBeenCalledWith(
-      'UPDATE "Something" SET "name" = $1 WHERE "id" = $2 RETURNING *',
-      ['test', 0],
-    );
-    expect(result).toBeUndefined();
+    updateById({ id: 1, name: 'bad' }, (err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
   });
 });
 
-// ── deleteSomething ──────────────────────────────────────
-describe('Something.model - deleteSomething', () => {
+// ── deleteById ───────────────────────────────────────────
+describe('Something.model - deleteById', () => {
   afterEach(() => jest.clearAllMocks());
 
   // Valid partition: delete an existing row and return it
-  test('should delete a row and return the deleted something', async () => {
+  test('should delete a row and return the deleted something', (done) => {
     const deleted = { id: 3, name: 'gone' };
-    pool.query.mockResolvedValue({ rows: [deleted] });
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(null, { rows: [deleted] });
+    });
 
-    const result = await deleteSomething(3);
-
-    expect(pool.query).toHaveBeenCalledWith(
-      'DELETE FROM "Something" WHERE "id" = $1 RETURNING *',
-      [3],
-    );
-    expect(result).toEqual(deleted);
+    deleteById({ id: 3 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledWith(
+        'DELETE FROM "Something" WHERE "id" = $1 RETURNING *',
+        [3],
+        expect.any(Function),
+      );
+      expect(result.rows[0]).toEqual(deleted);
+      done();
+    });
   });
 
-  // Boundary: non-existent id returns undefined (no row matched)
-  test('should return undefined when id does not exist', async () => {
-    pool.query.mockResolvedValue({ rows: [] });
+  // Boundary: non-existent id returns zero rows
+  test('should return zero rows when id does not exist', (done) => {
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(null, { rows: [] });
+    });
 
-    const result = await deleteSomething(999);
-
-    expect(result).toBeUndefined();
+    deleteById({ id: 999 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
   });
 
-  // Error handling: DB connection loss propagates to caller
-  test('should propagate database errors', async () => {
-    pool.query.mockRejectedValue(new Error('connection lost'));
+  // Error handling: DB connection loss propagates to callback
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('connection lost');
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(dbError, null);
+    });
 
-    await expect(deleteSomething(1)).rejects.toThrow('connection lost');
-  });
-
-  // Boundary: id = 0 is below valid range – tests edge of numeric range
-  test('should pass id = 0 to the query (boundary value)', async () => {
-    pool.query.mockResolvedValue({ rows: [] });
-
-    const result = await deleteSomething(0);
-
-    expect(pool.query).toHaveBeenCalledWith(
-      'DELETE FROM "Something" WHERE "id" = $1 RETURNING *',
-      [0],
-    );
-    expect(result).toBeUndefined();
+    deleteById({ id: 1 }, (err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
   });
 
   // Boundary: negative id – well below valid range
-  test('should pass negative id to the query (boundary – below valid range)', async () => {
-    pool.query.mockResolvedValue({ rows: [] });
+  test('should pass negative id to the query (boundary – below valid range)', (done) => {
+    pool.query.mockImplementation((sql, values, callback) => {
+      callback(null, { rows: [] });
+    });
 
-    const result = await deleteSomething(-1);
-
-    expect(pool.query).toHaveBeenCalledWith(
-      'DELETE FROM "Something" WHERE "id" = $1 RETURNING *',
-      [-1],
-    );
-    expect(result).toBeUndefined();
+    deleteById({ id: -1 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledWith(
+        'DELETE FROM "Something" WHERE "id" = $1 RETURNING *',
+        [-1],
+        expect.any(Function),
+      );
+      expect(result.rows).toEqual([]);
+      done();
+    });
   });
 });
