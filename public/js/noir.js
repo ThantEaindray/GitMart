@@ -1,4 +1,4 @@
-/* global formatPrice */
+
 
 function parseResponse(response) {
   return response.json().then(function (data) {

@@ -1,6 +1,6 @@
 //so this one will solely be for handling websocket stuff since the chats page will probably end up a bit too chaotic if i let it have everything in there
 const token = localStorage.getItem('token')
-uId = localStorage.getItem('loggedInUserId')
+const uId = localStorage.getItem('loggedInUserId')
 const webSocket = new WebSocket('ws://localhost:443/');
 webSocket.onmessage = (event) => {
   //so the event is the message content basically, in this case itll be an object with a recipient
@@ -8,7 +8,7 @@ webSocket.onmessage = (event) => {
   //we need to deserialise it since the WS only accepts JSON
   let openChat = localStorage.getItem('openChat')
   let raw = JSON.parse(event.data)
-  reconstituted = String.fromCharCode.apply(null, raw.data);
+  const reconstituted = String.fromCharCode.apply(null, raw.data);
   let content = JSON.parse(reconstituted)
   if (content.chat !== openChat) {
     return

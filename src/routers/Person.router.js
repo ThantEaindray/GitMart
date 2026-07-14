@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const model = require('../models/Person.model');
 
-router.get('/', (req, res, next) => {
+router.get('/', (req, res) => {
   const callback = (error, result) => {
     if (error) {
       console.log(error);

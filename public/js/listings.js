@@ -1,6 +1,6 @@
 // ── TOAST ─────────────────────────────────────────────────────────────────
 
-/* global authFetch, CURRENCIES, formatPrice */
+
 
 function showToast(message) {
   const toast = document.getElementById('toast');

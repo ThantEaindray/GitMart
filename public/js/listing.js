@@ -1,6 +1,6 @@
 // ── TOAST ─────────────────────────────────────────────────────────────────
 
-/* global fetchMethod, formatPrice */
+
 
 var currentListing = null;
 

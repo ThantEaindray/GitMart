@@ -1,4 +1,4 @@
-/* global authFetch */
+
 
 document.addEventListener('DOMContentLoaded', () => {
   const token = localStorage.getItem('token');

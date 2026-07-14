@@ -5,7 +5,7 @@ module.exports.loadChats = (req, res, next) => {
     uid:res.locals.userId
   }
   //so we have the verified user id this is the part where we need to load all the chats
-  const callback = (err, results, fields) => {
+  const callback = (err, results, _fields) => {
     if (err) {
       console.error("problem loading chats" + err)
       return res.status(500).json(err)
@@ -52,13 +52,13 @@ module.exports.toLoad = (req, res, next) => {
 }
   
 
-module.exports.formatList = (req, res, next) => {
+module.exports.formatList = (req, res, _next) => {
   let namesicons = res.locals.namesImgs
   //ok so basically were trying to do an array of objects type deal here
   let chatIds = res.locals.chatIds
   let chatlist = new Array
   //basically we do a for loop so that way we can get a counter for our thing to make it easier to use across multiple arrays
-  for (x = 0; x < chatIds.length; x++) { 
+  for (let x = 0; x < chatIds.length; x++) {
     //so we wanna create a new object
     let data = {
       chat: chatIds[x],
@@ -113,12 +113,12 @@ module.exports.checkAccess = (req, res, next) => {
   next()
 }
 
-module.exports.loadMessages = (req, res, next) => {
+module.exports.loadMessages = (req, res, _next) => {
   const data = {
     chatId: req.params.id
   }
-  
-  const callback = (err, results, fields) => {
+
+  const callback = (err, results, _fields) => {
     if (err) {
       console.error("problem loading messages", err)
       return res.status(500).json(err)
@@ -130,11 +130,9 @@ module.exports.loadMessages = (req, res, next) => {
 }
 
 
-module.exports.sendText = (req, res, next) => {
-  let data =req.body  
-  //since cont is already an object why go to all that effort to redeclare everything
-  // just renaming it for consistencies sake
-  const callback = (err, results, fields) => {
+module.exports.sendText = (req, res, _next) => {
+  let data = req.body
+  const callback = (err, _results, _fields) => {
     if (err) {
       console.error("problem sending text", err)
       return res.status(500).json(err)      
@@ -156,7 +154,7 @@ module.exports.hasChat = (req, res, next) => {
     return res.status(409).json({})
   }
   
-  const callback = (err, results, fields) => {
+  const callback = (err, results, _fields) => {
     if (err) {
       console.error("problem checking for duplicate chat", err)
       return res.status(500).json(err)
@@ -173,13 +171,13 @@ module.exports.hasChat = (req, res, next) => {
   model.hasChat(data,callback)
 }
 
-module.exports.newChat = (req,res,next) => {
+module.exports.newChat = (req, res, _next) => {
   const data = {
     initId: res.locals.userId,
     recipId: req.body.id
   }
 
-  const callback = (err, results, fields) => {
+  const callback = (err, _results, _fields) => {
     if(err) {
       console.error("problem creating chat", err)
       return res.status(500).json(err)
