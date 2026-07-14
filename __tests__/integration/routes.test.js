@@ -141,7 +141,7 @@ describe('PUT /somethings/:id', () => {
     const res = await request(app).put('/somethings/999999').send({ name: 'ghost' });
 
     expect(res.status).toBe(404);
-    expect(res.body).toHaveProperty('error');
+    expect(res.body).toHaveProperty('message');
   });
 });
 
@@ -193,7 +193,7 @@ describe('DELETE /somethings/:id', () => {
     const res = await request(app).delete('/somethings/999999');
 
     expect(res.status).toBe(404);
-    expect(res.body).toHaveProperty('error');
+    expect(res.body).toHaveProperty('message');
   });
 });
 
