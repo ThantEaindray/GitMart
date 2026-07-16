@@ -17,3 +17,8 @@ when a user sends a message
 (will use a cdn in future this is just for convenience right now since its not hosted)
 3. add an unread flag/system to the chats.
 4. some sort of online indicator as well i think would be good to have just like listen for a user have it send out the id of the user whos online and then from there we can change the innerhtml
+
+
+
+
+BASICALLY WE NEED TO DO A FULL REWRITE OF THE WEBSOCKET HANDLING SYSTEM TO MAKE IT WORK WELL
