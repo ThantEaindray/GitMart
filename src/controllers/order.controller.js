@@ -1,7 +1,19 @@
 const model = require('../models/orderModel');
 
-// Status values that can be shown and updated in order history.
-const allowedStatuses = ['Pending', 'Processing', 'Delivered', 'Cancelled'];
+// Status values for the first version of order tracking.
+// Later commits can build a timeline from the same trusted list.
+const ORDER_STATUSES = Object.freeze({
+  PENDING: 'Pending',
+  PROCESSING: 'Processing',
+  DELIVERED: 'Delivered',
+  CANCELLED: 'Cancelled',
+});
+
+const allowedStatuses = Object.values(ORDER_STATUSES);
+
+function isAllowedOrderStatus(status) {
+  return allowedStatuses.includes(status);
+}
 
 // Checkout field formats that must match the frontend validation.
 const checkoutPatterns = {
@@ -77,7 +89,7 @@ module.exports.updateOrderStatus = (req, res, next) => {
     return res.status(400).json({ message: 'Order status is required.' });
   }
 
-  if (!allowedStatuses.includes(status)) {
+  if (!isAllowedOrderStatus(status)) {
     return res.status(400).json({ message: 'Invalid order status.' });
   }
 
