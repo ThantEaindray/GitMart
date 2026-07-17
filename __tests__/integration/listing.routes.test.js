@@ -75,6 +75,8 @@ async function insertListing({
         description,
         price,
         category,
+        status,
+        status_updated_on,
         "isSold",
         "isClosed"
     `,
@@ -238,9 +240,15 @@ describe('Listing API baseline', () => {
       // Confirm that the API really persisted the listing.
       const databaseResult = await pool.query(
         `
-          SELECT owner_id, title, description, price, category
-          FROM listings
-          WHERE id = $1
+          SELECT
+  owner_id,
+  title,
+  description,
+  price,
+  category,
+  status
+FROM listings
+WHERE id = $1
         `,
         [response.body.listing.id],
       );
@@ -248,6 +256,7 @@ describe('Listing API baseline', () => {
       expect(databaseResult.rows).toHaveLength(1);
       expect(databaseResult.rows[0].owner_id).toBe(owner.id);
       expect(databaseResult.rows[0].title).toBe(validListing.title);
+      expect(databaseResult.rows[0].status).toBe('AVAILABLE');
     });
   });
 
@@ -315,6 +324,65 @@ describe('Listing API baseline', () => {
       expect(databaseResult.rows[0].title).toBe('Baseline Camera');
 
       expect(Number(databaseResult.rows[0].price)).toBe(500);
+    });
+  });
+
+  describe('Listing lifecycle database foundation', () => {
+    test('uses AVAILABLE as the default status for a new listing', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      expect(listing).toMatchObject({
+        status: 'AVAILABLE',
+        isSold: false,
+        isClosed: false,
+      });
+
+      expect(listing.status_updated_on).toBeDefined();
+    });
+
+    test('rejects a status outside the supported lifecycle values', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      await expect(
+        pool.query(
+          `
+          UPDATE listings
+          SET status = $1
+          WHERE id = $2
+        `,
+          ['DELETED', listing.id],
+        ),
+      ).rejects.toMatchObject({
+        code: '23514',
+        constraint: 'listings_status_check',
+      });
+    });
+
+    test('rejects a status and legacy flags that do not match', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      await expect(
+        pool.query(
+          `
+          UPDATE listings
+          SET
+            status = $1,
+            "isSold" = $2,
+            "isClosed" = $3
+          WHERE id = $4
+        `,
+          ['SOLD', false, false, listing.id],
+        ),
+      ).rejects.toMatchObject({
+        code: '23514',
+        constraint: 'listings_status_flags_check',
+      });
     });
   });
 
