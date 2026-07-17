@@ -3,12 +3,27 @@ const { markPurchasedItemsSold } = require('./purchaseState');
 // Demo in-memory order storage.
 const orders = [];
 
+function createStatusHistoryEntry(status) {
+  return {
+    status,
+    note: `Order status changed to ${status}.`,
+    createdAt: new Date().toISOString(),
+  };
+}
+
 // Create an order and mark one-off listings as sold.
 module.exports.createOrder = function createOrder(orderData) {
+  const initialStatus = 'Pending';
   const newOrder = {
     id: orders.length + 1,
     ...orderData,
-    status: 'Pending',
+    status: initialStatus,
+    statusHistory: [
+      {
+        ...createStatusHistoryEntry(initialStatus),
+        note: 'Order was created after checkout.',
+      },
+    ],
     createdAt: new Date().toISOString(),
   };
 
@@ -33,5 +48,7 @@ module.exports.updateOrderStatus = function updateOrderStatus(id, status, userId
   }
 
   order.status = status;
+  order.statusHistory = order.statusHistory || [];
+  order.statusHistory.push(createStatusHistoryEntry(status));
   return Promise.resolve(order);
 };
