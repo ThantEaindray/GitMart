@@ -74,6 +74,7 @@ function parseResponse(response) {
 
 let selectedListingImageUrl = null;
 let pendingCoverImageUrl = null;
+let wishlistedIds = new Set();
 
 function getCurrentUserId() {
   return Number(localStorage.getItem('loggedInUserId') || localStorage.getItem('userId'));
@@ -127,12 +128,25 @@ function createListingCard(listing) {
       <div class="card-footer">
         <span class="card-price" data-price="${listing.price}">${formatPrice(Number(listing.price))}</span>
         ${listing.view_count > 0 ? `<span style="font-size:0.78rem;color:var(--muted);"><i class="bi bi-eye"></i> ${listing.view_count}</span>` : ''}
+        ${!isOwner(listing) ? `<button class="btn-wishlist-heart" data-listing-id="${listing.id}" type="button" aria-label="Add to wishlist"><i class="bi bi-heart"></i></button>` : ''}
       </div>
       ${ownerControls}
     </div>
   `;
 
   card.addEventListener('click', goToListing);
+
+  const heartBtn = card.querySelector('.btn-wishlist-heart');
+  if (heartBtn) {
+    if (wishlistedIds.has(listing.id)) {
+      heartBtn.classList.add('wishlisted');
+      heartBtn.querySelector('i').className = 'bi bi-heart-fill';
+    }
+    heartBtn.addEventListener('click', function (event) {
+      event.stopPropagation();
+      toggleWishlistHeart(heartBtn, listing.id);
+    });
+  }
 
   const editBtn = card.querySelector('.btn-edit-listing');
   if (editBtn) {
@@ -240,6 +254,54 @@ function onListingsError() {
   showWarning('Something went wrong while loading listings.');
 }
 
+// ── WISHLIST ──────────────────────────────────────────────────────────────
+
+function toggleWishlistHeart(btn, listingId) {
+  if (!localStorage.getItem('token')) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  var wasWishlisted = wishlistedIds.has(listingId);
+  var method = wasWishlisted ? 'DELETE' : 'POST';
+
+  authFetch('/api/wishlist/' + listingId, { method: method })
+    .then(function (res) {
+      if (res.status === 200 || res.status === 201) {
+        if (wasWishlisted) {
+          wishlistedIds.delete(listingId);
+          btn.classList.remove('wishlisted');
+          btn.querySelector('i').className = 'bi bi-heart';
+        } else {
+          wishlistedIds.add(listingId);
+          btn.classList.add('wishlisted');
+          btn.querySelector('i').className = 'bi bi-heart-fill';
+        }
+      }
+    })
+    .catch(function () {});
+}
+
+function loadWishlistState() {
+  if (!localStorage.getItem('token')) return;
+
+  authFetch('/api/wishlist')
+    .then(function (res) {
+      return res.json();
+    })
+    .then(function (items) {
+      wishlistedIds = new Set(items.map(function (i) { return i.listing_id; }));
+      document.querySelectorAll('.btn-wishlist-heart').forEach(function (btn) {
+        var id = Number(btn.dataset.listingId);
+        if (wishlistedIds.has(id)) {
+          btn.classList.add('wishlisted');
+          btn.querySelector('i').className = 'bi bi-heart-fill';
+        }
+      });
+    })
+    .catch(function () {});
+}
+
 function initListingsPage() {
   var listingsGrid = document.getElementById('listingsGrid');
   if (!listingsGrid) return;
@@ -261,6 +323,14 @@ function initListingsPage() {
   if (sortSelect)  sortSelect.addEventListener('change', fetchListings);
 
   fetchListings();
+  loadWishlistState();
+
+  var wishlistNavBtn = document.getElementById('btn-wishlist');
+  if (wishlistNavBtn) {
+    wishlistNavBtn.addEventListener('click', function () {
+      window.location.href = 'wishlist.html';
+    });
+  }
 
   fetch('/api/listings/most-viewed')
     .then(parseResponse)
