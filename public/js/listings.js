@@ -256,50 +256,54 @@ function onListingsError() {
 
 // ── WISHLIST ──────────────────────────────────────────────────────────────
 
+var _heartBtn = null;
+var _heartListingId = null;
+var _heartWasWishlisted = false;
+
+function applyHeartToggle(res) {
+  if (res.status !== 200 && res.status !== 201) return;
+  if (_heartWasWishlisted) {
+    wishlistedIds.delete(_heartListingId);
+    _heartBtn.classList.remove('wishlisted');
+    _heartBtn.querySelector('i').className = 'bi bi-heart';
+  } else {
+    wishlistedIds.add(_heartListingId);
+    _heartBtn.classList.add('wishlisted');
+    _heartBtn.querySelector('i').className = 'bi bi-heart-fill';
+  }
+}
+
 function toggleWishlistHeart(btn, listingId) {
   if (!localStorage.getItem('token')) {
     window.location.href = 'login.html';
     return;
   }
+  _heartBtn = btn;
+  _heartListingId = listingId;
+  _heartWasWishlisted = wishlistedIds.has(listingId);
+  var method = _heartWasWishlisted ? 'DELETE' : 'POST';
+  authFetch('/api/wishlist/' + listingId, { method: method }).then(applyHeartToggle);
+}
 
-  var wasWishlisted = wishlistedIds.has(listingId);
-  var method = wasWishlisted ? 'DELETE' : 'POST';
-
-  authFetch('/api/wishlist/' + listingId, { method: method })
-    .then(function (res) {
-      if (res.status === 200 || res.status === 201) {
-        if (wasWishlisted) {
-          wishlistedIds.delete(listingId);
-          btn.classList.remove('wishlisted');
-          btn.querySelector('i').className = 'bi bi-heart';
-        } else {
-          wishlistedIds.add(listingId);
-          btn.classList.add('wishlisted');
-          btn.querySelector('i').className = 'bi bi-heart-fill';
-        }
-      }
-    })
-    .catch(function () {});
+function applyLoadedHearts(result) {
+  if (result.status !== 200) return;
+  wishlistedIds = new Set(result.data.map(function (i) { return i.listing_id; }));
+  document.querySelectorAll('.btn-wishlist-heart').forEach(function (btn) {
+    if (wishlistedIds.has(Number(btn.dataset.listingId))) {
+      btn.classList.add('wishlisted');
+      btn.querySelector('i').className = 'bi bi-heart-fill';
+    }
+  });
 }
 
 function loadWishlistState() {
   if (!localStorage.getItem('token')) return;
+  authFetch('/api/wishlist').then(parseResponse).then(applyLoadedHearts);
+}
 
-  authFetch('/api/wishlist')
-    .then(function (res) {
-      return res.json();
-    })
-    .then(function (items) {
-      wishlistedIds = new Set(items.map(function (i) { return i.listing_id; }));
-      document.querySelectorAll('.btn-wishlist-heart').forEach(function (btn) {
-        var id = Number(btn.dataset.listingId);
-        if (wishlistedIds.has(id)) {
-          btn.classList.add('wishlisted');
-          btn.querySelector('i').className = 'bi bi-heart-fill';
-        }
-      });
-    })
-    .catch(function () {});
+function onMostViewedError() {
+  var s = document.getElementById('most-viewed-section');
+  if (s) s.style.display = 'none';
 }
 
 function initListingsPage() {
@@ -335,10 +339,7 @@ function initListingsPage() {
   fetch('/api/listings/most-viewed')
     .then(parseResponse)
     .then(renderMostViewed)
-    .catch(function () {
-      var s = document.getElementById('most-viewed-section');
-      if (s) s.style.display = 'none';
-    });
+    .catch(onMostViewedError);
 }
 
 // ── LISTING MODAL HELPERS ─────────────────────────────────────────────────
@@ -394,43 +395,53 @@ function handleListingModalConfirm() {
   if (listingModalMode === 'delete') deleteListingFromModal(selectedListing);
 }
 
+function onListingUpdated(result) {
+  if (result.status !== 200) {
+    showWarning(result.data.message || 'Failed to update listing.');
+    return;
+  }
+  closeListingModal();
+  showToast('Listing updated successfully.');
+  fetchListings();
+}
+
+function onUpdateListingError() {
+  showWarning('Something went wrong while updating listing.');
+}
+
 function updateListingFromModal(listing) {
   if (!localStorage.getItem('token')) {
     showToast('Please log in to edit your listing.');
     return;
   }
-
   const newTitle = document.getElementById('editTitle').value.trim();
   const newDescription = document.getElementById('editDescription').value.trim();
   const newPrice = document.getElementById('editPrice').value;
-
   if (!newTitle || !newDescription || Number(newPrice) <= 0) {
     showWarning('Title, description and valid price are required.');
     return;
   }
-
   authFetch('/api/listings/' + listing.id, {
     method: 'PATCH',
-    body: JSON.stringify({
-      title: newTitle,
-      description: newDescription,
-      price: Number(newPrice),
-    }),
+    body: JSON.stringify({ title: newTitle, description: newDescription, price: Number(newPrice) }),
   })
     .then(parseResponse)
-    .then(function (result) {
-      if (result.status !== 200) {
-        showWarning(result.data.message || 'Failed to update listing.');
-        return;
-      }
+    .then(onListingUpdated)
+    .catch(onUpdateListingError);
+}
 
-      closeListingModal();
-      showToast('Listing updated successfully.');
-      fetchListings();
-    })
-    .catch(function () {
-      showWarning('Something went wrong while updating listing.');
-    });
+function onListingDeleted(result) {
+  if (result.status !== 200) {
+    showWarning(result.data.message || 'Failed to delete listing.');
+    return;
+  }
+  closeListingModal();
+  showToast('Listing deleted successfully.');
+  fetchListings();
+}
+
+function onDeleteListingError() {
+  showWarning('Something went wrong while deleting listing.');
 }
 
 function deleteListingFromModal(listing) {
@@ -438,24 +449,10 @@ function deleteListingFromModal(listing) {
     showToast('Please log in to delete your listing.');
     return;
   }
-
-  authFetch('/api/listings/' + listing.id, {
-    method: 'DELETE',
-  })
+  authFetch('/api/listings/' + listing.id, { method: 'DELETE' })
     .then(parseResponse)
-    .then(function (result) {
-      if (result.status !== 200) {
-        showWarning(result.data.message || 'Failed to delete listing.');
-        return;
-      }
-
-      closeListingModal();
-      showToast('Listing deleted successfully.');
-      fetchListings();
-    })
-    .catch(function () {
-      showWarning('Something went wrong while deleting listing.');
-    });
+    .then(onListingDeleted)
+    .catch(onDeleteListingError);
 }
 // ── CREATE LISTING PAGE ───────────────────────────────────────────────────
 

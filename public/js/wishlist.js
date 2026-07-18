@@ -18,26 +18,38 @@ function parseResponse(response) {
   });
 }
 
+function showWishlistError(message) {
+  var grid = document.getElementById('wishlistGrid');
+  if (grid) grid.innerHTML = '<p class="status-text">' + message + '</p>';
+}
+
 // ── REMOVE FROM WISHLIST ──────────────────────────────────────────────────
 
+var _pendingRemoveCard = null;
+
+function onItemRemoved(result) {
+  if (result.status !== 200) {
+    showToast(result.data.message || 'Failed to remove item.');
+    return;
+  }
+  _pendingRemoveCard.remove();
+  showToast('Removed from wishlist.');
+  var grid = document.getElementById('wishlistGrid');
+  if (grid && grid.querySelectorAll('.card').length === 0) {
+    renderEmpty();
+  }
+}
+
+function onRemoveError() {
+  showToast('Something went wrong.');
+}
+
 function removeFromWishlist(listingId, cardEl) {
+  _pendingRemoveCard = cardEl;
   authFetch('/api/wishlist/' + listingId, { method: 'DELETE' })
     .then(parseResponse)
-    .then(function (result) {
-      if (result.status === 200) {
-        cardEl.remove();
-        showToast('Removed from wishlist.');
-        var grid = document.getElementById('wishlistGrid');
-        if (grid && grid.querySelectorAll('.card').length === 0) {
-          renderEmpty();
-        }
-      } else {
-        showToast(result.data.message || 'Failed to remove item.');
-      }
-    })
-    .catch(function () {
-      showToast('Something went wrong.');
-    });
+    .then(onItemRemoved)
+    .catch(onRemoveError);
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────
@@ -52,6 +64,12 @@ function renderEmpty() {
     '<p>Save listings you love by clicking the heart on any listing card.</p>' +
     '<a href="listings.html" class="btn-primary">Browse Listings</a>' +
     '</div>';
+}
+
+function onRemoveBtnClick() {
+  var listingId = Number(this.dataset.listingId);
+  var card = this.closest('.card');
+  removeFromWishlist(listingId, card);
 }
 
 function createWishlistCard(item) {
@@ -84,17 +102,13 @@ function createWishlistCard(item) {
     (item.view_count > 0 ? '<span style="font-size:0.78rem;color:var(--muted);"><i class="bi bi-eye"></i> ' + item.view_count + '</span>' : '') +
     '</div>' +
     '<div class="wishlist-card-actions">' +
-    '<button class="btn-secondary btn-remove" type="button">Remove</button>' +
+    '<button class="btn-secondary btn-remove" data-listing-id="' + item.listing_id + '" type="button">Remove</button>' +
     '<a href="listing.html?id=' + item.listing_id + '" class="btn-primary">View</a>' +
     '</div>' +
     '</div>';
 
   var removeBtn = card.querySelector('.btn-remove');
-  if (removeBtn) {
-    removeBtn.addEventListener('click', function () {
-      removeFromWishlist(item.listing_id, card);
-    });
-  }
+  if (removeBtn) removeBtn.addEventListener('click', onRemoveBtnClick);
 
   return card;
 }
@@ -117,26 +131,27 @@ function renderWishlist(items) {
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 
+function onWishlistLoaded(result) {
+  if (result.status !== 200) {
+    showWishlistError('Failed to load wishlist.');
+    return;
+  }
+  renderWishlist(result.data);
+}
+
+function onWishlistLoadError() {
+  showWishlistError('Something went wrong.');
+}
+
 function loadWishlist() {
   if (!localStorage.getItem('token')) {
     window.location.href = 'login.html';
     return;
   }
-
   authFetch('/api/wishlist')
     .then(parseResponse)
-    .then(function (result) {
-      if (result.status !== 200) {
-        var grid = document.getElementById('wishlistGrid');
-        if (grid) grid.innerHTML = '<p class="status-text">Failed to load wishlist.</p>';
-        return;
-      }
-      renderWishlist(result.data);
-    })
-    .catch(function () {
-      var grid = document.getElementById('wishlistGrid');
-      if (grid) grid.innerHTML = '<p class="status-text">Something went wrong.</p>';
-    });
+    .then(onWishlistLoaded)
+    .catch(onWishlistLoadError);
 }
 
 document.addEventListener('DOMContentLoaded', loadWishlist);
