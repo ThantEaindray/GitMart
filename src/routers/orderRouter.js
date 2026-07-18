@@ -22,6 +22,14 @@ router.get(
   orderController.sendResponse,
 );
 
+// Read one logged-in user's order with tracking details.
+router.get(
+  '/:id',
+  jwtMiddleware.verifyToken,
+  orderController.getOrderById,
+  orderController.sendResponse,
+);
+
 // Update one order's status.
 router.put(
   '/:id',

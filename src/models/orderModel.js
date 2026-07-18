@@ -37,6 +37,15 @@ module.exports.getAllOrders = function getAllOrders(userId) {
   return Promise.resolve(orders.filter((order) => String(order.userId) === String(userId)));
 };
 
+// Return one order only when it belongs to the logged-in user.
+module.exports.getOrderById = function getOrderById(id, userId) {
+  const order = orders.find(
+    (item) => item.id === Number(id) && String(item.userId) === String(userId),
+  );
+
+  return Promise.resolve(order || null);
+};
+
 // Update one order if it belongs to the logged-in user.
 module.exports.updateOrderStatus = function updateOrderStatus(id, status, userId) {
   const order = orders.find(

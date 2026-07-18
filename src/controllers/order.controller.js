@@ -81,6 +81,22 @@ module.exports.getAllOrders = (req, res, next) => {
     .catch(next);
 };
 
+// GET /api/orders/:id
+module.exports.getOrderById = (req, res, next) => {
+  model
+    .getOrderById(req.params.id, res.locals.userId)
+    .then((order) => {
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found.' });
+      }
+
+      res.locals.statusCode = 200;
+      res.locals.results = order;
+      return next();
+    })
+    .catch(next);
+};
+
 // PUT /api/orders/:id
 module.exports.updateOrderStatus = (req, res, next) => {
   const { status } = req.body;
