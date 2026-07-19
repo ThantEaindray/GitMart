@@ -54,6 +54,16 @@ module.exports.analyseImage = function (req, res) {
     .catch(onError);
 };
 
+// GET /api/listings/recently-viewed
+module.exports.getRecentlyViewed = (req, res) => {
+  const data = { userId: res.locals.userId };
+  const callback = (error, result) => {
+    if (error) return res.status(500).json({ message: 'Internal server error' });
+    return res.status(200).json(applyRuntimeSoldStateToRows(result.rows));
+  };
+  model.getRecentlyViewed(data, callback);
+};
+
 // GET /api/listings/most-viewed
 module.exports.getMostViewed = (req, res) => {
   const callback = (error, result) => {
