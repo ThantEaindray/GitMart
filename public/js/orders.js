@@ -73,6 +73,35 @@ function createStatusOptions(currentStatus) {
     .join('');
 }
 
+// Render timestamped fulfilment updates for buyer tracking.
+function renderStatusTimeline(statusHistory = []) {
+  if (!Array.isArray(statusHistory) || statusHistory.length === 0) {
+    return '<p class="orders-status timeline-empty">No tracking updates are available yet.</p>';
+  }
+
+  return `
+    <div class="order-timeline" aria-label="Order tracking timeline">
+      ${statusHistory
+        .map((entry) => {
+          const status = normalizeStatus(entry.status);
+          return `
+            <div class="timeline-entry">
+              <span class="timeline-dot ${status}" aria-hidden="true"></span>
+              <div class="timeline-copy">
+                <div class="timeline-row">
+                  <span class="timeline-status">${entry.status || 'Pending'}</span>
+                  <span class="timeline-date">${formatDate(entry.createdAt)}</span>
+                </div>
+                <p class="timeline-note">${entry.note || 'Order tracking was updated.'}</p>
+              </div>
+            </div>
+          `;
+        })
+        .join('')}
+    </div>
+  `;
+}
+
 // Render one expandable order card.
 function renderOrder(order) {
   const status = normalizeStatus(order.status);
@@ -117,6 +146,11 @@ function renderOrder(order) {
             <p class="order-detail-line muted">${order.deliveryNotes || 'No delivery notes.'}</p>
           </div>
         </div>
+
+        <section class="order-tracking-panel" aria-label="Order tracking updates">
+          <p class="order-detail-title">Tracking Timeline</p>
+          ${renderStatusTimeline(order.statusHistory)}
+        </section>
 
         <div class="order-actions">
           <div class="status-control">
@@ -171,9 +205,14 @@ function renderOrder(order) {
         method: 'PUT',
         body: JSON.stringify({ status: statusDropdown.value }),
       });
+      const updatedOrder = await response.json();
 
-      if (!response.ok) throw new Error('Failed to update order status.');
-      order.status = statusDropdown.value;
+      if (!response.ok) {
+        throw new Error(updatedOrder.message || 'Failed to update order status.');
+      }
+
+      order.status = updatedOrder.status;
+      order.statusHistory = updatedOrder.statusHistory;
       showToast('Order status updated.');
       renderOrders();
     } catch (error) {

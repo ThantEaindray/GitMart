@@ -324,6 +324,88 @@
   color: var(--muted);
 }
 
+/* Tracking timeline for status history */
+.order-tracking-panel {
+  border: 1px solid var(--border);
+  margin-top: 18px;
+  padding: 16px;
+}
+
+.order-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.timeline-entry {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.04);
+}
+
+.timeline-dot.pending {
+  background: #c9a84c;
+}
+
+.timeline-dot.processing {
+  background: #7fa6dd;
+}
+
+.timeline-dot.delivered {
+  background: #77b98a;
+}
+
+.timeline-dot.cancelled {
+  background: #d06b6b;
+}
+
+.timeline-copy {
+  min-width: 0;
+}
+
+.timeline-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: baseline;
+}
+
+.timeline-status {
+  color: var(--text);
+  font-size: 0.78em;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.timeline-date {
+  color: var(--muted);
+  font-size: 0.72em;
+  letter-spacing: 0.08em;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.timeline-note {
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 4px 0 0;
+}
+
+.timeline-empty {
+  padding: 18px;
+}
+
 /* Status update control and price totals */
 .order-actions {
   display: flex;
@@ -452,5 +534,16 @@
 
   .order-item-row {
     grid-template-columns: 1fr;
+  }
+
+  .timeline-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .timeline-date {
+    text-align: left;
+    white-space: normal;
   }
 }
