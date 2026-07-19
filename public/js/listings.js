@@ -254,6 +254,25 @@ function onListingsError() {
   showWarning('Something went wrong while loading listings.');
 }
 
+// ── RECENTLY VIEWED ───────────────────────────────────────────────────────
+
+function renderRecentlyViewed(result) {
+  var section = document.getElementById('recently-viewed-section');
+  var grid = document.getElementById('recentlyViewedGrid');
+  if (!section || !grid) return;
+  if (result.status !== 200 || !result.data || result.data.length === 0) return;
+
+  section.style.display = 'block';
+  result.data.forEach(function (listing) {
+    grid.appendChild(createListingCard(listing));
+  });
+}
+
+function loadRecentlyViewed() {
+  if (!localStorage.getItem('token')) return;
+  authFetch('/api/listings/recently-viewed').then(parseResponse).then(renderRecentlyViewed);
+}
+
 // ── WISHLIST ──────────────────────────────────────────────────────────────
 
 var _heartBtn = null;
@@ -328,6 +347,7 @@ function initListingsPage() {
 
   fetchListings();
   loadWishlistState();
+  loadRecentlyViewed();
 
   var wishlistNavBtn = document.getElementById('btn-wishlist');
   if (wishlistNavBtn) {
