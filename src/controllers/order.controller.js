@@ -11,8 +11,21 @@ const ORDER_STATUSES = Object.freeze({
 
 const allowedStatuses = Object.values(ORDER_STATUSES);
 
+// Allowed fulfilment flow for luxury order tracking.
+const STATUS_TRANSITIONS = Object.freeze({
+  [ORDER_STATUSES.PENDING]: [ORDER_STATUSES.PROCESSING, ORDER_STATUSES.CANCELLED],
+  [ORDER_STATUSES.PROCESSING]: [ORDER_STATUSES.DELIVERED, ORDER_STATUSES.CANCELLED],
+  [ORDER_STATUSES.DELIVERED]: [],
+  [ORDER_STATUSES.CANCELLED]: [],
+});
+
 function isAllowedOrderStatus(status) {
   return allowedStatuses.includes(status);
+}
+
+function canTransitionOrderStatus(currentStatus, nextStatus) {
+  if (currentStatus === nextStatus) return true;
+  return (STATUS_TRANSITIONS[currentStatus] || []).includes(nextStatus);
 }
 
 // Checkout field formats that must match the frontend validation.
@@ -110,15 +123,29 @@ module.exports.updateOrderStatus = (req, res, next) => {
   }
 
   model
-    .updateOrderStatus(req.params.id, status, res.locals.userId)
+    .getOrderById(req.params.id, res.locals.userId)
     .then((order) => {
       if (!order) {
         return res.status(404).json({ message: 'Order not found.' });
       }
 
-      res.locals.statusCode = 200;
-      res.locals.results = order;
-      return next();
+      if (!canTransitionOrderStatus(order.status, status)) {
+        return res.status(400).json({
+          message: `Order status cannot change from ${order.status} to ${status}.`,
+        });
+      }
+
+      if (order.status === status) {
+        res.locals.statusCode = 200;
+        res.locals.results = order;
+        return next();
+      }
+
+      return model.updateOrderStatus(req.params.id, status, res.locals.userId).then((updatedOrder) => {
+        res.locals.statusCode = 200;
+        res.locals.results = updatedOrder;
+        return next();
+      });
     })
     .catch(next);
 };
