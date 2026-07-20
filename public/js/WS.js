@@ -9,7 +9,7 @@ webSocket.onopen = () => {
   //now we need to send over an initial handshake message to let the socket know what to do with it
   //alright so we want to send our initial handshake now
   let data = {
-    type: handshake,
+    type: 'handshake',
     id: uId,
     token: token
   }
@@ -22,46 +22,47 @@ webSocket.onmessage = (event) => {
   //so we need to unwrap it first and determine if its for our user
   //we need to deserialise it since the WS only accepts JSON
   
-  let raw = JSON.parse(event.data)
-  reconstituted = String.fromCharCode.apply(null, raw.data);
-  let content = JSON.parse(reconstituted)
-  console.log("message:",content)
-  if (content.chat !== openChat) {
-    return
-  }
-  console.log(content)
-  //now that we can be sure that its for our user here (security be damned im doing this rough and fast)
-  //either our user or they sent it i think it will still broadcast to everyone regardless of if they sent it
-  //ok so theres 2 types of messages, images and text. obviously theyll need to be displayed differently
+  let data = JSON.parse(String.fromCharCode.apply(null, event.data))
 
-  //we need to do basically what we did on the history loading part should be easy enough
-  let position = "justify-content-end"
-  let cardcolour= "text-bg-success"
-  //this is if were the sender
-  if (content.user !== uId) {
-    position = "justify-content-start"
-    cardcolour = "text-bg-secondary text-end"
+  if (data.type = "message") {
+    if (data.to == uId || data.from == uId) {
+      //we need to do basically what we did on the history loading part should be easy enough
+      let position = "justify-content-end"
+      let cardcolour = "text-bg-success"
+      //this is if were the sender
+      if (data.from !== uId) {
+        position = "justify-content-start"
+        cardcolour = "text-bg-secondary text-end"
+      }
+      //so now that we have the positioning we wanna check that its sent to the intended chat
+      if (data.chat == openChat) {
+        if (content.textcontent !== undefined)
+          document.getElementById("messages").innerHTML += `
+            <div class="row p-2 ${position}">
+              <div class="col-4">
+                <div class="card p-2 ${cardcolour}" >
+                  <p class="p-1">${data.content}</p>
+                </div>
+              </div>
+            </div>
+          `
+      }
+    }
+    //ok so we need to do the setup for the unread flag here
+    if (data.to == uId && data.chat !== openChat) {
+      //unread chat fn goes here
+    }
   }
-  
-  if (content.textcontent !== undefined)
-  document.getElementById("messages").innerHTML += `
-    <div class="row p-2 ${position}">
-      <div class="col-4">
-        <div class="card p-2 ${cardcolour}" >
-          <p class="p-1">${content.textcontent}</p>
-        </div>
-      </div>
-    </div>
-  `
 }
-
 //so what do we need to do when the user wants to send a message (lets just get text working first and then we can sort out the images later)
 // this is gonna be horribly painful to do isnt it
 
 function sendTxt(content) { 
   let cont = {
+    type:"message",
     chat: openChat,
-    user: uId,
+    from: uId,
+    to: , 
     textcontent: content
   }
   document.getElementById('message').value = ''

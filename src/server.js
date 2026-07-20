@@ -30,43 +30,55 @@ let connections = new Array
 // info gets sent out by the server the server recieves the other 3
 ws.on('message', (data) => {
   //alright so we'll need to narrow it down into the 3 different kinds now
-  let parsed = String.fromCharCode.apply(null, data.data)
+  let parsed = JSON.parse(String.fromCharCode.apply(null, data.data))
   let conn = data.origin
   //alright now theres 3 ways for it to go
-  if (parsed.type = 'handshake') {
+  if (parsed.type == 'handshake') {
     //so here we need to make the fn for sending out info regarding the initial handshake
     connections.push({ id: parsed.id, conn: conn })
-    ws.clients.forEach(cli => {
+    ws.clients.forEach((cli) => {
       //this part isnt as useful just yet but this is the groundwork for the online indicators.
       cli.send(
         JSON.stringify({
           type: "info",
-          inftype: "newConn",
-          id:parsed.id
+          inftype: "Conns",
+          allcons: connections
         })
       )
     })
   }
   //now we need to handle the messages if its an actual message
-  if (parsed.type = "message") {
-    var sendto
-    //we make a simple sendto variable and that will hold the conn id for our user we're targeting
-    // (keep it here for scoping)
-    function send() {
-      //this will do the actual sending then the foreach determines if the user is online to be sent to
-      ws.clients.forEach(cli => {
-        
-      })
-    }
-    connections.forEach(e => {
-      if (e.id = parsed.toUsr) {
-        sendto = e.conn
-        send()
-      } else {
-        //if theyre not online (not in the list of connections) we just return
-        return
-      }
+  if (parsed.type == "message") {
+    //so having it send to only the specific user seems a bit too hard I'll settle for online indicators first
+    ws.clients.forEach((cli) => {
+      cli.send(
+        JSON.stringify({
+          type: "message",
+          from: parsed.from,
+          to: parsed.to,
+          chat: parsed.chat,
+          content: parsed.cont
+        })
+      )
     })
-
   }
 })
+ws.on('close', (cli) => {
+  let toclose = connections.find((e) => e.conn = cli.origin)
+  //now we need to get the index of the array element so that we can get rid of it
+  let closeIndex = connections.indexOf(toclose)
+  if (closeIndex > -1) {
+    connections.splice(closeIndex,1)
+  }
+  ws.connections.forEach((cli) => {
+    cli.send(
+      JSON.stringify({
+        type: "info",
+        inftype: "Conns",
+        allcons: connections
+      })
+    )
+  })
+})
+//so now we get the info cons inftype with the array of all the connections to the system
+// thats the backend logic for the online offline indicators its not pretty but it works
