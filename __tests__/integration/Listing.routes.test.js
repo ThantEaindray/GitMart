@@ -11,9 +11,10 @@ let testUserId;
 // We register + login one test user before all tests.
 
 beforeAll(async () => {
-  // Clean any stale data from prior runs
-  await pool.query('DELETE FROM listing_views');
-  await pool.query('DELETE FROM listings WHERE owner_id IS NOT NULL');
+  // Delete stale test user's listings first (cascades to listing_views), then the user
+  await pool.query(
+    "DELETE FROM listings WHERE owner_id = (SELECT id FROM users WHERE username = 'listingtest')",
+  );
   await pool.query("DELETE FROM users WHERE username = 'listingtest'");
 
   // Register test user
@@ -34,14 +35,12 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  // Clear user-owned listings before each test; keep seed listings (owner_id IS NULL)
-  await pool.query('DELETE FROM listing_views');
-  await pool.query('DELETE FROM listings WHERE owner_id IS NOT NULL');
+  // Scope cleanup to this test user only; listing_views cascade from listings
+  await pool.query('DELETE FROM listings WHERE owner_id = $1', [testUserId]);
 });
 
 afterAll(async () => {
-  await pool.query('DELETE FROM listing_views');
-  await pool.query('DELETE FROM listings WHERE owner_id IS NOT NULL');
+  await pool.query('DELETE FROM listings WHERE owner_id = $1', [testUserId]);
   await pool.query("DELETE FROM users WHERE username = 'listingtest'");
   await pool.end();
 });
