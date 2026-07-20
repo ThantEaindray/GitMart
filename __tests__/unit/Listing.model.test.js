@@ -3,6 +3,11 @@ const {
   createListing,
   getAllListings,
   getListingById,
+  getListingsByOwner,
+  getListingsByCategory,
+  updateListing,
+  getMostViewed,
+  getRecentlyViewed,
   searchListings,
   deleteListing,
 } = require('../../src/models/Listing.model');
@@ -262,6 +267,229 @@ describe('Listing.model - searchListings', () => {
         done();
       },
     );
+  });
+});
+
+// ── updateListing ─────────────────────────────────────────────────────────
+describe('Listing.model - updateListing', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  const updatedListing = { ...fakeListing, title: 'Updated Watch', price: 150 };
+
+  // Valid partition: owner updates their listing and gets updated row back
+  test('should update listing and return the updated row', (done) => {
+    mockQuery(null, [updatedListing]);
+
+    const data = { id: 1, owner_id: 42, title: 'Updated Watch', description: 'desc', price: 150 };
+
+    updateListing(data, (err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledTimes(1);
+      const [, values] = pool.query.mock.calls[0];
+      expect(values).toEqual(['Updated Watch', 'desc', 150, 1, 42]);
+      expect(result.rows[0].title).toBe('Updated Watch');
+      done();
+    });
+  });
+
+  // Boundary: wrong owner returns empty rows (SQL WHERE enforces ownership)
+  test('should return empty rows when caller is not the owner', (done) => {
+    mockQuery(null, []);
+
+    updateListing({ id: 1, owner_id: 99, title: 'X', description: 'Y', price: 10 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
+  });
+
+  // Boundary: non-existent id returns empty rows
+  test('should return empty rows when listing does not exist', (done) => {
+    mockQuery(null, []);
+
+    updateListing({ id: 999, owner_id: 42, title: 'X', description: 'Y', price: 10 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
+  });
+
+  // Error handling: DB error propagates to callback
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('update failed');
+    mockQuery(dbError, null);
+
+    updateListing({ id: 1, owner_id: 42, title: 'X', description: 'Y', price: 10 }, (err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
+  });
+});
+
+// ── getMostViewed ─────────────────────────────────────────────────────────
+describe('Listing.model - getMostViewed', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  // Valid partition: returns top listings ordered by view_count
+  test('should return most-viewed listings via callback', (done) => {
+    const topListings = [
+      { ...fakeListing, view_count: 10 },
+      { ...fakeListing, id: 2, view_count: 5 },
+    ];
+    mockQuery(null, topListings);
+
+    getMostViewed((err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledTimes(1);
+      expect(result.rows).toHaveLength(2);
+      expect(result.rows[0].view_count).toBe(10);
+      done();
+    });
+  });
+
+  // Boundary: no viewed listings returns empty array
+  test('should return empty array when no listings have views', (done) => {
+    mockQuery(null, []);
+
+    getMostViewed((err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
+  });
+
+  // Error handling: DB error propagates to callback
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('query failed');
+    mockQuery(dbError, null);
+
+    getMostViewed((err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
+  });
+});
+
+// ── getRecentlyViewed ─────────────────────────────────────────────────────
+describe('Listing.model - getRecentlyViewed', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  const recentItem = { ...fakeListing, viewed_at: '2026-07-20T10:00:00.000Z' };
+
+  // Valid partition: returns listings the user has viewed
+  test('should return recently viewed listings for the user', (done) => {
+    mockQuery(null, [recentItem]);
+
+    getRecentlyViewed({ userId: 42 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledTimes(1);
+      const [, values] = pool.query.mock.calls[0];
+      expect(values).toEqual([42]);
+      expect(result.rows[0]).toEqual(recentItem);
+      done();
+    });
+  });
+
+  // Boundary: user with no view history returns empty array
+  test('should return empty array when user has no view history', (done) => {
+    mockQuery(null, []);
+
+    getRecentlyViewed({ userId: 99 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
+  });
+
+  // Error handling: DB error propagates to callback
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('query failed');
+    mockQuery(dbError, null);
+
+    getRecentlyViewed({ userId: 42 }, (err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
+  });
+});
+
+// ── getListingsByOwner ────────────────────────────────────────────────────
+describe('Listing.model - getListingsByOwner', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  // Valid partition: returns all listings for an owner
+  test('should return listings for the given owner', (done) => {
+    mockQuery(null, [fakeListing]);
+
+    getListingsByOwner({ owner_id: 42 }, (err, result) => {
+      expect(err).toBeNull();
+      const [, values] = pool.query.mock.calls[0];
+      expect(values).toEqual([42]);
+      expect(result.rows[0].owner_id).toBe(42);
+      done();
+    });
+  });
+
+  // Boundary: owner with no listings returns empty array
+  test('should return empty array when owner has no listings', (done) => {
+    mockQuery(null, []);
+
+    getListingsByOwner({ owner_id: 999 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
+  });
+
+  // Error handling: DB error propagates to callback
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('query failed');
+    mockQuery(dbError, null);
+
+    getListingsByOwner({ owner_id: 42 }, (err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
+  });
+});
+
+// ── getListingsByCategory ─────────────────────────────────────────────────
+describe('Listing.model - getListingsByCategory', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  // Valid partition: returns listings matching the category
+  test('should return listings for the given category', (done) => {
+    mockQuery(null, [fakeListing]);
+
+    getListingsByCategory({ category: 'Watches' }, (err, result) => {
+      expect(err).toBeNull();
+      const [, values] = pool.query.mock.calls[0];
+      expect(values).toEqual(['Watches']);
+      expect(result.rows[0].category).toBe('Watches');
+      done();
+    });
+  });
+
+  // Boundary: category with no listings returns empty array
+  test('should return empty array when category has no listings', (done) => {
+    mockQuery(null, []);
+
+    getListingsByCategory({ category: 'NonExistent' }, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
+  });
+
+  // Error handling: DB error propagates to callback
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('query failed');
+    mockQuery(dbError, null);
+
+    getListingsByCategory({ category: 'Watches' }, (err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
   });
 });
 
