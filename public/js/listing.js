@@ -3,6 +3,8 @@
 
 
 var currentListing = null;
+var _isWishlisted = false;
+var _currentListingId = null;
 
 function showToast(message) {
   const toast = document.getElementById('toast');
@@ -68,6 +70,7 @@ function addToCart() {
 
 function renderListing(listing) {
   currentListing = listing;
+  _currentListingId = listing.id;
   const section = document.getElementById('listing-detail');
   document.title = 'GitMart — ' + listing.title;
 
@@ -92,6 +95,12 @@ function renderListing(listing) {
   var cartBtn = isAvailable
     ? '<button class="btn-outline" id="btn-cart" onclick="addToCart()"><i class="bi bi-bag"></i> Add to Cart</button>'
     : '<button class="btn-outline btn-unavailable" id="btn-cart" disabled>Unavailable</button>';
+
+  var loggedInId = localStorage.getItem('loggedInUserId');
+  var isOwner = loggedInId && Number(loggedInId) === listing.owner_id;
+  var heartBtn = isOwner
+    ? ''
+    : '<button class="btn-wishlist-heart" id="btn-detail-heart" onclick="toggleDetailWishlist()" title="Add to wishlist"><i class="bi bi-heart"></i></button>';
 
   section.innerHTML =
     '<div class="product-img">' +
@@ -124,9 +133,59 @@ function renderListing(listing) {
     listing.owner_id +
     ')">Contact Seller</button>' +
     cartBtn +
+    heartBtn +
     '</div>' +
     '</div>';
 }
+
+// ── WISHLIST ──────────────────────────────────────────────────────────────
+
+function applyDetailHeartToggle(res) {
+  if (res.status !== 200 && res.status !== 201) return;
+  _isWishlisted = !_isWishlisted;
+  var btn = document.getElementById('btn-detail-heart');
+  if (!btn) return;
+  if (_isWishlisted) {
+    btn.classList.add('wishlisted');
+    btn.querySelector('i').className = 'bi bi-heart-fill';
+  } else {
+    btn.classList.remove('wishlisted');
+    btn.querySelector('i').className = 'bi bi-heart';
+  }
+}
+
+function onDetailHeartError() {
+  showToast('Could not update wishlist.');
+}
+
+function toggleDetailWishlist() {
+  if (!localStorage.getItem('token')) {
+    window.location.href = 'login.html';
+    return;
+  }
+  var method = _isWishlisted ? 'DELETE' : 'POST';
+  authFetch('/api/wishlist/' + _currentListingId, { method: method })
+    .then(applyDetailHeartToggle)
+    .catch(onDetailHeartError);
+}
+
+function applyDetailWishlistState(result) {
+  if (result.status !== 200) return;
+  _isWishlisted = result.data.some(function (item) {
+    return item.listing_id === Number(_currentListingId);
+  });
+  var btn = document.getElementById('btn-detail-heart');
+  if (!btn || !_isWishlisted) return;
+  btn.classList.add('wishlisted');
+  btn.querySelector('i').className = 'bi bi-heart-fill';
+}
+
+function loadDetailWishlistState() {
+  if (!localStorage.getItem('token')) return;
+  authFetch('/api/wishlist').then(parseResponse).then(applyDetailWishlistState);
+}
+
+// ── LOAD ──────────────────────────────────────────────────────────────────
 
 function onListingLoaded(result) {
   const section = document.getElementById('listing-detail');
@@ -137,6 +196,7 @@ function onListingLoaded(result) {
   }
 
   renderListing(result.data);
+  loadDetailWishlistState();
 }
 
 function onListingError() {
@@ -202,5 +262,12 @@ function createChat(uId) {
 
 window.addToCart = addToCart;
 window.createChat = createChat;
+window.toggleDetailWishlist = toggleDetailWishlist;
 
-document.addEventListener('DOMContentLoaded', loadListing);
+document.addEventListener('DOMContentLoaded', function () {
+  loadListing();
+  var navHeart = document.getElementById('btn-wishlist');
+  if (navHeart) navHeart.addEventListener('click', function () {
+    window.location.href = 'wishlist.html';
+  });
+});
