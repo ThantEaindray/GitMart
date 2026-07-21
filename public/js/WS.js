@@ -52,6 +52,12 @@ webSocket.onmessage = (event) => {
       //unread chat fn goes here
     }
   }
+  if (data.type == "info") {
+    //so we need to get the info here which is just the connections so we just have to get it to like innerhtml and stuff 
+    if (data.inftype == "Conns") {
+      
+    }
+  }
 }
 //so what do we need to do when the user wants to send a message (lets just get text working first and then we can sort out the images later)
 // this is gonna be horribly painful to do isnt it
