@@ -31,6 +31,14 @@ function normalizeStatus(status) {
   return String(status || 'Pending').toLowerCase();
 }
 
+// Frontend options mirror the backend fulfilment rules.
+const STATUS_TRANSITIONS = Object.freeze({
+  Pending: ['Processing', 'Cancelled'],
+  Processing: ['Delivered', 'Cancelled'],
+  Delivered: [],
+  Cancelled: [],
+});
+
 // Show dates in Singapore time.
 function formatDate(value) {
   if (!value) return '-';
@@ -64,11 +72,12 @@ function renderItems(items = []) {
 
 // Build the status dropdown choices.
 function createStatusOptions(currentStatus) {
-  const options = ['Pending', 'Processing', 'Delivered', 'Cancelled'];
+  const safeCurrentStatus = currentStatus || 'Pending';
+  const options = [safeCurrentStatus, ...(STATUS_TRANSITIONS[safeCurrentStatus] || [])];
   return options
     .map(
       (status) =>
-        `<option value="${status}" ${status === currentStatus ? 'selected' : ''}>${status}</option>`,
+        `<option value="${status}" ${status === safeCurrentStatus ? 'selected' : ''}>${status}</option>`,
     )
     .join('');
 }
