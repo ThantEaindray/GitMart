@@ -6,7 +6,14 @@ module.exports.createListing = (data, callback) => {
     VALUES ($1, $2, $3, $4, $5, $6)
     RETURNING id, owner_id, price, created_on, title, description, category, image_url, "isSold", "isClosed"
   `;
-  const VALUES = [data.owner_id, data.price, data.title, data.description, data.category || 'Others', data.image_url || null];
+  const VALUES = [
+    data.owner_id,
+    data.price,
+    data.title,
+    data.description,
+    data.category || 'Others',
+    data.image_url || null,
+  ];
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
@@ -92,9 +99,59 @@ module.exports.getMostViewed = (callback) => {
   pool.query(SQLSTATEMENT, callback);
 };
 
+module.exports.getListingLifecycleById = (data, callback) => {
+  const SQLSTATEMENT = `
+    SELECT
+      id,
+      owner_id,
+      status,
+      status_updated_on,
+      "isSold",
+      "isClosed"
+    FROM listings
+    WHERE id = $1
+  `;
+
+  const VALUES = [data.id];
+
+  pool.query(SQLSTATEMENT, VALUES, callback);
+};
+
+module.exports.updateListingStatus = (data, callback) => {
+  const SQLSTATEMENT = `
+    UPDATE listings
+    SET
+      status = $1,
+      status_updated_on = NOW(),
+      "isSold" = $2,
+      "isClosed" = $3
+    WHERE id = $4
+      AND owner_id = $5
+      AND status = $6
+    RETURNING
+      id,
+      owner_id,
+      status,
+      status_updated_on,
+      "isSold",
+      "isClosed"
+  `;
+
+  const VALUES = [
+    data.status,
+    data.isSold,
+    data.isClosed,
+    data.id,
+    data.owner_id,
+    data.current_status,
+  ];
+
+  pool.query(SQLSTATEMENT, VALUES, callback);
+};
+
 const SORT_MAP = {
-  newest:    'created_on DESC, id DESC',
-  cheapest:  'price ASC, id DESC',
+  newest: 'created_on DESC, id DESC',
+  cheapest: 'price ASC, id DESC',
   expensive: 'price DESC, id DESC',
 };
 
@@ -110,7 +167,7 @@ module.exports.searchListings = (data, callback) => {
     ORDER BY ${orderBy}
   `;
   const VALUES = [
-    data.search   || '',
+    data.search || '',
     data.minPrice ? Number(data.minPrice) : null,
     data.maxPrice ? Number(data.maxPrice) : null,
     data.category || '',

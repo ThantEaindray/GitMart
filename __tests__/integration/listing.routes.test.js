@@ -386,6 +386,294 @@ WHERE id = $1
     });
   });
 
+  describe('PATCH /api/listings/:id/status', () => {
+    test('returns 401 when no access token is provided', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app).patch(`/api/listings/${listing.id}/status`).send({
+        status: 'RESERVED',
+      });
+
+      expect(response.status).toBe(401);
+
+      expect(response.body).toEqual({
+        error: 'No token provided',
+      });
+    });
+
+    test('returns 400 when the listing ID is invalid', async () => {
+      const response = await request(app)
+        .patch('/api/listings/not-a-number/status')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: 'RESERVED',
+        });
+
+      expect(response.status).toBe(400);
+
+      expect(response.body).toEqual({
+        message: 'Listing ID must be a positive integer.',
+      });
+    });
+
+    test('returns 400 when status is missing', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({});
+
+      expect(response.status).toBe(400);
+
+      expect(response.body).toEqual({
+        message: 'Status is required.',
+      });
+    });
+
+    test('returns 400 when status is unsupported', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: 'DELETED',
+        });
+
+      expect(response.status).toBe(400);
+
+      expect(response.body).toEqual({
+        message: 'Status must be AVAILABLE, RESERVED, SOLD or ARCHIVED.',
+      });
+    });
+
+    test('returns 404 when the listing does not exist', async () => {
+      const response = await request(app)
+        .patch('/api/listings/999999/status')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: 'RESERVED',
+        });
+
+      expect(response.status).toBe(404);
+
+      expect(response.body).toEqual({
+        message: 'Listing not found.',
+      });
+    });
+
+    test('returns 403 when another user changes the status', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${otherUserToken}`)
+        .send({
+          status: 'RESERVED',
+        });
+
+      expect(response.status).toBe(403);
+
+      expect(response.body).toEqual({
+        message: 'Only the listing owner can change its status.',
+      });
+
+      const databaseResult = await pool.query(
+        `
+        SELECT status
+        FROM listings
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      expect(databaseResult.rows[0].status).toBe('AVAILABLE');
+    });
+
+    test('allows the owner to reserve an available listing', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: ' reserved ',
+        });
+
+      expect(response.status).toBe(200);
+
+      expect(response.body.message).toBe('Listing status changed from AVAILABLE to RESERVED.');
+
+      expect(response.body.listing).toMatchObject({
+        id: listing.id,
+        owner_id: owner.id,
+        status: 'RESERVED',
+        isSold: false,
+        isClosed: false,
+      });
+
+      expect(response.body.listing.status_updated_on).toBeDefined();
+
+      const databaseResult = await pool.query(
+        `
+        SELECT
+          status,
+          "isSold",
+          "isClosed"
+        FROM listings
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      expect(databaseResult.rows[0]).toMatchObject({
+        status: 'RESERVED',
+        isSold: false,
+        isClosed: false,
+      });
+    });
+
+    test('allows the owner to mark an available listing as sold', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: 'SOLD',
+        });
+
+      expect(response.status).toBe(200);
+
+      expect(response.body.listing).toMatchObject({
+        id: listing.id,
+        status: 'SOLD',
+        isSold: true,
+        isClosed: false,
+      });
+
+      const databaseResult = await pool.query(
+        `
+        SELECT
+          status,
+          "isSold",
+          "isClosed"
+        FROM listings
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      expect(databaseResult.rows[0]).toMatchObject({
+        status: 'SOLD',
+        isSold: true,
+        isClosed: false,
+      });
+    });
+
+    test('allows the owner to archive an available listing', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: 'ARCHIVED',
+        });
+
+      expect(response.status).toBe(200);
+
+      expect(response.body.listing).toMatchObject({
+        id: listing.id,
+        status: 'ARCHIVED',
+        isSold: false,
+        isClosed: true,
+      });
+
+      const databaseResult = await pool.query(
+        `
+        SELECT
+          status,
+          "isSold",
+          "isClosed"
+        FROM listings
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      expect(databaseResult.rows[0]).toMatchObject({
+        status: 'ARCHIVED',
+        isSold: false,
+        isClosed: true,
+      });
+    });
+
+    test('rejects an invalid transition from SOLD to AVAILABLE', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      await pool.query(
+        `
+        UPDATE listings
+        SET
+          status = 'SOLD',
+          "isSold" = true,
+          "isClosed" = false
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: 'AVAILABLE',
+        });
+
+      expect(response.status).toBe(409);
+
+      expect(response.body).toEqual({
+        message: 'Cannot change listing status from SOLD to AVAILABLE.',
+      });
+
+      const databaseResult = await pool.query(
+        `
+        SELECT
+          status,
+          "isSold",
+          "isClosed"
+        FROM listings
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      expect(databaseResult.rows[0]).toMatchObject({
+        status: 'SOLD',
+        isSold: true,
+        isClosed: false,
+      });
+    });
+  });
+
   describe('DELETE /api/listings/:id', () => {
     test('does not allow another user to delete the listing', async () => {
       const listing = await insertListing({
