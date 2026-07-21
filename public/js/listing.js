@@ -138,6 +138,66 @@ function renderListing(listing) {
     '</div>';
 }
 
+// ── RELATED LISTINGS ─────────────────────────────────────────────────────
+
+function goToRelatedListing() {
+  window.location.href = 'listing.html?id=' + this.dataset.listingId;
+}
+
+function renderRelatedCard(listing) {
+  var img = listing.image_url
+    ? '<img src="' + listing.image_url + '" alt="' + listing.title + '" loading="lazy" />'
+    : '<i class="bi bi-tag"></i>';
+
+  var card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.listingId = listing.id;
+  card.innerHTML =
+    '<div class="card-img">' + img + '</div>' +
+    '<div class="card-body">' +
+    '<div class="card-cat">' + listing.category + '</div>' +
+    '<div class="card-name">' + listing.title + '</div>' +
+    '<div class="card-footer"><span class="card-price" data-price="' +
+    listing.price + '">' + formatPrice(Number(listing.price)) + '</span></div>' +
+    '</div>';
+  card.addEventListener('click', goToRelatedListing);
+  return card;
+}
+
+function onRelatedLoaded(result) {
+  if (result.status !== 200) return;
+
+  var others = result.data
+    .filter(function (l) { return l.id !== Number(_currentListingId); })
+    .slice(0, 4);
+
+  if (others.length === 0) return;
+
+  var grid = document.getElementById('related-grid');
+  var section = document.getElementById('related-section');
+  var seeAll = document.getElementById('related-see-all');
+  if (!grid || !section) return;
+
+  others.forEach(function (l) { grid.appendChild(renderRelatedCard(l)); });
+
+  if (seeAll && currentListing) {
+    seeAll.href = 'listings.html?category=' + encodeURIComponent(currentListing.category);
+  }
+
+  section.style.display = '';
+}
+
+function onRelatedError() {
+  // Related listings are non-critical — silently skip on failure
+}
+
+function loadRelatedListings(category) {
+  fetch('/api/listings/category/' + encodeURIComponent(category))
+    .then(parseResponse)
+    .then(onRelatedLoaded)
+    .catch(onRelatedError);
+}
+
 // ── WISHLIST ──────────────────────────────────────────────────────────────
 
 function applyDetailHeartToggle(res) {
@@ -197,6 +257,7 @@ function onListingLoaded(result) {
 
   renderListing(result.data);
   loadDetailWishlistState();
+  loadRelatedListings(result.data.category);
 }
 
 function onListingError() {
