@@ -3,11 +3,15 @@ const {
   createListing,
   getAllListings,
   getListingById,
+  getListingByIdWithView,
   getListingsByOwner,
   getListingsByCategory,
   updateListing,
   getMostViewed,
   getRecentlyViewed,
+  getSellerStats,
+  getSellerCategoryBreakdown,
+  getSellerViewBreakdown,
   searchListings,
   deleteListing,
 } = require('../../src/models/Listing.model');
@@ -487,6 +491,182 @@ describe('Listing.model - getListingsByCategory', () => {
     mockQuery(dbError, null);
 
     getListingsByCategory({ category: 'Watches' }, (err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
+  });
+});
+
+// ── getListingByIdWithView ────────────────────────────────────────────────
+describe('Listing.model - getListingByIdWithView', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  // Valid partition: returns listing and passes correct id + userId values
+  test('should call pool.query with listing id and userId', (done) => {
+    mockQuery(null, [fakeListing]);
+
+    getListingByIdWithView({ id: 1, userId: 42 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledTimes(1);
+      const [, values] = pool.query.mock.calls[0];
+      expect(values).toEqual([1, 42]);
+      expect(result.rows[0]).toEqual(fakeListing);
+      done();
+    });
+  });
+
+  // Boundary: listing not found returns empty rows
+  test('should return empty rows when listing does not exist', (done) => {
+    mockQuery(null, []);
+
+    getListingByIdWithView({ id: 999, userId: 42 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
+  });
+
+  // Error handling: DB error propagates to callback
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('query failed');
+    mockQuery(dbError, null);
+
+    getListingByIdWithView({ id: 1, userId: 42 }, (err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
+  });
+});
+
+// ── getSellerStats ────────────────────────────────────────────────────────
+describe('Listing.model - getSellerStats', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  const fakeStats = {
+    total: '3',
+    active: '2',
+    sold: '1',
+    closed: '0',
+    avg_price: '99.99',
+    min_price: '50.00',
+    max_price: '150.00',
+    total_views: '10',
+  };
+
+  // Valid partition: returns stats for the given owner
+  test('should return seller stats for the given owner', (done) => {
+    mockQuery(null, [fakeStats]);
+
+    getSellerStats({ owner_id: 42 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledTimes(1);
+      const [, values] = pool.query.mock.calls[0];
+      expect(values).toEqual([42]);
+      expect(result.rows[0]).toEqual(fakeStats);
+      done();
+    });
+  });
+
+  // Boundary: owner with no listings returns zeroed stats row
+  test('should return a stats row even when owner has no listings', (done) => {
+    const emptyStats = { total: '0', active: '0', sold: '0', closed: '0', avg_price: null, min_price: null, max_price: null, total_views: '0' };
+    mockQuery(null, [emptyStats]);
+
+    getSellerStats({ owner_id: 999 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows[0].total).toBe('0');
+      done();
+    });
+  });
+
+  // Error handling: DB error propagates to callback
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('query failed');
+    mockQuery(dbError, null);
+
+    getSellerStats({ owner_id: 42 }, (err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
+  });
+});
+
+// ── getSellerCategoryBreakdown ────────────────────────────────────────────
+describe('Listing.model - getSellerCategoryBreakdown', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  // Valid partition: returns category counts for the owner
+  test('should return category breakdown for the given owner', (done) => {
+    const fakeBreakdown = [{ category: 'Watches', count: '2' }, { category: 'Others', count: '1' }];
+    mockQuery(null, fakeBreakdown);
+
+    getSellerCategoryBreakdown({ owner_id: 42 }, (err, result) => {
+      expect(err).toBeNull();
+      const [, values] = pool.query.mock.calls[0];
+      expect(values).toEqual([42]);
+      expect(result.rows).toHaveLength(2);
+      done();
+    });
+  });
+
+  // Boundary: owner with no listings returns empty array
+  test('should return empty array when owner has no listings', (done) => {
+    mockQuery(null, []);
+
+    getSellerCategoryBreakdown({ owner_id: 999 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
+  });
+
+  // Error handling: DB error propagates to callback
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('query failed');
+    mockQuery(dbError, null);
+
+    getSellerCategoryBreakdown({ owner_id: 42 }, (err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
+  });
+});
+
+// ── getSellerViewBreakdown ────────────────────────────────────────────────
+describe('Listing.model - getSellerViewBreakdown', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  // Valid partition: returns top viewed listings for the owner
+  test('should return view breakdown for the given owner', (done) => {
+    const fakeViews = [{ title: 'Top Watch', view_count: 10 }, { title: 'Second Item', view_count: 5 }];
+    mockQuery(null, fakeViews);
+
+    getSellerViewBreakdown({ owner_id: 42 }, (err, result) => {
+      expect(err).toBeNull();
+      const [, values] = pool.query.mock.calls[0];
+      expect(values).toEqual([42]);
+      expect(result.rows[0].view_count).toBe(10);
+      done();
+    });
+  });
+
+  // Boundary: owner with no viewed listings returns empty array
+  test('should return empty array when no listings have views', (done) => {
+    mockQuery(null, []);
+
+    getSellerViewBreakdown({ owner_id: 999 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
+  });
+
+  // Error handling: DB error propagates to callback
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('query failed');
+    mockQuery(dbError, null);
+
+    getSellerViewBreakdown({ owner_id: 42 }, (err) => {
       expect(err).toBe(dbError);
       done();
     });

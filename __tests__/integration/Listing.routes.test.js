@@ -480,3 +480,54 @@ describe('GET /api/listings/owner/:owner_id', () => {
     expect(res.body).toEqual([]);
   });
 });
+
+// ─────────────────────────────────────────────────────────
+// GET /api/listings/dashboard (protected)
+// ─────────────────────────────────────────────────────────
+describe('GET /api/listings/dashboard', () => {
+  // Invalid partition: no token → 401
+  test('should return 401 when no auth token is provided', async () => {
+    const res = await request(app).get('/api/listings/dashboard');
+
+    expect(res.status).toBe(401);
+  });
+
+  // Valid partition: authenticated user gets dashboard shape
+  test('should return 200 with stats, categories, and viewBreakdown', async () => {
+    const res = await request(app)
+      .get('/api/listings/dashboard')
+      .set('Authorization', `Bearer ${authToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('stats');
+    expect(res.body).toHaveProperty('categories');
+    expect(res.body).toHaveProperty('viewBreakdown');
+  });
+
+  // Valid partition: stats reflect the listings the test user owns
+  test('should include seeded listings in stats total', async () => {
+    await seedListing({ title: 'Dashboard Item 1' });
+    await seedListing({ title: 'Dashboard Item 2' });
+
+    const res = await request(app)
+      .get('/api/listings/dashboard')
+      .set('Authorization', `Bearer ${authToken}`);
+
+    expect(res.status).toBe(200);
+    expect(Number(res.body.stats.total)).toBeGreaterThanOrEqual(2);
+  });
+
+  // Valid partition: categories array contains entries for seeded listings
+  test('should list categories matching seeded listings', async () => {
+    await seedListing({ title: 'Watch Dash', category: 'Watches' });
+
+    const res = await request(app)
+      .get('/api/listings/dashboard')
+      .set('Authorization', `Bearer ${authToken}`);
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.categories)).toBe(true);
+    const cats = res.body.categories.map((c) => c.category);
+    expect(cats).toContain('Watches');
+  });
+});
