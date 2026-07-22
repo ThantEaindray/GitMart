@@ -153,3 +153,9 @@ module.exports.updateOrderStatus = (req, res, next) => {
 module.exports.sendResponse = (req, res) => {
   return res.status(res.locals.statusCode).json(res.locals.results);
 };
+
+module.exports._test = {
+  ORDER_STATUSES,
+  canTransitionOrderStatus,
+  isAllowedOrderStatus,
+};
