@@ -1,7 +1,7 @@
 # ST0526 CI/CD Project
 
 [![CI](https://github.com/soc-cicd/ay2627s1-project-git-5-1/actions/workflows/ci.yml/badge.svg)](https://github.com/soc-cicd/ay2627s1-project-git-5-1/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/soc-cicd/ay2627s1-project-git-5-1/actions/workflows/codeql.yml/badge.svg)](https://github.com/soc-cicd/ay2627s1-project-git-5-1/actions/workflows/codeql.yml)
+[![Security Scan](https://github.com/soc-cicd/ay2627s1-project-git-5-1/actions/workflows/codeql.yml/badge.svg)](https://github.com/soc-cicd/ay2627s1-project-git-5-1/actions/workflows/codeql.yml)
 
 A Node.js + Express web application with a full CI/CD pipeline, automated testing, and report publishing to GitHub Pages.
 

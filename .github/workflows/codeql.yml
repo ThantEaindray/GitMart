@@ -1,31 +1,24 @@
-name: CodeQL Security Scan
+name: Security Scan
 
 on:
   push:
+    branches: ['**']
+  pull_request:
     branches: [main]
   schedule:
     - cron: '0 2 * * 1'
 
 jobs:
-  analyze:
-    name: Analyze (javascript)
+  njsscan:
+    name: njsscan (javascript)
     runs-on: ubuntu-latest
     continue-on-error: true
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+      - name: Run njsscan
+        uses: ajinabraham/njsscan-action@master
         with:
-          languages: javascript
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: '/language:javascript'
+          args: 'src/'
