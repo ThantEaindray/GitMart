@@ -74,6 +74,7 @@ function parseResponse(response) {
 
 let selectedListingImageUrl = null;
 let pendingCoverImageUrl = null;
+let wishlistedIds = new Set();
 
 function getCurrentUserId() {
   return Number(localStorage.getItem('loggedInUserId') || localStorage.getItem('userId'));
@@ -127,12 +128,25 @@ function createListingCard(listing) {
       <div class="card-footer">
         <span class="card-price" data-price="${listing.price}">${formatPrice(Number(listing.price))}</span>
         ${listing.view_count > 0 ? `<span style="font-size:0.78rem;color:var(--muted);"><i class="bi bi-eye"></i> ${listing.view_count}</span>` : ''}
+        ${!isOwner(listing) ? `<button class="btn-wishlist-heart" data-listing-id="${listing.id}" type="button" aria-label="Add to wishlist"><i class="bi bi-heart"></i></button>` : ''}
       </div>
       ${ownerControls}
     </div>
   `;
 
   card.addEventListener('click', goToListing);
+
+  const heartBtn = card.querySelector('.btn-wishlist-heart');
+  if (heartBtn) {
+    if (wishlistedIds.has(listing.id)) {
+      heartBtn.classList.add('wishlisted');
+      heartBtn.querySelector('i').className = 'bi bi-heart-fill';
+    }
+    heartBtn.addEventListener('click', function (event) {
+      event.stopPropagation();
+      toggleWishlistHeart(heartBtn, listing.id);
+    });
+  }
 
   const editBtn = card.querySelector('.btn-edit-listing');
   if (editBtn) {
@@ -240,6 +254,77 @@ function onListingsError() {
   showWarning('Something went wrong while loading listings.');
 }
 
+// ── RECENTLY VIEWED ───────────────────────────────────────────────────────
+
+function renderRecentlyViewed(result) {
+  var section = document.getElementById('recently-viewed-section');
+  var grid = document.getElementById('recentlyViewedGrid');
+  if (!section || !grid) return;
+  if (result.status !== 200 || !result.data || result.data.length === 0) return;
+
+  section.style.display = 'block';
+  result.data.forEach(function (listing) {
+    grid.appendChild(createListingCard(listing));
+  });
+}
+
+function loadRecentlyViewed() {
+  if (!localStorage.getItem('token')) return;
+  authFetch('/api/listings/recently-viewed').then(parseResponse).then(renderRecentlyViewed);
+}
+
+// ── WISHLIST ──────────────────────────────────────────────────────────────
+
+var _heartBtn = null;
+var _heartListingId = null;
+var _heartWasWishlisted = false;
+
+function applyHeartToggle(res) {
+  if (res.status !== 200 && res.status !== 201) return;
+  if (_heartWasWishlisted) {
+    wishlistedIds.delete(_heartListingId);
+    _heartBtn.classList.remove('wishlisted');
+    _heartBtn.querySelector('i').className = 'bi bi-heart';
+  } else {
+    wishlistedIds.add(_heartListingId);
+    _heartBtn.classList.add('wishlisted');
+    _heartBtn.querySelector('i').className = 'bi bi-heart-fill';
+  }
+}
+
+function toggleWishlistHeart(btn, listingId) {
+  if (!localStorage.getItem('token')) {
+    window.location.href = 'login.html';
+    return;
+  }
+  _heartBtn = btn;
+  _heartListingId = listingId;
+  _heartWasWishlisted = wishlistedIds.has(listingId);
+  var method = _heartWasWishlisted ? 'DELETE' : 'POST';
+  authFetch('/api/wishlist/' + listingId, { method: method }).then(applyHeartToggle);
+}
+
+function applyLoadedHearts(result) {
+  if (result.status !== 200) return;
+  wishlistedIds = new Set(result.data.map(function (i) { return i.listing_id; }));
+  document.querySelectorAll('.btn-wishlist-heart').forEach(function (btn) {
+    if (wishlistedIds.has(Number(btn.dataset.listingId))) {
+      btn.classList.add('wishlisted');
+      btn.querySelector('i').className = 'bi bi-heart-fill';
+    }
+  });
+}
+
+function loadWishlistState() {
+  if (!localStorage.getItem('token')) return;
+  authFetch('/api/wishlist').then(parseResponse).then(applyLoadedHearts);
+}
+
+function onMostViewedError() {
+  var s = document.getElementById('most-viewed-section');
+  if (s) s.style.display = 'none';
+}
+
 function initListingsPage() {
   var listingsGrid = document.getElementById('listingsGrid');
   if (!listingsGrid) return;
@@ -261,14 +346,20 @@ function initListingsPage() {
   if (sortSelect)  sortSelect.addEventListener('change', fetchListings);
 
   fetchListings();
+  loadWishlistState();
+  loadRecentlyViewed();
+
+  var wishlistNavBtn = document.getElementById('btn-wishlist');
+  if (wishlistNavBtn) {
+    wishlistNavBtn.addEventListener('click', function () {
+      window.location.href = 'wishlist.html';
+    });
+  }
 
   fetch('/api/listings/most-viewed')
     .then(parseResponse)
     .then(renderMostViewed)
-    .catch(function () {
-      var s = document.getElementById('most-viewed-section');
-      if (s) s.style.display = 'none';
-    });
+    .catch(onMostViewedError);
 }
 
 // ── LISTING MODAL HELPERS ─────────────────────────────────────────────────
@@ -324,43 +415,53 @@ function handleListingModalConfirm() {
   if (listingModalMode === 'delete') deleteListingFromModal(selectedListing);
 }
 
+function onListingUpdated(result) {
+  if (result.status !== 200) {
+    showWarning(result.data.message || 'Failed to update listing.');
+    return;
+  }
+  closeListingModal();
+  showToast('Listing updated successfully.');
+  fetchListings();
+}
+
+function onUpdateListingError() {
+  showWarning('Something went wrong while updating listing.');
+}
+
 function updateListingFromModal(listing) {
   if (!localStorage.getItem('token')) {
     showToast('Please log in to edit your listing.');
     return;
   }
-
   const newTitle = document.getElementById('editTitle').value.trim();
   const newDescription = document.getElementById('editDescription').value.trim();
   const newPrice = document.getElementById('editPrice').value;
-
   if (!newTitle || !newDescription || Number(newPrice) <= 0) {
     showWarning('Title, description and valid price are required.');
     return;
   }
-
   authFetch('/api/listings/' + listing.id, {
     method: 'PATCH',
-    body: JSON.stringify({
-      title: newTitle,
-      description: newDescription,
-      price: Number(newPrice),
-    }),
+    body: JSON.stringify({ title: newTitle, description: newDescription, price: Number(newPrice) }),
   })
     .then(parseResponse)
-    .then(function (result) {
-      if (result.status !== 200) {
-        showWarning(result.data.message || 'Failed to update listing.');
-        return;
-      }
+    .then(onListingUpdated)
+    .catch(onUpdateListingError);
+}
 
-      closeListingModal();
-      showToast('Listing updated successfully.');
-      fetchListings();
-    })
-    .catch(function () {
-      showWarning('Something went wrong while updating listing.');
-    });
+function onListingDeleted(result) {
+  if (result.status !== 200) {
+    showWarning(result.data.message || 'Failed to delete listing.');
+    return;
+  }
+  closeListingModal();
+  showToast('Listing deleted successfully.');
+  fetchListings();
+}
+
+function onDeleteListingError() {
+  showWarning('Something went wrong while deleting listing.');
 }
 
 function deleteListingFromModal(listing) {
@@ -368,24 +469,10 @@ function deleteListingFromModal(listing) {
     showToast('Please log in to delete your listing.');
     return;
   }
-
-  authFetch('/api/listings/' + listing.id, {
-    method: 'DELETE',
-  })
+  authFetch('/api/listings/' + listing.id, { method: 'DELETE' })
     .then(parseResponse)
-    .then(function (result) {
-      if (result.status !== 200) {
-        showWarning(result.data.message || 'Failed to delete listing.');
-        return;
-      }
-
-      closeListingModal();
-      showToast('Listing deleted successfully.');
-      fetchListings();
-    })
-    .catch(function () {
-      showWarning('Something went wrong while deleting listing.');
-    });
+    .then(onListingDeleted)
+    .catch(onDeleteListingError);
 }
 // ── CREATE LISTING PAGE ───────────────────────────────────────────────────
 

@@ -12,6 +12,7 @@
 DROP TABLE IF EXISTS chatcontent     CASCADE;
 DROP TABLE IF EXISTS offers          CASCADE;
 DROP TABLE IF EXISTS chats           CASCADE;
+DROP TABLE IF EXISTS wishlist        CASCADE;
 DROP TABLE IF EXISTS listing_views   CASCADE;
 DROP TABLE IF EXISTS listings        CASCADE;
 DROP TABLE IF EXISTS products        CASCADE;
@@ -127,6 +128,14 @@ CREATE TABLE listings (
         AND "isClosed" = false
       )
     )
+);
+
+-- ── Wishlist (saved listings per user) ───────────────────
+CREATE TABLE wishlist (
+  user_id    INTEGER NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
+  listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+  added_on   TIMESTAMP NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, listing_id)
 );
 
 -- ── Listing Views (unique per user per listing) ───────────
