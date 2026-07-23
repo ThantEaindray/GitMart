@@ -10,6 +10,7 @@
 
 -- Drop existing tables (children before parents to avoid FK errors)
 DROP TABLE IF EXISTS chatcontent     CASCADE;
+DROP TABLE IF EXISTS reservation_requests CASCADE;
 DROP TABLE IF EXISTS offers          CASCADE;
 DROP TABLE IF EXISTS chats           CASCADE;
 DROP TABLE IF EXISTS wishlist        CASCADE;
@@ -137,6 +138,53 @@ CREATE TABLE wishlist (
   added_on   TIMESTAMP NOT NULL DEFAULT NOW(),
   PRIMARY KEY (user_id, listing_id)
 );
+
+-- ── Reservation Requests ──────────────────────────────────
+CREATE TABLE reservation_requests (
+  id           SERIAL    PRIMARY KEY,
+
+  listing_id   INTEGER   NOT NULL
+    REFERENCES listings(id) ON DELETE CASCADE,
+
+  requester_id INTEGER   NOT NULL
+    REFERENCES users(id) ON DELETE CASCADE,
+
+  status       TEXT      NOT NULL DEFAULT 'PENDING',
+  message      TEXT,
+
+  created_on   TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_on   TIMESTAMP NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT reservation_requests_status_check
+    CHECK (
+      status IN (
+        'PENDING',
+        'ACCEPTED',
+        'REJECTED',
+        'CANCELLED'
+      )
+    ),
+
+  CONSTRAINT reservation_requests_message_length_check
+    CHECK (
+      message IS NULL
+      OR CHAR_LENGTH(message) <= 500
+    )
+);
+
+CREATE UNIQUE INDEX reservation_requests_unique_pending
+  ON reservation_requests (listing_id, requester_id)
+  WHERE status = 'PENDING';
+
+CREATE UNIQUE INDEX reservation_requests_one_accepted_per_listing
+  ON reservation_requests (listing_id)
+  WHERE status = 'ACCEPTED';
+
+CREATE INDEX reservation_requests_requester_status_idx
+  ON reservation_requests (requester_id, status);
+
+CREATE INDEX reservation_requests_listing_status_idx
+  ON reservation_requests (listing_id, status);
 
 -- ── Listing Views (unique per user per listing) ───────────
 CREATE TABLE listing_views (
