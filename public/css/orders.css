@@ -477,6 +477,14 @@
   font-family: 'Jost', sans-serif;
 }
 
+.status-help {
+  max-width: 260px;
+  color: var(--muted);
+  font-size: 0.78em;
+  line-height: 1.5;
+  margin: 2px 0 0;
+}
+
 /* Toast feedback message */
 .toast {
   position: fixed;

@@ -82,6 +82,18 @@ function createStatusOptions(currentStatus) {
     .join('');
 }
 
+function getStatusControlHelp(currentStatus) {
+  if (currentStatus === 'Delivered') {
+    return 'This order is completed and cannot be changed.';
+  }
+
+  if (currentStatus === 'Cancelled') {
+    return 'This order has been cancelled and cannot be changed.';
+  }
+
+  return 'Select the next valid fulfilment status.';
+}
+
 // Render timestamped fulfilment updates for buyer tracking.
 function renderStatusTimeline(statusHistory = []) {
   if (!Array.isArray(statusHistory) || statusHistory.length === 0) {
@@ -167,6 +179,7 @@ function renderOrder(order) {
             <select class="status-dropdown" id="status-${order.id}" data-id="${order.id}">
               ${createStatusOptions(order.status || 'Pending')}
             </select>
+            <p class="status-help">${getStatusControlHelp(order.status || 'Pending')}</p>
           </div>
 
           <div class="order-price-summary">
