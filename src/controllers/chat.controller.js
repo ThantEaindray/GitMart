@@ -64,10 +64,10 @@ module.exports.formatList = (req, res, next) => {
   for (x = 0; x < chatIds.length; x++) { 
     //so we wanna create a new object
     let data = {
+      toId: res.locals.toLoad[x],
       chat: chatIds[x],
       pfp: namesicons[0][x].icon,
-      username: namesicons[0]
-      [x].username
+      username: namesicons[0][x].username
     }
     chatlist.push(data)
   }

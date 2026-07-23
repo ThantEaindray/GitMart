@@ -2,7 +2,7 @@
 const token = localStorage.getItem('token')
 const uId = localStorage.getItem('loggedInUserId')
 let openChat = localStorage.getItem('openChat')
-const webSocket = new WebSocket('ws://localhost:443/');
+const webSocket = localStorage.getItem('webSocket');
 
 //so we need to set it up to send over some info about the user on the initial websocket connection
 webSocket.onopen = () => {
@@ -63,14 +63,14 @@ webSocket.onmessage = (event) => {
 //so what do we need to do when the user wants to send a message (lets just get text working first and then we can sort out the images later)
 // this is gonna be horribly painful to do isnt it
 
-function sendTxt(content) { 
+function sendTxt(content, toId) { 
   let cont = {
     type:"message",
     chat: openChat,
     from: uId,
-    to: , 
+    to: toId, 
     textcontent: content
-  }
+  } 
   document.getElementById('message').value = ''
   //just a barebones bit of verification to make sure things dont break down
   if (content == undefined) {
