@@ -42,15 +42,23 @@ jobs:
         run: |
           echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cicd-test" > .env.test
           echo "PORT=3001" >> .env.test
-          echo "JWT_SECRET_KEY=ci-test-access-secret" >> .env.test
-          echo "JWT_REFRESH_SECRET=ci-test-refresh-secret" >> .env.test
-          echo "BCRYPT_PEPPER=ci-test-pepper" >> .env.test
+          echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY || 'ci-test-access-secret' }}" >> .env.test
+          echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET || 'ci-test-refresh-secret' }}" >> .env.test
+          echo "BCRYPT_PEPPER=${{ secrets.BCRYPT_PEPPER || 'ci-test-pepper' }}" >> .env.test
 
       - name: Lint
         run: npm run lint
 
       - name: Unit tests
-        run: npm run test:unit
+        run: npm run test:unit -- --coverage --coverageReporters=text lcov
 
       - name: Integration tests
         run: npm run test:integration
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7

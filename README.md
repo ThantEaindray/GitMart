@@ -1,5 +1,8 @@
 # ST0526 CI/CD Project
 
+[![CI](https://github.com/soc-cicd/ay2627s1-project-git-5-1/actions/workflows/ci.yml/badge.svg)](https://github.com/soc-cicd/ay2627s1-project-git-5-1/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/soc-cicd/ay2627s1-project-git-5-1/actions/workflows/codeql.yml/badge.svg)](https://github.com/soc-cicd/ay2627s1-project-git-5-1/actions/workflows/codeql.yml)
+
 A Node.js + Express web application with a full CI/CD pipeline, automated testing, and report publishing to GitHub Pages.
 
 ---
@@ -301,10 +304,13 @@ Push / PR to main
 
 Set these in **Settings → Secrets and variables → Actions**:
 
-| Secret         | Example Value                                            |
-| -------------- | -------------------------------------------------------- |
-| `DATABASE_URL` | `postgresql://user:password@host/dbname?sslmode=require` |
-| `APP_PORT`     | `3001`                                                   |
+| Secret               | Example Value                                            |
+| -------------------- | -------------------------------------------------------- |
+| `DATABASE_URL`       | `postgresql://user:password@host/dbname?sslmode=require` |
+| `APP_PORT`           | `3001`                                                   |
+| `JWT_SECRET_KEY`     | any long random string                                   |
+| `JWT_REFRESH_SECRET` | any long random string (different from above)            |
+| `BCRYPT_PEPPER`      | any long random string                                   |
 
 ### GitHub Pages Setup
 
