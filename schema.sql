@@ -82,17 +82,52 @@ CREATE TABLE products (
 
 -- ── Listings (user-created marketplace listings) ───────────
 CREATE TABLE listings (
-  id          SERIAL         PRIMARY KEY,
-  owner_id    INTEGER        REFERENCES users(id),
-  price       NUMERIC(10,2)  NOT NULL CHECK (price > 0),
-  created_on  DATE           NOT NULL DEFAULT CURRENT_DATE,
-  title       TEXT           NOT NULL,
-  description TEXT           NOT NULL,
-  category    TEXT           NOT NULL DEFAULT 'Others',
-  image_url   TEXT,
-  "isSold"    BOOLEAN        DEFAULT false,
-  "isClosed"  BOOLEAN        DEFAULT false,
-  view_count  INTEGER        DEFAULT 0
+  id                SERIAL         PRIMARY KEY,
+  owner_id          INTEGER        REFERENCES users(id),
+  price             NUMERIC(10,2)  NOT NULL CHECK (price > 0),
+  created_on        DATE           NOT NULL DEFAULT CURRENT_DATE,
+  title             TEXT           NOT NULL,
+  description       TEXT           NOT NULL,
+  category          TEXT           NOT NULL DEFAULT 'Others',
+  image_url         TEXT,
+
+  status            TEXT           NOT NULL DEFAULT 'AVAILABLE',
+  status_updated_on TIMESTAMP      NOT NULL DEFAULT NOW(),
+
+  "isSold"          BOOLEAN        NOT NULL DEFAULT false,
+  "isClosed"        BOOLEAN        NOT NULL DEFAULT false,
+  view_count        INTEGER        DEFAULT 0,
+
+  CONSTRAINT listings_status_check
+    CHECK (
+      status IN (
+        'AVAILABLE',
+        'RESERVED',
+        'SOLD',
+        'ARCHIVED'
+      )
+    ),
+
+  CONSTRAINT listings_status_flags_check
+    CHECK (
+      (
+        status = 'SOLD'
+        AND "isSold" = true
+        AND "isClosed" = false
+      )
+      OR
+      (
+        status = 'ARCHIVED'
+        AND "isSold" = false
+        AND "isClosed" = true
+      )
+      OR
+      (
+        status IN ('AVAILABLE', 'RESERVED')
+        AND "isSold" = false
+        AND "isClosed" = false
+      )
+    )
 );
 
 -- ── Wishlist (saved listings per user) ───────────────────

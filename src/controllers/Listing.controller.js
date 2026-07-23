@@ -1,5 +1,11 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const model = require('../models/Listing.model');
+const {
+  normalizeListingStatus,
+  isValidListingStatus,
+  canTransitionListingStatus,
+  getLegacyListingFlags,
+} = require('../utils/listingLifecycle');
 const { isListingSold } = require('../models/purchaseState');
 
 function applyRuntimeSoldState(listing) {
@@ -270,6 +276,103 @@ module.exports.updateListing = (req, res) => {
   };
 
   model.updateListing(data, callback);
+};
+
+// PATCH /api/listings/:id/status
+module.exports.updateListingStatus = (req, res) => {
+  const listingId = Number(req.params.id);
+  const { status: requestedStatus } = req.body || {};
+
+  if (!Number.isInteger(listingId) || listingId <= 0) {
+    return res.status(400).json({
+      message: 'Listing ID must be a positive integer.',
+    });
+  }
+
+  if (typeof requestedStatus !== 'string' || requestedStatus.trim() === '') {
+    return res.status(400).json({
+      message: 'Status is required.',
+    });
+  }
+
+  const nextStatus = normalizeListingStatus(requestedStatus);
+
+  if (!isValidListingStatus(nextStatus)) {
+    return res.status(400).json({
+      message: 'Status must be AVAILABLE, RESERVED, SOLD or ARCHIVED.',
+    });
+  }
+
+  const lookupData = {
+    id: listingId,
+  };
+
+  const lookupCallback = (lookupError, lookupResult) => {
+    if (lookupError) {
+      console.log(lookupError);
+
+      return res.status(500).json({
+        message: 'Internal server error',
+      });
+    }
+
+    if (lookupResult.rows.length === 0) {
+      return res.status(404).json({
+        message: 'Listing not found.',
+      });
+    }
+
+    const listing = lookupResult.rows[0];
+
+    if (Number(listing.owner_id) !== Number(res.locals.userId)) {
+      return res.status(403).json({
+        message: 'Only the listing owner can change its status.',
+      });
+    }
+
+    if (!canTransitionListingStatus(listing.status, nextStatus)) {
+      return res.status(409).json({
+        message: `Cannot change listing status from ${listing.status} to ${nextStatus}.`,
+      });
+    }
+
+    const { isSold, isClosed } = getLegacyListingFlags(nextStatus);
+
+    const updateData = {
+      id: listingId,
+      owner_id: res.locals.userId,
+      current_status: listing.status,
+      status: nextStatus,
+      isSold,
+      isClosed,
+    };
+
+    const updateCallback = (updateError, updateResult) => {
+      if (updateError) {
+        console.log(updateError);
+
+        return res.status(500).json({
+          message: 'Internal server error',
+        });
+      }
+
+      if (updateResult.rows.length === 0) {
+        return res.status(409).json({
+          message:
+            'The listing status changed before this request was completed. Please try again.',
+        });
+      }
+
+      return res.status(200).json({
+        message: `Listing status changed from ${listing.status} to ${nextStatus}.`,
+        listing: updateResult.rows[0],
+      });
+    };
+
+    return model.updateListingStatus(updateData, updateCallback);
+  };
+
+  return model.getListingLifecycleById(lookupData, lookupCallback);
 };
 
 // DELETE /api/listings/:id
