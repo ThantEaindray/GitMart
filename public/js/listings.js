@@ -1,7 +1,5 @@
 // ── TOAST ─────────────────────────────────────────────────────────────────
 
-
-
 function showToast(message) {
   const toast = document.getElementById('toast');
   if (!toast) return;
@@ -83,6 +81,26 @@ function isOwner(listing) {
   return Number(listing.owner_id) === getCurrentUserId();
 }
 
+function getListingStatus(listing) {
+  if (typeof listing.status === 'string' && listing.status.trim() !== '') {
+    return listing.status.trim().toUpperCase();
+  }
+
+  if (listing.isSold) {
+    return 'SOLD';
+  }
+
+  if (listing.isClosed) {
+    return 'ARCHIVED';
+  }
+
+  return 'AVAILABLE';
+}
+
+function formatListingStatus(status) {
+  return status.charAt(0) + status.slice(1).toLowerCase();
+}
+
 // ── LISTING CARD ──────────────────────────────────────────────────────────
 
 function goToListing() {
@@ -90,11 +108,17 @@ function goToListing() {
 }
 
 function createListingCard(listing) {
+  const lifecycleStatus = getListingStatus(listing);
+
+  const statusLabel = formatListingStatus(lifecycleStatus);
+
+  const statusClass = lifecycleStatus.toLowerCase();
+
   const card = document.createElement('div');
+
   card.className = 'card';
   card.dataset.id = listing.id;
-
-  const status = listing.isSold ? 'Sold' : listing.isClosed ? 'Closed' : 'Available';
+  card.dataset.status = lifecycleStatus;
 
   const date = new Date(listing.created_on).toLocaleDateString(undefined, {
     year: 'numeric',
@@ -105,15 +129,39 @@ function createListingCard(listing) {
   const ownerControls = isOwner(listing)
     ? `
       <div class="owner-actions">
-        <button class="btn-primary btn-edit-listing" data-id="${listing.id}" type="button">Edit</button>
-        <button class="btn-secondary btn-delete-listing" data-id="${listing.id}" type="button">Delete</button>
+        <button
+          class="btn-primary btn-edit-listing"
+          data-id="${listing.id}"
+          type="button"
+        >
+          Edit
+        </button>
+
+        <button
+          class="btn-secondary btn-delete-listing"
+          data-id="${listing.id}"
+          type="button"
+        >
+          Delete
+        </button>
       </div>
     `
     : '';
 
   const listingImage = listing.image_url
-    ? `<img src="${listing.image_url}" alt="${listing.title}" class="listing-card-image" />`
-    : '<i class="bi bi-tag" style="font-size:2.5rem;"></i>';
+    ? `
+      <img
+        src="${listing.image_url}"
+        alt="${listing.title}"
+        class="listing-card-image"
+      />
+    `
+    : `
+      <i
+        class="bi bi-tag"
+        style="font-size: 2.5rem;"
+      ></i>
+    `;
 
   card.innerHTML = `
     <div class="card-img">
@@ -121,13 +169,58 @@ function createListingCard(listing) {
     </div>
 
     <div class="card-body">
-      <div class="card-cat">${status} &nbsp;·&nbsp; ${date}</div>
-      <div class="card-name">${listing.title}</div>
-      <p style="font-size:0.82em;color:var(--muted);margin:6px 0 10px;line-height:1.5;">${listing.description}</p>
-      <div class="card-footer">
-        <span class="card-price" data-price="${listing.price}">${formatPrice(Number(listing.price))}</span>
-        ${listing.view_count > 0 ? `<span style="font-size:0.78rem;color:var(--muted);"><i class="bi bi-eye"></i> ${listing.view_count}</span>` : ''}
+      <div class="card-cat">
+        <span
+          class="listing-status-badge listing-status-${statusClass}"
+        >
+          ${statusLabel}
+        </span>
+
+        <span>
+          &nbsp;·&nbsp; ${date}
+        </span>
       </div>
+
+      <div class="card-name">
+        ${listing.title}
+      </div>
+
+      <p
+        style="
+          font-size: 0.82em;
+          color: var(--muted);
+          margin: 6px 0 10px;
+          line-height: 1.5;
+        "
+      >
+        ${listing.description}
+      </p>
+
+      <div class="card-footer">
+        <span
+          class="card-price"
+          data-price="${listing.price}"
+        >
+          ${formatPrice(Number(listing.price))}
+        </span>
+
+        ${
+          listing.view_count > 0
+            ? `
+              <span
+                style="
+                  font-size: 0.78rem;
+                  color: var(--muted);
+                "
+              >
+                <i class="bi bi-eye"></i>
+                ${listing.view_count}
+              </span>
+            `
+            : ''
+        }
+      </div>
+
       ${ownerControls}
     </div>
   `;
@@ -135,6 +228,7 @@ function createListingCard(listing) {
   card.addEventListener('click', goToListing);
 
   const editBtn = card.querySelector('.btn-edit-listing');
+
   if (editBtn) {
     editBtn.addEventListener('click', function (event) {
       event.stopPropagation();
@@ -143,6 +237,7 @@ function createListingCard(listing) {
   }
 
   const deleteBtn = card.querySelector('.btn-delete-listing');
+
   if (deleteBtn) {
     deleteBtn.addEventListener('click', function (event) {
       event.stopPropagation();
@@ -157,22 +252,25 @@ function createListingCard(listing) {
 
 function debounce(fn, delay) {
   var timer;
-  return function () { clearTimeout(timer); timer = setTimeout(fn, delay); };
+  return function () {
+    clearTimeout(timer);
+    timer = setTimeout(fn, delay);
+  };
 }
 
 function buildSearchUrl() {
-  var search   = (document.getElementById('search-input') || {}).value || '';
-  var minPrice = (document.getElementById('min-price')    || {}).value || '';
-  var maxPrice = (document.getElementById('max-price')    || {}).value || '';
-  var sort     = (document.getElementById('sort-select')  || {}).value || 'newest';
+  var search = (document.getElementById('search-input') || {}).value || '';
+  var minPrice = (document.getElementById('min-price') || {}).value || '';
+  var maxPrice = (document.getElementById('max-price') || {}).value || '';
+  var sort = (document.getElementById('sort-select') || {}).value || 'newest';
   var category = new URLSearchParams(window.location.search).get('category') || '';
 
   var params = new URLSearchParams();
   if (search.trim()) params.set('search', search.trim());
-  if (minPrice)      params.set('minPrice', minPrice);
-  if (maxPrice)      params.set('maxPrice', maxPrice);
+  if (minPrice) params.set('minPrice', minPrice);
+  if (maxPrice) params.set('maxPrice', maxPrice);
   params.set('sort', sort);
-  if (category)      params.set('category', category);
+  if (category) params.set('category', category);
 
   return '/api/listings/search?' + params.toString();
 }
@@ -185,7 +283,7 @@ function fetchListings() {
 
 function renderMostViewed(result) {
   var section = document.getElementById('most-viewed-section');
-  var grid    = document.getElementById('mostViewedGrid');
+  var grid = document.getElementById('mostViewedGrid');
   if (!grid) return;
 
   if (result.status !== 200 || !result.data || result.data.length === 0) {
@@ -251,14 +349,14 @@ function initListingsPage() {
   }
 
   var searchInput = document.getElementById('search-input');
-  var minPrice    = document.getElementById('min-price');
-  var maxPrice    = document.getElementById('max-price');
-  var sortSelect  = document.getElementById('sort-select');
+  var minPrice = document.getElementById('min-price');
+  var maxPrice = document.getElementById('max-price');
+  var sortSelect = document.getElementById('sort-select');
 
   if (searchInput) searchInput.addEventListener('input', debounce(fetchListings, 300));
-  if (minPrice)    minPrice.addEventListener('input',   debounce(fetchListings, 400));
-  if (maxPrice)    maxPrice.addEventListener('input',   debounce(fetchListings, 400));
-  if (sortSelect)  sortSelect.addEventListener('change', fetchListings);
+  if (minPrice) minPrice.addEventListener('input', debounce(fetchListings, 400));
+  if (maxPrice) maxPrice.addEventListener('input', debounce(fetchListings, 400));
+  if (sortSelect) sortSelect.addEventListener('change', fetchListings);
 
   fetchListings();
 
@@ -303,7 +401,8 @@ function openListingModal(mode, listing) {
 
   if (mode === 'delete') {
     modalTitle.textContent = 'Delete Listing';
-    modalMessage.textContent = 'Are you sure you want to delete "' + listing.title + '"? This action cannot be undone.';
+    modalMessage.textContent =
+      'Are you sure you want to delete "' + listing.title + '"? This action cannot be undone.';
     confirmButton.textContent = 'Delete';
     editFields.classList.add('d-none');
   }
@@ -707,7 +806,6 @@ function initCreateListingPage() {
   if (confirmCoverImageBtn) {
     confirmCoverImageBtn.addEventListener('click', confirmCoverImage);
   }
-
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────

@@ -344,3 +344,77 @@
   margin: 10px 0 0;
   text-align: center;
 }
+
+/* ── LISTING LIFECYCLE CONTROLS ─────────────────────── */
+
+.owner-lifecycle-controls {
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.owner-lifecycle-controls .status-text {
+  margin: 0 0 16px;
+  padding: 0;
+  line-height: 1.6;
+}
+
+.owner-lifecycle-controls .product-actions {
+  align-items: stretch;
+}
+
+.owner-lifecycle-controls .btn-primary,
+.owner-lifecycle-controls .btn-outline {
+  flex: 1 1 160px;
+  min-height: 48px;
+  margin-left: 0;
+}
+
+.owner-lifecycle-controls [data-listing-status-action]:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+/* ── LISTING LIFECYCLE STATUS BADGES ────────────────── */
+
+.listing-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid currentColor;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.listing-status-available {
+  color: var(--accent);
+}
+
+.listing-status-reserved {
+  color: var(--accent2);
+}
+
+.listing-status-sold {
+  color: #d06b6b;
+}
+
+.listing-status-archived {
+  color: var(--muted);
+}
+
+/* ── LISTING LIFECYCLE RESPONSIVE STYLES ────────────── */
+
+@media (max-width: 640px) {
+  .owner-lifecycle-controls .product-actions {
+    flex-direction: column;
+  }
+
+  .owner-lifecycle-controls .btn-primary,
+  .owner-lifecycle-controls .btn-outline {
+    width: 100%;
+    flex-basis: auto;
+  }
+}

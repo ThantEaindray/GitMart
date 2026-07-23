@@ -164,6 +164,113 @@ describe('Listing API baseline', () => {
         message: 'Listing not found.',
       });
     });
+
+    test('returns lifecycle fields to a public user', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app).get(`/api/listings/${listing.id}`);
+
+      expect(response.status).toBe(200);
+
+      expect(response.body).toMatchObject({
+        id: listing.id,
+        owner_id: owner.id,
+        status: 'AVAILABLE',
+        isSold: false,
+        isClosed: false,
+      });
+
+      expect(response.body.status_updated_on).toBeDefined();
+    });
+
+    test('returns lifecycle fields to an authenticated user', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .get(`/api/listings/${listing.id}`)
+        .set('Authorization', `Bearer ${otherUserToken}`);
+
+      expect(response.status).toBe(200);
+
+      expect(response.body).toMatchObject({
+        id: listing.id,
+        owner_id: owner.id,
+        status: 'AVAILABLE',
+        isSold: false,
+        isClosed: false,
+      });
+
+      expect(response.body.status_updated_on).toBeDefined();
+
+      expect(Number(response.body.view_count)).toBe(1);
+    });
+  });
+
+  describe('Listing lifecycle data for listing cards', () => {
+    test('returns lifecycle fields from the search endpoint', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      await pool.query(
+        `
+        UPDATE listings
+        SET status = 'RESERVED'
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      const response = await request(app).get('/api/listings/search?search=Baseline');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveLength(1);
+
+      expect(response.body[0]).toMatchObject({
+        id: listing.id,
+        status: 'RESERVED',
+        isSold: false,
+        isClosed: false,
+      });
+
+      expect(response.body[0].status_updated_on).toBeDefined();
+    });
+
+    test('returns lifecycle fields from the most-viewed endpoint', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      await pool.query(
+        `
+        UPDATE listings
+        SET
+          status = 'RESERVED',
+          view_count = 3
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      const response = await request(app).get('/api/listings/most-viewed');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveLength(1);
+
+      expect(response.body[0]).toMatchObject({
+        id: listing.id,
+        status: 'RESERVED',
+        view_count: 3,
+        isSold: false,
+        isClosed: false,
+      });
+
+      expect(response.body[0].status_updated_on).toBeDefined();
+    });
   });
 
   describe('POST /api/listings', () => {
