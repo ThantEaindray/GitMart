@@ -42,7 +42,7 @@ function renderChats(results) {
   //in a perfect world itd be async but time
   results.forEach(function (e) {
     document.getElementById('chats').innerHTML += `
-      <div class="chat-item" id="chat-${e.chat}" onclick="viewChat(${e.chat})">
+      <div class="chat-item" id="chat-${e.chat}" onclick="viewChat(${e.chat},${e.toId})">
         <i class="bi bi-person-circle chat-item-icon"></i>
         <span class="chat-item-name">${e.username}</span>
       </div>
@@ -51,6 +51,10 @@ function renderChats(results) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  //immediately load the webSocket before we do anything else and store it locally for future use
+  const webSocket = new WebSocket('ws://localhost:443/')
+  localStorage.setItem(webSocket, webSocket)
+  //so first things first we need to do the most basic of calling the api to get the users chats to load in, first things first\
   //check for a logged in user
   const token = localStorage.getItem('token')
   if (!token) {

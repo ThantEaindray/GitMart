@@ -61,10 +61,10 @@ module.exports.formatList = (req, res, _next) => {
   for (let x = 0; x < chatIds.length; x++) {
     //so we wanna create a new object
     let data = {
+      toId: res.locals.toLoad[x],
       chat: chatIds[x],
-      //pfp: namesicons[x][0].icon,
-      //uncomment the pfp part when we add support for that (next sprint probably)
-      username: namesicons[x][0].username
+      pfp: namesicons[0][x].icon,
+      username: namesicons[0][x].username
     }
     chatlist.push(data)
   }
