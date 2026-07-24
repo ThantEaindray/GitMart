@@ -20,33 +20,6 @@ webSocket.onmessage = (event) => {
   //so the event is the message content basically, in this case itll be an object with a recipient
   //so we need to unwrap it first and determine if its for our user
   //we need to deserialise it since the WS only accepts JSON
-<<<<<<< HEAD
-  let openChat = localStorage.getItem('openChat')
-  let raw = JSON.parse(event.data)
-  const reconstituted = String.fromCharCode.apply(null, raw.data);
-  let content = JSON.parse(reconstituted)
-  if (content.chat !== openChat) {
-    return
-  }
-  //ok so theres 2 types of messages, images and text theyll need to be displayed differently
-
-  //we need to do basically what we did on the history loading part should be easy enough
-  let position = "sent"
-  //this is if were the sender
-  if (content.user !== uId) {
-    position = "received"
-  }
-  
-  if (content.textcontent !== undefined)
-  document.getElementById("messages").innerHTML += `
-    <div class="msg ${position}">
-          <span class="msg-bubble">${content.textcontent}</span>
-    </div>
-  `
-}
-
-//so what do we need to do when the user wants to send a message 
-=======
   
   let data = JSON.parse(String.fromCharCode.apply(null, event.data))
 
