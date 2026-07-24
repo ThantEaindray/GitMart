@@ -1,0 +1,24 @@
+name: Security Scan
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * 1'
+
+jobs:
+  njsscan:
+    name: njsscan (javascript)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run njsscan
+        uses: ajinabraham/njsscan-action@master
+        with:
+          args: 'src/'

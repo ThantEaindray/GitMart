@@ -21,6 +21,7 @@ const orderRouter = require('./routers/orderRouter');
 // GET  /api/me
 const userRouter = require('./routers/User.router');
 const listingRouter = require('./routers/Listing.router');
+const wishlistRouter = require('./routers/Wishlist.router');
 
 const chatrouter = require('./routers/chats.router')
 
@@ -56,6 +57,7 @@ app.use('/api/orders', orderRouter);
 // router.post('/register') becomes POST /api/register
 app.use('/api', userRouter);
 app.use('/api', listingRouter);
+app.use('/api', wishlistRouter);
 app.use('/api/chats',chatrouter)
 // 404 handler — if no route above matched the request,
 // create a 404 error and pass it to the error handler below.

@@ -271,6 +271,21 @@ module.exports.getSellerCategoryBreakdown = (data, callback) => {
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
+module.exports.getRecentlyViewed = (data, callback) => {
+  const SQLSTATEMENT = `
+    SELECT l.id, l.owner_id, l.price, l.title, l.description,
+           l.category, l.image_url, l.view_count,
+           l."isSold", l."isClosed", l.created_on,
+           lv.viewed_at
+    FROM listing_views lv
+    JOIN listings l ON l.id = lv.listing_id
+    WHERE lv.user_id = $1
+    ORDER BY lv.viewed_at DESC
+    LIMIT 8
+  `;
+  pool.query(SQLSTATEMENT, [data.userId], callback);
+};
+
 module.exports.deleteListing = (data, callback) => {
   const SQLSTATEMENT = `
     DELETE FROM listings
