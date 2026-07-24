@@ -1,0 +1,19 @@
+alright so what are my main goals for this part
+1. make the chats actually only send to the intended user instead of all of them and they only display the one from the selected chat
+(too vulnerable)
+ok so how are we gonna do task 1 - firstly we need to assign each user a unique id that gets stored as a cookie which says their user id and the number which they are connected as.
+changes that we need to make:
+1.1: connect to ws immediately when opening chats page.
+1.2: send info to ws server, ws svr assigns socket id
+1.3: store obj {uid, chatid, connection}
+1.4: send back as a cookie to the user
+when a user sends a message
+1.5: get id of user to send to, get id of chat sent via
+1.6: 
+
+
+
+2. add image support to the system, use FS package
+(will use a cdn in future this is just for convenience right now since its not hosted)
+3. add an unread flag/system to the chats.
+4. some sort of online indicator as well i think would be good to have just like listen for a user have it send out the id of the user whos online and then from there we can change the innerhtml
