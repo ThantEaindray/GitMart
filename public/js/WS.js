@@ -2,6 +2,20 @@
 const token = localStorage.getItem('token')
 const uId = localStorage.getItem('loggedInUserId')
 const webSocket = new WebSocket('ws://localhost:443/');
+
+//so we need to set it up to send over some info about the user on the initial websocket connection
+webSocket.onopen = () => {
+  //now we need to send over an initial handshake message to let the socket know what to do with it
+  //alright so we want to send our initial handshake now
+  let handshake = {
+    type: handshake,
+    id: uId,
+    token: token
+  }
+  //no need to write it to the data since it isnt really relevant to that.
+  webSocket.send(JSON.stringify(handshake))
+}
+
 webSocket.onmessage = (event) => {
   //so the event is the message content basically, in this case itll be an object with a recipient
   //so we need to unwrap it first and determine if its for our user
