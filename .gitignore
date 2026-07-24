@@ -1,5 +1,7 @@
 node_modules
 .claude
+CA3.md
+CA4.md
 # Keep environment variables out of version control
 .env*
 /test-results/
