@@ -39,10 +39,23 @@ module.exports.getListingsByCategory = (data, callback) => {
 
 module.exports.getListingById = (data, callback) => {
   const SQLSTATEMENT = `
-    SELECT id, owner_id, price, created_on, title, description, category, image_url, view_count, "isSold", "isClosed"
-    FROM listings
-    WHERE id = $1
-  `;
+  SELECT
+    id,
+    owner_id,
+    price,
+    created_on,
+    title,
+    description,
+    category,
+    image_url,
+    view_count,
+    status,
+    status_updated_on,
+    "isSold",
+    "isClosed"
+  FROM listings
+  WHERE id = $1
+`;
   const VALUES = [data.id];
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
@@ -58,7 +71,20 @@ module.exports.getListingByIdWithView = (data, callback) => {
     UPDATE listings
     SET view_count = view_count + (CASE WHEN EXISTS(SELECT 1 FROM maybe_view) THEN 1 ELSE 0 END)
     WHERE id = $1::integer
-    RETURNING id, owner_id, price, created_on, title, description, category, image_url, view_count, "isSold", "isClosed"
+    RETURNING
+  id,
+  owner_id,
+  price,
+  created_on,
+  title,
+  description,
+  category,
+  image_url,
+  view_count,
+  status,
+  status_updated_on,
+  "isSold",
+  "isClosed"
   `;
   const VALUES = [data.id, data.userId];
   pool.query(SQLSTATEMENT, VALUES, callback);
@@ -90,12 +116,27 @@ module.exports.updateListing = (data, callback) => {
 
 module.exports.getMostViewed = (callback) => {
   const SQLSTATEMENT = `
-    SELECT id, owner_id, price, created_on, title, description, category, view_count, "isSold", "isClosed"
-    FROM listings
-    WHERE NOT "isSold" AND NOT "isClosed" AND view_count > 0
-    ORDER BY view_count DESC
-    LIMIT 4
-  `;
+  SELECT
+    id,
+    owner_id,
+    price,
+    created_on,
+    title,
+    description,
+    category,
+    image_url,
+    view_count,
+    status,
+    status_updated_on,
+    "isSold",
+    "isClosed"
+  FROM listings
+  WHERE NOT "isSold"
+    AND NOT "isClosed"
+    AND view_count > 0
+  ORDER BY view_count DESC
+  LIMIT 4
+`;
   pool.query(SQLSTATEMENT, callback);
 };
 
@@ -158,7 +199,20 @@ const SORT_MAP = {
 module.exports.searchListings = (data, callback) => {
   const orderBy = SORT_MAP[data.sort] || SORT_MAP.newest;
   const SQLSTATEMENT = `
-    SELECT id, owner_id, price, created_on, title, description, category, view_count, "isSold", "isClosed"
+    SELECT
+  id,
+  owner_id,
+  price,
+  created_on,
+  title,
+  description,
+  category,
+  image_url,
+  view_count,
+  status,
+  status_updated_on,
+  "isSold",
+  "isClosed"
     FROM listings
     WHERE ($1 = '' OR title ILIKE '%' || $1 || '%' OR description ILIKE '%' || $1 || '%')
       AND ($2::numeric IS NULL OR price >= $2::numeric)

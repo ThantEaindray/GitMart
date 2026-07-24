@@ -30,7 +30,7 @@
     "seed": "dotenv -e .env.dev -- node scripts/seed.js",
     "migration:reset": "dotenv -e .env.dev -- node scripts/reset.js",
     "test:unit": "jest --testPathPatterns=__tests__/unit --silent",
-    "test:integration": "dotenv -e .env.test -- jest --testPathPatterns=__tests__/integration --globalSetup=./configs/jest-integration-setup.js --silent",
+    "test:integration": "dotenv -e .env.test -- jest --testPathPatterns=__tests__/integration --globalSetup=./configs/jest-integration-setup.js --silent --runInBand",
     "test:e2e": "node scripts/clean-test-results.js && dotenv -e .env.test -- playwright test --config=configs/playwright.config.js",
     "test": "jest --testPathPatterns=__tests__/unit --silent && dotenv -e .env.test -- jest --testPathPatterns=__tests__/integration --globalSetup=./configs/jest-integration-setup.js --silent && node scripts/clean-test-results.js && dotenv -e .env.test -- playwright test --config=configs/playwright.config.js",
     "test:trace": "npm run test:e2e -- --reporter=html --trace on",
