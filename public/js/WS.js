@@ -7,13 +7,13 @@ const webSocket = new WebSocket('ws://localhost:443/');
 webSocket.onopen = () => {
   //now we need to send over an initial handshake message to let the socket know what to do with it
   //alright so we want to send our initial handshake now
-  let handshake = {
+  let data = {
     type: handshake,
     id: uId,
     token: token
   }
   //no need to write it to the data since it isnt really relevant to that.
-  webSocket.send(JSON.stringify(handshake))
+  webSocket.send(JSON.stringify(data))
 }
 
 webSocket.onmessage = (event) => {
