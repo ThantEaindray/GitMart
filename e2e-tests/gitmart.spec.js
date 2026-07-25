@@ -7,6 +7,7 @@ const E2E_BUYER = { username: 'e2e_buyer', email: 'buyer@e2e.com', password: 'Bu
 
 let sellerToken = null;
 let buyerToken = null;
+let buyerId = null;
 let testListingId = null;
 
 // Run all tests serially so shared state (token, listingId) is reliable
@@ -26,7 +27,9 @@ test.beforeAll(async ({ request }) => {
   const buyerLogin = await request.post(`${BASE}/api/login`, {
     data: { username: E2E_BUYER.username, password: E2E_BUYER.password },
   });
-  buyerToken = (await buyerLogin.json()).token;
+  const buyerData = await buyerLogin.json();
+  buyerToken = buyerData.token;
+  buyerId = buyerData.userId;
 
   const listingRes = await request.post(`${BASE}/api/listings`, {
     headers: { Authorization: `Bearer ${sellerToken}` },
@@ -40,9 +43,14 @@ test.beforeAll(async ({ request }) => {
   testListingId = (await listingRes.json()).listing.id;
 });
 
-// Sets a JWT token in localStorage so the page treats the user as logged in.
-async function setToken(page, token) {
-  await page.evaluate((t) => localStorage.setItem('token', t), token);
+async function setAuth(page, token, userId) {
+  await page.evaluate(
+    ({ t, u }) => {
+      localStorage.setItem('token', t);
+      localStorage.setItem('loggedInUserId', String(u));
+    },
+    { t: token, u: userId },
+  );
 }
 
 // ── Feature 1: Listings Browse ────────────────────────────────────────────────
@@ -144,7 +152,7 @@ test.describe('Wishlist', () => {
   // Valid partition: wishlist page renders the "My Wishlist" section heading
   test('wishlist page renders the wishlist section', async ({ page }) => {
     await page.goto(`${BASE}/html/listings.html`);
-    await setToken(page, buyerToken);
+    await setAuth(page, buyerToken, buyerId);
     await page.goto(`${BASE}/html/wishlist.html`);
     await expect(page.locator('.section-title')).toContainText('Wishlist');
   });
@@ -152,7 +160,7 @@ test.describe('Wishlist', () => {
   // Valid partition: non-owner sees the heart button; owner does not
   test('heart button is visible for a non-owner on listing detail', async ({ page }) => {
     await page.goto(`${BASE}/html/listing.html?id=${testListingId}`);
-    await setToken(page, buyerToken);
+    await setAuth(page, buyerToken, buyerId);
     await page.reload();
     await page.waitForSelector('.product-name', { timeout: 8000 });
     await expect(page.locator('#btn-detail-heart')).toBeVisible();
@@ -186,7 +194,7 @@ test.describe('Recently Viewed', () => {
   }) => {
     // Set buyer token so views are attributed
     await page.goto(`${BASE}/html/listings.html`);
-    await setToken(page, buyerToken);
+    await setAuth(page, buyerToken, buyerId);
 
     // Visit the listing detail — this triggers view recording
     await page.goto(`${BASE}/html/listing.html?id=${testListingId}`);
