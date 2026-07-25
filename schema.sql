@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS chatcontent     CASCADE;
 DROP TABLE IF EXISTS offers          CASCADE;
 DROP TABLE IF EXISTS chats           CASCADE;
 DROP TABLE IF EXISTS wishlist        CASCADE;
+DROP TABLE IF EXISTS listing_reviews CASCADE;
 DROP TABLE IF EXISTS listing_views   CASCADE;
 DROP TABLE IF EXISTS listings        CASCADE;
 DROP TABLE IF EXISTS products        CASCADE;
@@ -128,6 +129,17 @@ CREATE TABLE listings (
         AND "isClosed" = false
       )
     )
+);
+
+-- ── Listing Reviews ──────────────────────────────────────
+CREATE TABLE listing_reviews (
+  id           SERIAL    PRIMARY KEY,
+  listing_id   INTEGER   NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+  reviewer_id  INTEGER   NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
+  rating       INTEGER   NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment      TEXT,
+  created_on   TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (listing_id, reviewer_id)
 );
 
 -- ── Wishlist (saved listings per user) ───────────────────

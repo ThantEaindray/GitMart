@@ -128,6 +128,9 @@ function renderListing(listing) {
     '<p class="product-description">' +
     listing.description +
     '</p>' +
+    (listing.owner_id
+      ? '<div class="product-seller-bar">Sold by <a href="seller.html?id=' + listing.owner_id + '" id="seller-name-link" class="seller-name-link">…</a></div>'
+      : '') +
     '<div class="product-actions">' +
     '<button class="btn-primary" id="btn-contact" onclick="createChat(' +
     listing.owner_id +
@@ -136,6 +139,18 @@ function renderListing(listing) {
     heartBtn +
     '</div>' +
     '</div>';
+}
+
+// ── SELLER INFO ───────────────────────────────────────────────────────────
+
+function loadSellerInfo(ownerId) {
+  fetch('/api/users/' + ownerId + '/public')
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      var link = document.getElementById('seller-name-link');
+      if (link && data.username) link.textContent = data.username;
+    })
+    .catch(function () {});
 }
 
 // ── RELATED LISTINGS ─────────────────────────────────────────────────────
@@ -258,6 +273,8 @@ function onListingLoaded(result) {
   renderListing(result.data);
   loadDetailWishlistState();
   loadRelatedListings(result.data.category);
+  if (result.data.owner_id) loadSellerInfo(result.data.owner_id);
+  if (typeof initReviews === 'function') initReviews(result.data.id, result.data.owner_id);
 }
 
 function onListingError() {
