@@ -110,13 +110,13 @@ test.describe('Authentication', () => {
     await expect(page.locator('button[type="submit"]')).toBeVisible();
   });
 
-  // Error partition: wrong credentials should reveal the warning card
+  // Error partition: unknown username returns 404 and shows a field-level error
   test('wrong credentials show an error message', async ({ page }) => {
     await page.goto(`${BASE}/html/login.html`);
     await page.locator('#username').fill('nobody');
     await page.locator('#password').fill('wrongpass');
     await page.locator('button[type="submit"]').click();
-    await expect(page.locator('#warningCard')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#username')).toHaveClass(/input-error/, { timeout: 5000 });
   });
 
   // Valid partition: correct credentials store the token in localStorage
@@ -143,6 +143,8 @@ test.describe('Wishlist', () => {
 
   // Valid partition: wishlist page renders the "My Wishlist" section heading
   test('wishlist page renders the wishlist section', async ({ page }) => {
+    await page.goto(`${BASE}/html/listings.html`);
+    await setToken(page, buyerToken);
     await page.goto(`${BASE}/html/wishlist.html`);
     await expect(page.locator('.section-title')).toContainText('Wishlist');
   });
