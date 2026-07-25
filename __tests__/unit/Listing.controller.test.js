@@ -1,6 +1,6 @@
 const controller = require('../../src/controllers/Listing.controller');
 const model = require('../../src/models/Listing.model');
-const purchaseState = require('../../src/models/purchaseState');
+const _purchaseState = require('../../src/models/purchaseState');
 
 jest.mock('../../src/models/Listing.model');
 jest.mock('../../src/models/purchaseState', () => ({ isListingSold: jest.fn().mockReturnValue(false) }));
