@@ -34,4 +34,7 @@ router.patch(
   reservationController.cancelReservationRequest,
 );
 
+router.patch('/reservations/:id/accept', jwtMiddleware.verifyToken, reservationController.acceptReservationRequest);
+router.patch('/reservations/:id/reject', jwtMiddleware.verifyToken, reservationController.rejectReservationRequest);
+
 module.exports = router;

@@ -172,3 +172,115 @@ module.exports.cancelPendingReservation = (data, callback) => {
 
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
+
+module.exports.acceptReservationRequest = async (data) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const lookupResult = await client.query(
+      `
+        SELECT
+          reservation_requests.id,
+          reservation_requests.listing_id,
+          reservation_requests.status,
+          listings.owner_id,
+          listings.status AS listing_status
+        FROM reservation_requests
+        INNER JOIN listings
+          ON listings.id = reservation_requests.listing_id
+        WHERE reservation_requests.id = $1
+        FOR UPDATE OF reservation_requests
+      `,
+      [data.id],
+    );
+
+    if (lookupResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return { notFound: true };
+    }
+
+    const reservation = lookupResult.rows[0];
+
+    if (Number(reservation.owner_id) !== Number(data.owner_id)) {
+      await client.query('ROLLBACK');
+      return { forbidden: true };
+    }
+
+    if (reservation.status !== 'PENDING') {
+      await client.query('ROLLBACK');
+      return { invalidState: true, currentStatus: reservation.status };
+    }
+
+    if (reservation.listing_status !== 'AVAILABLE') {
+      await client.query('ROLLBACK');
+      return { listingUnavailable: true, listingStatus: reservation.listing_status };
+    }
+
+    const acceptedResult = await client.query(
+      `
+        UPDATE reservation_requests
+        SET status = 'ACCEPTED', updated_on = NOW()
+        WHERE id = $1
+        RETURNING id, listing_id, requester_id, status, message, created_on, updated_on
+      `,
+      [data.id],
+    );
+
+    await client.query(
+      `
+        UPDATE reservation_requests
+        SET status = 'REJECTED', updated_on = NOW()
+        WHERE listing_id = $1
+          AND id != $2
+          AND status = 'PENDING'
+      `,
+      [reservation.listing_id, data.id],
+    );
+
+    await client.query(
+      `
+        UPDATE listings
+        SET status = 'RESERVED', status_updated_on = NOW()
+        WHERE id = $1
+      `,
+      [reservation.listing_id],
+    );
+
+    await client.query('COMMIT');
+
+    return { success: true, reservation: acceptedResult.rows[0] };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+module.exports.rejectReservationRequest = (data, callback) => {
+  const SQLSTATEMENT = `
+    UPDATE reservation_requests
+    SET
+      status = 'REJECTED',
+      updated_on = NOW()
+    FROM listings
+    WHERE reservation_requests.id = $1
+      AND reservation_requests.listing_id = listings.id
+      AND listings.owner_id = $2
+      AND reservation_requests.status = 'PENDING'
+    RETURNING
+      reservation_requests.id,
+      reservation_requests.listing_id,
+      reservation_requests.requester_id,
+      reservation_requests.status,
+      reservation_requests.message,
+      reservation_requests.created_on,
+      reservation_requests.updated_on
+  `;
+
+  const VALUES = [data.id, data.owner_id];
+
+  pool.query(SQLSTATEMENT, VALUES, callback);
+};
