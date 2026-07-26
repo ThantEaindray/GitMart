@@ -51,19 +51,74 @@ async function insertUser(username, email) {
  */
 async function insertListing({
   ownerId = owner.id,
-  title = 'Reservation Test Camera',
-  description = 'A listing created for reservation testing.',
-  price = 300,
-  category = 'Electronics',
+  title = 'Reservation Test Listing',
   status = 'AVAILABLE',
 } = {}) {
+  const flagsByStatus = {
+    AVAILABLE: {
+      isSold: false,
+      isClosed: false,
+    },
+    RESERVED: {
+      isSold: false,
+      isClosed: false,
+    },
+    SOLD: {
+      isSold: true,
+      isClosed: false,
+    },
+    ARCHIVED: {
+      isSold: false,
+      isClosed: true,
+    },
+  };
+
+  const flags = flagsByStatus[status];
+
+  if (!flags) {
+    throw new Error(`Unsupported test listing status: ${status}`);
+  }
+
   const result = await pool.query(
     `
-      INSERT INTO listings (owner_id, title, description, price, category, status)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id, owner_id, title, description, price, category, status
+      INSERT INTO listings (
+        owner_id,
+        title,
+        description,
+        price,
+        category,
+        status,
+        "isSold",
+        "isClosed"
+      )
+      VALUES (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8
+      )
+      RETURNING
+        id,
+        owner_id,
+        title,
+        status,
+        "isSold",
+        "isClosed"
     `,
-    [ownerId, title, description, price, category, status],
+    [
+      ownerId,
+      title,
+      'A listing created for reservation testing.',
+      250,
+      'Electronics',
+      status,
+      flags.isSold,
+      flags.isClosed,
+    ],
   );
 
   return result.rows[0];
@@ -329,13 +384,13 @@ describe('Reservation API', () => {
       expect(response.body).toEqual([]);
     });
 
-    test('returns only requests received on the logged-in owner\'s listings', async () => {
+    test("returns only requests received on the logged-in owner's listings", async () => {
       const listing = await insertListing();
       const receivedReservation = await insertReservationRequest({ listingId: listing.id });
 
       const otherOwnerListing = await insertListing({
         ownerId: otherUser.id,
-        title: 'Someone Else\'s Listing',
+        title: "Someone Else's Listing",
       });
       await insertReservationRequest({ listingId: otherOwnerListing.id, requesterId: owner.id });
 
@@ -405,7 +460,10 @@ describe('Reservation API', () => {
 
     test('returns 409 when the reservation is no longer pending', async () => {
       const listing = await insertListing();
-      const reservation = await insertReservationRequest({ listingId: listing.id, status: 'REJECTED' });
+      const reservation = await insertReservationRequest({
+        listingId: listing.id,
+        status: 'REJECTED',
+      });
 
       const response = await request(app)
         .patch(`/api/reservations/${reservation.id}/cancel`)
@@ -496,7 +554,10 @@ describe('Reservation API', () => {
 
     test('returns 409 when the reservation is no longer pending', async () => {
       const listing = await insertListing();
-      const reservation = await insertReservationRequest({ listingId: listing.id, status: 'CANCELLED' });
+      const reservation = await insertReservationRequest({
+        listingId: listing.id,
+        status: 'CANCELLED',
+      });
 
       const response = await request(app)
         .patch(`/api/reservations/${reservation.id}/accept`)
@@ -515,13 +576,21 @@ describe('Reservation API', () => {
         .set('Authorization', `Bearer ${ownerToken}`);
 
       expect(response.status).toBe(409);
-      expect(response.body.message).toContain('Only listings with AVAILABLE status can be reserved');
+      expect(response.body.message).toContain(
+        'Only listings with AVAILABLE status can be reserved',
+      );
     });
 
     test('allows the owner to accept a pending reservation, reserves the listing, and rejects competing pending requests', async () => {
       const listing = await insertListing();
-      const acceptedTarget = await insertReservationRequest({ listingId: listing.id, requesterId: requester.id });
-      const competingRequest = await insertReservationRequest({ listingId: listing.id, requesterId: otherUser.id });
+      const acceptedTarget = await insertReservationRequest({
+        listingId: listing.id,
+        requesterId: requester.id,
+      });
+      const competingRequest = await insertReservationRequest({
+        listingId: listing.id,
+        requesterId: otherUser.id,
+      });
 
       const response = await request(app)
         .patch(`/api/reservations/${acceptedTarget.id}/accept`)
@@ -543,7 +612,9 @@ describe('Reservation API', () => {
       );
       expect(competingRow.rows[0].status).toBe('REJECTED');
 
-      const listingRow = await pool.query(`SELECT status FROM listings WHERE id = $1`, [listing.id]);
+      const listingRow = await pool.query(`SELECT status FROM listings WHERE id = $1`, [
+        listing.id,
+      ]);
       expect(listingRow.rows[0].status).toBe('RESERVED');
     });
   });
@@ -599,7 +670,10 @@ describe('Reservation API', () => {
 
     test('returns 409 when the reservation is no longer pending', async () => {
       const listing = await insertListing();
-      const reservation = await insertReservationRequest({ listingId: listing.id, status: 'ACCEPTED' });
+      const reservation = await insertReservationRequest({
+        listingId: listing.id,
+        status: 'ACCEPTED',
+      });
 
       const response = await request(app)
         .patch(`/api/reservations/${reservation.id}/reject`)
@@ -629,7 +703,9 @@ describe('Reservation API', () => {
       );
       expect(reservationRow.rows[0].status).toBe('REJECTED');
 
-      const listingRow = await pool.query(`SELECT status FROM listings WHERE id = $1`, [listing.id]);
+      const listingRow = await pool.query(`SELECT status FROM listings WHERE id = $1`, [
+        listing.id,
+      ]);
       expect(listingRow.rows[0].status).toBe('AVAILABLE');
     });
   });
