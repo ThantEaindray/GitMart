@@ -63,4 +63,8 @@ router.put('/me/password', jwtMiddleware.verifyToken, userController.getPassword
 // Logout — revoke refresh token from DB and clear cookie
 router.post('/logout', userController.logout);
 
+// Public seller profile — no auth required
+router.get('/users/:userId/public', userController.getPublicProfile);
+router.get('/users/:userId/reviews', userController.getSellerReviews);
+
 module.exports = router;

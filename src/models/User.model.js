@@ -153,3 +153,29 @@ module.exports.namesPictures = (data, callback) => {
   const VALUES = [data]
   pool.query(SQLSTATEMENT,VALUES,callback)
 }
+
+module.exports.getPublicProfile = (data, callback) => {
+  const SQLSTATEMENT = `
+    SELECT u.id, u.username, u.created_on,
+           COUNT(l.id) FILTER (WHERE l.status = 'AVAILABLE') AS listing_count
+    FROM users u
+    LEFT JOIN listings l ON l.owner_id = u.id
+    WHERE u.id = $1
+    GROUP BY u.id
+  `;
+  pool.query(SQLSTATEMENT, [data.userId], callback);
+};
+
+module.exports.getSellerReviews = (data, callback) => {
+  const SQLSTATEMENT = `
+    SELECT r.id, r.rating, r.comment, r.created_on,
+           l.title AS listing_title, l.id AS listing_id,
+           u.username AS reviewer_name
+    FROM listing_reviews r
+    JOIN listings l ON l.id = r.listing_id
+    JOIN users u ON u.id = r.reviewer_id
+    WHERE l.owner_id = $1
+    ORDER BY r.created_on DESC
+  `;
+  pool.query(SQLSTATEMENT, [data.userId], callback);
+};
