@@ -80,7 +80,9 @@ function renderListingCard(listing) {
     '<div class="card-cat">' + escapeHtml(listing.category) + '</div>' +
     '<div class="card-name">' + escapeHtml(listing.title) + '</div>' +
     '<div class="card-footer"><span class="card-price" data-price="' +
-    listing.price + '">' + formatPrice(Number(listing.price)) + '</span></div>' +
+    listing.price + '">' + formatPrice(Number(listing.price)) + '</span>' +
+    (Number(listing.review_count) > 0 ? '<span class="card-rating" style="font-size:0.78rem;color:var(--accent,#c9a96e);">★ ' + listing.avg_rating + ' <span style="color:var(--muted)">(' + listing.review_count + ')</span></span>' : '') +
+    '</div>' +
     '</div>';
   card.addEventListener('click', goToListing);
   return card;

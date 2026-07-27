@@ -127,6 +127,7 @@ function createListingCard(listing) {
       <p style="font-size:0.82em;color:var(--muted);margin:6px 0 10px;line-height:1.5;">${listing.description}</p>
       <div class="card-footer">
         <span class="card-price" data-price="${listing.price}">${formatPrice(Number(listing.price))}</span>
+        ${Number(listing.review_count) > 0 ? `<span class="card-rating" style="font-size:0.78rem;color:var(--accent,#c9a96e);">★ ${listing.avg_rating} <span style="color:var(--muted)">(${listing.review_count})</span></span>` : ''}
         ${listing.view_count > 0 ? `<span style="font-size:0.78rem;color:var(--muted);"><i class="bi bi-eye"></i> ${listing.view_count}</span>` : ''}
         ${!isOwner(listing) ? `<button class="btn-wishlist-heart" data-listing-id="${listing.id}" type="button" aria-label="Add to wishlist"><i class="bi bi-heart"></i></button>` : ''}
       </div>

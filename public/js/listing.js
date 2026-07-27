@@ -120,6 +120,9 @@ function renderListing(listing) {
     '<h1 class="product-name">' +
     listing.title +
     '</h1>' +
+    (Number(listing.review_count) > 0
+      ? '<div class="product-rating">★ ' + listing.avg_rating + ' <span class="rv-count">(' + listing.review_count + ' review' + (listing.review_count == 1 ? '' : 's') + ')</span></div>'
+      : '') +
     '<div class="product-price" data-price="' +
     listing.price +
     '">' +
