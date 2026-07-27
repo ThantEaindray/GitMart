@@ -4,7 +4,8 @@
 const ordersList = document.getElementById('ordersList');
 const ordersCount = document.getElementById('ordersCount');
 const ordersPending = document.getElementById('ordersPending');
-const ordersSpend = document.getElementById('ordersSpend');
+const ordersProcessing = document.getElementById('ordersProcessing');
+const ordersDelivered = document.getElementById('ordersDelivered');
 const refreshOrdersButton = document.getElementById('refreshOrders');
 
 // Current orders shown on the page
@@ -252,14 +253,17 @@ function updateSummary() {
   const pendingCount = allOrders.filter(
     (order) => normalizeStatus(order.status) === 'pending',
   ).length;
-  const spend = allOrders.reduce(
-    (sum, order) => sum + Number(order.totalAmount || order.total || 0),
-    0,
+  const processingCount = allOrders.filter(
+    (order) => normalizeStatus(order.status) === 'processing',
+  ).length;
+  const deliveredCount = allOrders.filter(
+    (order) => normalizeStatus(order.status) === 'delivered',
   );
 
   ordersCount.textContent = allOrders.length;
   ordersPending.textContent = pendingCount;
-  ordersSpend.textContent = formatMoney(spend);
+  ordersProcessing.textContent = processingCount;
+  ordersDelivered.textContent = deliveredCount;
 }
 
 // Render the order list using the active filter.
