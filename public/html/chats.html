@@ -57,17 +57,25 @@
 
       <form class="chat-input-bar" id="input-form">
         <input class="chat-input" type="text" id="message" placeholder="Type a message…" autocomplete="off" required/>
+        <button type="btn-primary" data-bs-toggle="modal" data-bs-target="#imgmodal">testbutton</button>
         <button type="submit" class="btn-primary chat-send-btn">Send</button>
       </form>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
-
+  <div class="modal modal-centered" id="imgmodal">
+      <form class="image-uploads" id="imageuploads">
+          <p>Select a file to upload</p>
+          <input id="fileinput" type="file" required/>
+          <input type="submit">
+      </form>
+  </div>
   <script src="../js/prefs.js"></script>
   <script src="../js/api.js"></script>
   <script src="../js/queryCmds.js"></script>
   <script src="../js/chats.js"></script>
   <script src="../js/WS.js"></script>
+  <script src="../js/images.js"></script>
 </body>
 </html>

@@ -130,7 +130,7 @@ module.exports.loadMessages = (req, res, _next) => {
 }
 
 
-module.exports.sendText = (req, res, _next) => {
+module.exports.uploadCont = (req, res, _next) => {
   let data = req.body
   const callback = (err, _results, _fields) => {
     if (err) {
@@ -140,7 +140,7 @@ module.exports.sendText = (req, res, _next) => {
     //we dont really even need to return anything for this one the ws will do the rest
     res.status(201).json({})
   }
-  model.sendText(data,callback)
+  model.uploadCont(data,callback)
 }
 
 module.exports.hasChat = (req, res, next) => {

@@ -28,12 +28,12 @@ module.exports.loadMessages = (data, callback) => {
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
-module.exports.sendText = (data, callback) => {
+module.exports.uploadCont = (data, callback) => {
   const SQLSTATEMENT = `
-    INSERT INTO chatcontent (chat_id, sender_id, textcontent)
-    VALUES ($1, $2, $3)
+    INSERT INTO chatcontent (chat_id, sender_id, cont, content_type)
+    VALUES ($1, $2, $3, $4)
   `;
-  const VALUES = [data.chat, data.user, data.textcontent];
+  const VALUES = [data.chat, data.user, data.content, data.type];
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
