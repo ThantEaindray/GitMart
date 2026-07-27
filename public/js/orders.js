@@ -258,7 +258,7 @@ function updateSummary() {
   ).length;
   const deliveredCount = allOrders.filter(
     (order) => normalizeStatus(order.status) === 'delivered',
-  );
+  ).length;
 
   ordersCount.textContent = allOrders.length;
   ordersPending.textContent = pendingCount;
