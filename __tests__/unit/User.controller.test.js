@@ -445,3 +445,392 @@ describe('getCurrentUser', () => {
     expect(res.json).toHaveBeenCalledWith({ id: 1, username: 'alice' });
   });
 });
+
+// ── checkUsernameExists extra ────────────────────────────────────────────────
+
+describe('checkUsernameExists - extra cases', () => {
+  it('returns 400 when password is exactly 5 characters (boundary)', () => {
+    const req = { body: { username: 'alice', email: 'a@b.com', password: '12345' } };
+    const res = makeRes();
+    controller.checkUsernameExists(req, res, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('calls the model when password is exactly 6 characters (boundary)', () => {
+    const req = { body: { username: 'alice', email: 'a@b.com', password: '123456' } };
+    const res = makeRes();
+    const next = jest.fn();
+    mockFn(model.getUserByUsername, null, []);
+    controller.checkUsernameExists(req, res, next);
+    expect(model.getUserByUsername).toHaveBeenCalled();
+  });
+
+  it('returns 400 when only email is missing', () => {
+    const req = { body: { username: 'alice', password: 'secret1' } };
+    const res = makeRes();
+    controller.checkUsernameExists(req, res, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when only username is missing', () => {
+    const req = { body: { email: 'a@b.com', password: 'secret1' } };
+    const res = makeRes();
+    controller.checkUsernameExists(req, res, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+});
+
+// ── checkEmailExists extra ───────────────────────────────────────────────────
+
+describe('checkEmailExists - extra cases', () => {
+  it('passes email from req.body to the model', () => {
+    const req = { body: { email: 'test@example.com' } };
+    const res = makeRes();
+    const next = jest.fn();
+    mockFn(model.getUserByEmail, null, []);
+    controller.checkEmailExists(req, res, next);
+    expect(model.getUserByEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'test@example.com' }),
+      expect.any(Function),
+    );
+  });
+});
+
+// ── register extra ───────────────────────────────────────────────────────────
+
+describe('register - extra cases', () => {
+  it('sets res.locals.isStaff from the DB result', () => {
+    const req = { body: { username: 'alice', email: 'a@b.com' } };
+    const res = makeRes({ hash: 'hashed' });
+    const next = jest.fn();
+    mockFn(model.createUser, null, [{ id: 7, username: 'alice', isStaff: true }]);
+    controller.register(req, res, next);
+    expect(res.locals.isStaff).toBe(true);
+  });
+
+  it('sets res.locals.message with success text', () => {
+    const req = { body: { username: 'bob', email: 'b@b.com' } };
+    const res = makeRes({ hash: 'hashed' });
+    const next = jest.fn();
+    mockFn(model.createUser, null, [{ id: 8, username: 'bob', isStaff: false }]);
+    controller.register(req, res, next);
+    expect(res.locals.message).toContain('bob');
+  });
+
+  it('passes hash from res.locals to the model as password', () => {
+    const req = { body: { username: 'alice', email: 'a@b.com' } };
+    const res = makeRes({ hash: 'hashedPassword' });
+    const next = jest.fn();
+    mockFn(model.createUser, null, [{ id: 7, username: 'alice', isStaff: false }]);
+    controller.register(req, res, next);
+    expect(model.createUser).toHaveBeenCalledWith(
+      expect.objectContaining({ password: 'hashedPassword' }),
+      expect.any(Function),
+    );
+  });
+});
+
+// ── login extra ──────────────────────────────────────────────────────────────
+
+describe('login - extra cases', () => {
+  it('returns 400 when only password is missing', () => {
+    const req = { body: { username: 'alice' } };
+    const res = makeRes();
+    controller.login(req, res, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('sets res.locals.hash from the DB result on success', () => {
+    const req = { body: { username: 'alice', password: 'pass' } };
+    const res = makeRes();
+    const next = jest.fn();
+    mockFn(model.getUserByUsername, null, [{ id: 7, username: 'alice', password: 'hashed_pw', isStaff: false }]);
+    controller.login(req, res, next);
+    expect(res.locals.hash).toBe('hashed_pw');
+  });
+
+  it('sets res.locals.isStaff from the DB result on success', () => {
+    const req = { body: { username: 'alice', password: 'pass' } };
+    const res = makeRes();
+    const next = jest.fn();
+    mockFn(model.getUserByUsername, null, [{ id: 7, username: 'alice', password: 'hash', isStaff: true }]);
+    controller.login(req, res, next);
+    expect(res.locals.isStaff).toBe(true);
+  });
+
+  it('calls the model with username from the request body', () => {
+    const req = { body: { username: 'charlie', password: 'pass' } };
+    const res = makeRes();
+    mockFn(model.getUserByUsername, null, []);
+    controller.login(req, res, jest.fn());
+    expect(model.getUserByUsername).toHaveBeenCalledWith(
+      expect.objectContaining({ username: 'charlie' }),
+      expect.any(Function),
+    );
+  });
+});
+
+// ── getSettings extra ────────────────────────────────────────────────────────
+
+describe('getSettings - extra cases', () => {
+  it('passes userId from res.locals to the model', () => {
+    const res = makeRes({ userId: 42 });
+    mockFn(model.getUserSettings, null, [{ theme: 'dark' }]);
+    controller.getSettings({}, res);
+    expect(model.getUserSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 42 }),
+      expect.any(Function),
+    );
+  });
+});
+
+// ── updateSettings extra ─────────────────────────────────────────────────────
+
+describe('updateSettings - extra cases', () => {
+  it('passes null theme to model when theme is not provided', () => {
+    const req = { body: { currency: 'SGD' } };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.updateUserSettings, null, [{}]);
+    controller.updateSettings(req, res);
+    expect(model.updateUserSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ theme: null }),
+      expect.any(Function),
+    );
+  });
+
+  it('passes explicit theme value to model', () => {
+    const req = { body: { theme: 'noir', currency: 'USD' } };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.updateUserSettings, null, [{}]);
+    controller.updateSettings(req, res);
+    expect(model.updateUserSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ theme: 'noir' }),
+      expect.any(Function),
+    );
+  });
+
+  it('passes fontSize to model', () => {
+    const req = { body: { fontSize: 'lg' } };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.updateUserSettings, null, [{}]);
+    controller.updateSettings(req, res);
+    expect(model.updateUserSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ fontSize: 'lg' }),
+      expect.any(Function),
+    );
+  });
+
+  it('passes null fontSize when not provided', () => {
+    const req = { body: {} };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.updateUserSettings, null, [{}]);
+    controller.updateSettings(req, res);
+    expect(model.updateUserSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ fontSize: null }),
+      expect.any(Function),
+    );
+  });
+});
+
+// ── updateDisplayName extra ──────────────────────────────────────────────────
+
+describe('updateDisplayName - extra cases', () => {
+  it('passes displayName to the model', () => {
+    const req = { body: { displayName: 'Alice Wonder' } };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.updateDisplayName, null, []);
+    controller.updateDisplayName(req, res);
+    expect(model.updateDisplayName).toHaveBeenCalledWith(
+      expect.objectContaining({ displayName: 'Alice Wonder' }),
+      expect.any(Function),
+    );
+  });
+
+  it('returns json with message "Display name updated."', () => {
+    const req = { body: { displayName: 'Alice' } };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.updateDisplayName, null, []);
+    controller.updateDisplayName(req, res);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Display name updated.' });
+  });
+
+  it('passes null displayName when field is missing', () => {
+    const req = { body: {} };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.updateDisplayName, null, []);
+    controller.updateDisplayName(req, res);
+    expect(model.updateDisplayName).toHaveBeenCalledWith(
+      expect.objectContaining({ displayName: null }),
+      expect.any(Function),
+    );
+  });
+});
+
+// ── updateProfileImage extra ─────────────────────────────────────────────────
+
+describe('updateProfileImage - extra cases', () => {
+  it('returns 400 when imageBase64 is an empty string', () => {
+    const req = { body: { imageBase64: '' } };
+    const res = makeRes({ userId: 1 });
+    controller.updateProfileImage(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('strips the data URI prefix before creating imageBuffer', () => {
+    const req = { body: { imageBase64: 'data:image/png;base64,abc123' } };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.updateProfileImage, null, [{ profile_image: 'abc123' }]);
+    controller.updateProfileImage(req, res);
+    const [data] = model.updateProfileImage.mock.calls[0];
+    expect(data.imageBuffer).toEqual(Buffer.from('abc123', 'base64'));
+  });
+
+  it('returns json with message "Profile image updated successfully."', () => {
+    const req = { body: { imageBase64: 'data:image/png;base64,abc123' } };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.updateProfileImage, null, [{ profile_image: 'abc123' }]);
+    controller.updateProfileImage(req, res);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: 'Profile image updated successfully.' }));
+  });
+});
+
+// ── updateNotifications extra ────────────────────────────────────────────────
+
+describe('updateNotifications - extra cases', () => {
+  it('passes notifyOrders=false when explicitly set to false', () => {
+    const req = { body: { notifyOrders: false } };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.updateNotifications, null, []);
+    controller.updateNotifications(req, res);
+    expect(model.updateNotifications).toHaveBeenCalledWith(
+      expect.objectContaining({ notifyOrders: false }),
+      expect.any(Function),
+    );
+  });
+
+  it('passes notifyPromotions=true when explicitly set to true', () => {
+    const req = { body: { notifyPromotions: true } };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.updateNotifications, null, []);
+    controller.updateNotifications(req, res);
+    expect(model.updateNotifications).toHaveBeenCalledWith(
+      expect.objectContaining({ notifyPromotions: true }),
+      expect.any(Function),
+    );
+  });
+
+  it('returns json with message "Notification preferences updated."', () => {
+    const req = { body: {} };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.updateNotifications, null, []);
+    controller.updateNotifications(req, res);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Notification preferences updated.' });
+  });
+
+  it('notifyOrders is true when req.body.notifyOrders is undefined', () => {
+    const req = { body: {} };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.updateNotifications, null, []);
+    controller.updateNotifications(req, res);
+    expect(model.updateNotifications).toHaveBeenCalledWith(
+      expect.objectContaining({ notifyOrders: true }),
+      expect.any(Function),
+    );
+  });
+});
+
+// ── deleteAccount extra ──────────────────────────────────────────────────────
+
+describe('deleteAccount - extra cases', () => {
+  it('returns json with message "Account deleted."', () => {
+    const res = makeRes({ userId: 1 });
+    mockFn(model.deleteUser, null, []);
+    controller.deleteAccount({}, res);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Account deleted.' });
+  });
+
+  it('clears the refreshToken cookie on success', () => {
+    const res = makeRes({ userId: 1 });
+    mockFn(model.deleteUser, null, []);
+    controller.deleteAccount({}, res);
+    expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', expect.any(Object));
+  });
+});
+
+// ── getPasswordHash extra ────────────────────────────────────────────────────
+
+describe('getPasswordHash - extra cases', () => {
+  it('returns 400 when newPassword is exactly 5 characters (boundary)', () => {
+    const req = { body: { currentPassword: 'old', newPassword: '12345' } };
+    const res = makeRes({ userId: 1 });
+    controller.getPasswordHash(req, res, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('calls the model when newPassword is exactly 6 characters (boundary)', () => {
+    const req = { body: { currentPassword: 'old', newPassword: '123456' } };
+    const res = makeRes({ userId: 1 });
+    const next = jest.fn();
+    mockFn(model.getUserPasswordById, null, [{ password: 'hash' }]);
+    controller.getPasswordHash(req, res, next);
+    expect(model.getUserPasswordById).toHaveBeenCalled();
+  });
+});
+
+// ── updatePassword extra ─────────────────────────────────────────────────────
+
+describe('updatePassword - extra cases', () => {
+  it('returns json with message "Password updated successfully."', () => {
+    const res = makeRes({ userId: 1, hash: 'newHash' });
+    mockFn(model.updateUserPassword, null, []);
+    controller.updatePassword({}, res);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Password updated successfully.' });
+  });
+
+  it('passes hash from res.locals to the model', () => {
+    const res = makeRes({ userId: 1, hash: 'myNewHash' });
+    mockFn(model.updateUserPassword, null, []);
+    controller.updatePassword({}, res);
+    expect(model.updateUserPassword).toHaveBeenCalledWith(
+      expect.objectContaining({ password: 'myNewHash' }),
+      expect.any(Function),
+    );
+  });
+});
+
+// ── sendRegistered extra ─────────────────────────────────────────────────────
+
+describe('sendRegistered - extra cases', () => {
+  it('returns json with a message string', () => {
+    const res = makeRes();
+    controller.sendRegistered({}, res);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: expect.any(String) }));
+  });
+});
+
+// ── logout extra ─────────────────────────────────────────────────────────────
+
+describe('logout - extra cases', () => {
+  it('clears the refreshToken cookie by name', () => {
+    const req = { cookies: {} };
+    const res = makeRes();
+    controller.logout(req, res);
+    expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', expect.any(Object));
+  });
+
+  it('returns json with message "Logged out."', () => {
+    const req = { cookies: {} };
+    const res = makeRes();
+    controller.logout(req, res);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Logged out.' });
+  });
+
+  it('clears the cookie even when deleteRefreshToken fails', () => {
+    const req = { cookies: { refreshToken: 'tok' } };
+    const res = makeRes();
+    model.deleteRefreshToken.mockImplementation((_data, cb) => cb(new Error('DB error')));
+    controller.logout(req, res);
+    expect(res.clearCookie).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+});
