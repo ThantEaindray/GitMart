@@ -245,6 +245,8 @@ function createListingCard(listing) {
           ${formatPrice(Number(listing.price))}
         </span>
 
+        ${Number(listing.review_count) > 0 ? `<span class="card-rating" style="font-size:0.78rem;color:var(--accent,#c9a96e);">★ ${listing.avg_rating} <span style="color:var(--muted)">(${listing.review_count})</span></span>` : ''}
+
         ${viewCountHtml}
         ${wishlistButtonHtml}
       </div>

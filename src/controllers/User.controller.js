@@ -292,6 +292,39 @@ module.exports.getCurrentUser = (req, res) => {
 
 //this function is for the chats but it only really calls the users
 // get the names & pfps of every user who has an open chat with the open user (array of ids)
+// GET /api/users/:userId/public
+module.exports.getPublicProfile = (req, res) => {
+  const data = { userId: req.params.userId };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    return res.status(200).json(result.rows[0]);
+  };
+
+  model.getPublicProfile(data, callback);
+};
+
+// GET /api/users/:userId/reviews
+module.exports.getSellerReviews = (req, res) => {
+  const data = { userId: req.params.userId };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    return res.status(200).json(result.rows);
+  };
+
+  model.getSellerReviews(data, callback);
+};
+
 module.exports.namesPictures = (req, res, next) => {
   const data = {
     ids: res.locals.toLoad

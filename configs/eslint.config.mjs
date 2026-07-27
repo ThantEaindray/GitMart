@@ -128,6 +128,9 @@ export default [
         CURRENCIES: 'writable',
         getProductById: 'writable',
         getProductsByCategory: 'writable',
+        showToast: 'writable',
+        initReviews: 'writable',
+        deleteReview: 'writable',
       },
     },
     rules: {
