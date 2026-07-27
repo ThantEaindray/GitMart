@@ -1,7 +1,5 @@
 // ── TOAST ─────────────────────────────────────────────────────────────────
 
-
-
 var currentListing = null;
 var _isWishlisted = false;
 var _currentListingId = null;
@@ -33,12 +31,212 @@ function errorView(message) {
   );
 }
 
+function getCurrentUserId() {
+  return Number(localStorage.getItem('loggedInUserId') || localStorage.getItem('userId'));
+}
+
+function isListingOwner(listing) {
+  const currentUserId = getCurrentUserId();
+
+  return currentUserId > 0 && Number(listing.owner_id) === currentUserId;
+}
+
+function getListingStatus(listing) {
+  if (typeof listing.status === 'string' && listing.status.trim() !== '') {
+    return listing.status.trim().toUpperCase();
+  }
+
+  if (listing.isSold) {
+    return 'SOLD';
+  }
+
+  if (listing.isClosed) {
+    return 'ARCHIVED';
+  }
+
+  return 'AVAILABLE';
+}
+
+function formatListingStatus(status) {
+  return status.charAt(0) + status.slice(1).toLowerCase();
+}
+
+function getOwnerLifecycleActions(status) {
+  if (status === 'AVAILABLE') {
+    return `
+      <div class="owner-lifecycle-controls">
+        <p class="status-text">Manage your listing status</p>
+
+        <div class="product-actions">
+          <button
+            class="btn-primary"
+            type="button"
+            data-listing-status-action
+            onclick="updateListingStatus('RESERVED')"
+          >
+            Mark Reserved
+          </button>
+
+          <button
+            class="btn-outline"
+            type="button"
+            data-listing-status-action
+            onclick="updateListingStatus('SOLD')"
+          >
+            Mark Sold
+          </button>
+
+          <button
+            class="btn-outline"
+            type="button"
+            data-listing-status-action
+            onclick="updateListingStatus('ARCHIVED')"
+          >
+            Archive
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  if (status === 'RESERVED') {
+    return `
+      <div class="owner-lifecycle-controls">
+        <p class="status-text">Manage your listing status</p>
+
+        <div class="product-actions">
+          <button
+            class="btn-primary"
+            type="button"
+            data-listing-status-action
+            onclick="updateListingStatus('AVAILABLE')"
+          >
+            Release Reservation
+          </button>
+
+          <button
+            class="btn-outline"
+            type="button"
+            data-listing-status-action
+            onclick="updateListingStatus('SOLD')"
+          >
+            Mark Sold
+          </button>
+
+          <button
+            class="btn-outline"
+            type="button"
+            data-listing-status-action
+            onclick="updateListingStatus('ARCHIVED')"
+          >
+            Archive
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  if (status === 'ARCHIVED') {
+    return `
+      <div class="owner-lifecycle-controls">
+        <p class="status-text">
+          This listing is archived.
+        </p>
+
+        <div class="product-actions">
+          <button
+            class="btn-primary"
+            type="button"
+            data-listing-status-action
+            onclick="updateListingStatus('AVAILABLE')"
+          >
+            Relist as Available
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="owner-lifecycle-controls">
+      <p class="status-text">
+        This listing is sold. Sold is a final status.
+      </p>
+
+      <button
+        class="btn-outline btn-unavailable"
+        type="button"
+        disabled
+      >
+        Sold
+      </button>
+    </div>
+  `;
+}
+
+function getBuyerActions(listing, status) {
+  const contactButton = listing.owner_id
+    ? `
+      <button
+        class="btn-primary"
+        id="btn-contact"
+        type="button"
+        onclick="createChat(${listing.owner_id})"
+      >
+        Contact Seller
+      </button>
+    `
+    : '';
+
+  const cartButton =
+    status === 'AVAILABLE'
+      ? `
+        <button
+          class="btn-outline"
+          id="btn-cart"
+          type="button"
+          onclick="addToCart()"
+        >
+          <i class="bi bi-bag"></i>
+          Add to Cart
+        </button>
+      `
+      : `
+        <button
+          class="btn-outline btn-unavailable"
+          id="btn-cart"
+          type="button"
+          disabled
+        >
+          ${formatListingStatus(status)}
+        </button>
+      `;
+
+  return `
+  <div class="product-actions">
+    ${contactButton}
+    ${cartButton}
+
+    <button
+      class="btn-wishlist-heart"
+      id="btn-detail-heart"
+      type="button"
+      onclick="toggleDetailWishlist()"
+      title="Add to wishlist"
+      aria-label="Add to wishlist"
+    >
+      <i class="bi bi-heart"></i>
+    </button>
+  </div>
+`;
+}
+
 // ── LISTING DETAIL ────────────────────────────────────────────────────────
 
 function addToCart() {
   if (!currentListing) return;
-  if (currentListing.isSold || currentListing.isClosed) {
-    showToast('This listing has already been sold.');
+  if (getListingStatus(currentListing) !== 'AVAILABLE') {
+    showToast('Only available listings can be added to cart.');
     return;
   }
 
@@ -68,80 +266,158 @@ function addToCart() {
   showToast('Added to cart.');
 }
 
+function setLifecycleButtonsDisabled(disabled) {
+  document.querySelectorAll('[data-listing-status-action]').forEach(function (button) {
+    button.disabled = disabled;
+  });
+}
+
+function updateListingStatus(nextStatus) {
+  if (!currentListing) {
+    return;
+  }
+
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  if (!isListingOwner(currentListing)) {
+    showToast('Only the listing owner can change its status.');
+    return;
+  }
+
+  setLifecycleButtonsDisabled(true);
+
+  fetch(`/api/listings/${currentListing.id}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      status: nextStatus,
+    }),
+  })
+    .then(parseResponse)
+    .then(function (result) {
+      if (result.status !== 200) {
+        setLifecycleButtonsDisabled(false);
+
+        showToast(result.data.message || 'Failed to update listing status.');
+
+        return;
+      }
+
+      currentListing = Object.assign({}, currentListing, result.data.listing);
+
+      renderListing(currentListing);
+
+      showToast(result.data.message || 'Listing status updated successfully.');
+    })
+    .catch(function () {
+      setLifecycleButtonsDisabled(false);
+
+      showToast('Failed to update listing status.');
+    });
+}
+
 function renderListing(listing) {
   currentListing = listing;
   _currentListingId = listing.id;
+
   const section = document.getElementById('listing-detail');
-  document.title = 'GitMart — ' + listing.title;
 
-  const isAvailable = !listing.isSold && !listing.isClosed;
-  const status = listing.isSold ? 'Sold' : listing.isClosed ? 'Closed' : 'Available';
-  const statusColor = isAvailable ? 'var(--accent)' : 'var(--muted)';
+  document.title = `GitMart — ${listing.title}`;
 
-  const date = new Date(listing.created_on).toLocaleDateString(undefined, {
+  const lifecycleStatus = getListingStatus(listing);
+
+  const statusLabel = formatListingStatus(lifecycleStatus);
+
+  const owner = isListingOwner(listing);
+
+  const statusColor =
+    lifecycleStatus === 'AVAILABLE'
+      ? 'var(--accent)'
+      : lifecycleStatus === 'RESERVED'
+        ? 'var(--accent2)'
+        : 'var(--muted)';
+
+  const createdDate = new Date(listing.created_on).toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
 
+  const statusUpdatedDate = listing.status_updated_on
+    ? new Date(listing.status_updated_on).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    : null;
+
   const listingImage = listing.image_url
-    ? '<img src="' +
-      listing.image_url +
-      '" alt="' +
-      listing.title +
-      '" class="listing-detail-image" />'
+    ? `
+      <img
+        src="${listing.image_url}"
+        alt="${listing.title}"
+        class="listing-detail-image"
+      />
+    `
     : '<i class="bi bi-tag"></i>';
 
-  var cartBtn = isAvailable
-    ? '<button class="btn-outline" id="btn-cart" onclick="addToCart()"><i class="bi bi-bag"></i> Add to Cart</button>'
-    : '<button class="btn-outline btn-unavailable" id="btn-cart" disabled>Unavailable</button>';
+  const actions = owner
+    ? getOwnerLifecycleActions(lifecycleStatus)
+    : getBuyerActions(listing, lifecycleStatus);
 
-  var loggedInId = localStorage.getItem('loggedInUserId');
-  var isOwner = loggedInId && Number(loggedInId) === listing.owner_id;
-  var heartBtn = isOwner
-    ? ''
-    : '<button class="btn-wishlist-heart" id="btn-detail-heart" onclick="toggleDetailWishlist()" title="Add to wishlist"><i class="bi bi-heart"></i></button>';
+  section.innerHTML = `
+    <div class="product-img">
+      ${listingImage}
+    </div>
 
-  section.innerHTML =
-    '<div class="product-img">' +
-    listingImage +
-    '</div>' +
-    '<div class="product-info">' +
-    '<div class="card-cat" style="color:' +
-    statusColor +
-    ';">' +
-    status +
-    ' &nbsp;·&nbsp; Listed ' +
-    date +
-    (listing.view_count > 0
-      ? ' &nbsp;·&nbsp; <i class="bi bi-eye"></i> ' + listing.view_count + ' views'
-      : '') +
-    '</div>' +
-    '<h1 class="product-name">' +
-    listing.title +
-    '</h1>' +
-    (Number(listing.review_count) > 0
-      ? '<div class="product-rating">★ ' + listing.avg_rating + ' <span class="rv-count">(' + listing.review_count + ' review' + (listing.review_count == 1 ? '' : 's') + ')</span></div>'
-      : '') +
-    '<div class="product-price" data-price="' +
-    listing.price +
-    '">' +
-    formatPrice(Number(listing.price)) +
-    '</div>' +
-    '<p class="product-description">' +
-    listing.description +
-    '</p>' +
-    (listing.owner_id
-      ? '<div class="product-seller-bar">Sold by <a href="seller.html?id=' + listing.owner_id + '" id="seller-name-link" class="seller-name-link">…</a></div>'
-      : '') +
-    '<div class="product-actions">' +
-    '<button class="btn-primary" id="btn-contact" onclick="createChat(' +
-    listing.owner_id +
-    ')">Contact Seller</button>' +
-    cartBtn +
-    heartBtn +
-    '</div>' +
-    '</div>';
+    <div class="product-info">
+      <div
+        class="card-cat"
+        style="color: ${statusColor};"
+      >
+        ${statusLabel}
+        &nbsp;·&nbsp;
+        Listed ${createdDate}
+
+        ${statusUpdatedDate ? `&nbsp;·&nbsp; Status updated ${statusUpdatedDate}` : ''}
+
+        ${
+          listing.view_count > 0
+            ? `&nbsp;·&nbsp; <i class="bi bi-eye"></i> ${listing.view_count} views`
+            : ''
+        }
+      </div>
+
+      <h1 class="product-name">
+        ${listing.title}
+      </h1>
+
+      ${Number(listing.review_count) > 0 ? `<div class="product-rating">★ ${listing.avg_rating} <span class="rv-count">(${listing.review_count} review${listing.review_count == 1 ? '' : 's'})</span></div>` : ''}
+
+      <div
+        class="product-price"
+        data-price="${listing.price}"
+      >
+        ${formatPrice(Number(listing.price))}
+      </div>
+
+      <p class="product-description">
+        ${listing.description}
+      </p>
+
+      ${listing.owner_id ? `<div class="product-seller-bar">Sold by <a href="seller.html?id=${listing.owner_id}" id="seller-name-link" class="seller-name-link">…</a></div>` : ''}
+
+      ${actions}
+    </div>
+  `;
 }
 
 // ── SELLER INFO ───────────────────────────────────────────────────────────
@@ -171,12 +447,21 @@ function renderRelatedCard(listing) {
   card.className = 'card';
   card.dataset.listingId = listing.id;
   card.innerHTML =
-    '<div class="card-img">' + img + '</div>' +
+    '<div class="card-img">' +
+    img +
+    '</div>' +
     '<div class="card-body">' +
-    '<div class="card-cat">' + listing.category + '</div>' +
-    '<div class="card-name">' + listing.title + '</div>' +
+    '<div class="card-cat">' +
+    listing.category +
+    '</div>' +
+    '<div class="card-name">' +
+    listing.title +
+    '</div>' +
     '<div class="card-footer"><span class="card-price" data-price="' +
-    listing.price + '">' + formatPrice(Number(listing.price)) + '</span></div>' +
+    listing.price +
+    '">' +
+    formatPrice(Number(listing.price)) +
+    '</span></div>' +
     '</div>';
   card.addEventListener('click', goToRelatedListing);
   return card;
@@ -186,7 +471,9 @@ function onRelatedLoaded(result) {
   if (result.status !== 200) return;
 
   var others = result.data
-    .filter(function (l) { return l.id !== Number(_currentListingId); })
+    .filter(function (l) {
+      return l.id !== Number(_currentListingId);
+    })
     .slice(0, 4);
 
   if (others.length === 0) return;
@@ -196,7 +483,9 @@ function onRelatedLoaded(result) {
   var seeAll = document.getElementById('related-see-all');
   if (!grid || !section) return;
 
-  others.forEach(function (l) { grid.appendChild(renderRelatedCard(l)); });
+  others.forEach(function (l) {
+    grid.appendChild(renderRelatedCard(l));
+  });
 
   if (seeAll && currentListing) {
     seeAll.href = 'listings.html?category=' + encodeURIComponent(currentListing.category);
@@ -313,7 +602,7 @@ function createChat(uId) {
 
     return;
   }
-  
+
   //format the data into an object for the req to work
   const data = {
     id: uId,
@@ -343,12 +632,17 @@ function createChat(uId) {
 
 window.addToCart = addToCart;
 window.createChat = createChat;
+window.updateListingStatus = updateListingStatus;
 window.toggleDetailWishlist = toggleDetailWishlist;
 
 document.addEventListener('DOMContentLoaded', function () {
   loadListing();
-  var navHeart = document.getElementById('btn-wishlist');
-  if (navHeart) navHeart.addEventListener('click', function () {
-    window.location.href = 'wishlist.html';
-  });
+
+  const navHeart = document.getElementById('btn-wishlist');
+
+  if (navHeart) {
+    navHeart.addEventListener('click', function () {
+      window.location.href = 'wishlist.html';
+    });
+  }
 });

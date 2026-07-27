@@ -50,7 +50,8 @@ module.exports.getListingsByCategory = (data, callback) => {
 module.exports.getListingById = (data, callback) => {
   const SQLSTATEMENT = `
     SELECT l.id, l.owner_id, l.price, l.created_on, l.title, l.description,
-           l.category, l.image_url, l.view_count, l."isSold", l."isClosed",
+           l.category, l.image_url, l.view_count, l.status, l.status_updated_on,
+           l."isSold", l."isClosed",
            ROUND(AVG(r.rating)::numeric, 1) AS avg_rating,
            COUNT(r.id) AS review_count
     FROM listings l
@@ -74,7 +75,7 @@ module.exports.getListingByIdWithView = (data, callback) => {
       UPDATE listings
       SET view_count = view_count + (CASE WHEN EXISTS(SELECT 1 FROM maybe_view) THEN 1 ELSE 0 END)
       WHERE id = $1::integer
-      RETURNING id, owner_id, price, created_on, title, description, category, image_url, view_count, "isSold", "isClosed"
+      RETURNING id, owner_id, price, created_on, title, description, category, image_url, view_count, status, status_updated_on, "isSold", "isClosed"
     )
     SELECT u.*,
            ROUND(AVG(r.rating)::numeric, 1) AS avg_rating,
@@ -82,7 +83,8 @@ module.exports.getListingByIdWithView = (data, callback) => {
     FROM updated u
     LEFT JOIN listing_reviews r ON r.listing_id = u.id
     GROUP BY u.id, u.owner_id, u.price, u.created_on, u.title, u.description,
-             u.category, u.image_url, u.view_count, u."isSold", u."isClosed"
+             u.category, u.image_url, u.view_count, u.status, u.status_updated_on,
+             u."isSold", u."isClosed"
   `;
   const VALUES = [data.id, data.userId];
   pool.query(SQLSTATEMENT, VALUES, callback);
@@ -120,7 +122,8 @@ module.exports.updateListing = (data, callback) => {
 module.exports.getMostViewed = (callback) => {
   const SQLSTATEMENT = `
     SELECT l.id, l.owner_id, l.price, l.created_on, l.title, l.description,
-           l.category, l.view_count, l."isSold", l."isClosed",
+           l.category, l.image_url, l.view_count, l.status, l.status_updated_on,
+           l."isSold", l."isClosed",
            ROUND(AVG(r.rating)::numeric, 1) AS avg_rating,
            COUNT(r.id) AS review_count
     FROM listings l
@@ -193,7 +196,8 @@ module.exports.searchListings = (data, callback) => {
   const orderBy = SORT_MAP[data.sort] || SORT_MAP.newest;
   const SQLSTATEMENT = `
     SELECT l.id, l.owner_id, l.price, l.created_on, l.title, l.description,
-           l.category, l.view_count, l."isSold", l."isClosed",
+           l.category, l.image_url, l.view_count, l.status, l.status_updated_on,
+           l."isSold", l."isClosed",
            ROUND(AVG(r.rating)::numeric, 1) AS avg_rating,
            COUNT(r.id) AS review_count
     FROM listings l

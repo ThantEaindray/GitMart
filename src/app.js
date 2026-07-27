@@ -23,8 +23,9 @@ const userRouter = require('./routers/User.router');
 const listingRouter = require('./routers/Listing.router');
 const wishlistRouter = require('./routers/Wishlist.router');
 const reviewRouter = require('./routers/Review.router');
+const reservationRouter = require('./routers/Reservation.router');
 
-const chatrouter = require('./routers/chats.router')
+const chatrouter = require('./routers/chats.router');
 
 const app = express();
 
@@ -60,7 +61,9 @@ app.use('/api', userRouter);
 app.use('/api', listingRouter);
 app.use('/api', wishlistRouter);
 app.use('/api', reviewRouter);
-app.use('/api/chats',chatrouter)
+app.use('/api', reservationRouter);
+app.use('/api/chats', chatrouter);
+
 // 404 handler — if no route above matched the request,
 // create a 404 error and pass it to the error handler below.
 app.use((req, res, next) => {
