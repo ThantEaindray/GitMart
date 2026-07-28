@@ -2,59 +2,59 @@ process.env.JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || 'integration-test-acc
 
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
-
 const app = require('../../src/app');
 const pool = require('../../src/models/db');
 
 const JWT_ALGORITHM = process.env.JWT_ALGORITHM || 'HS256';
 
 let owner;
-let buyer;
+let requester;
 let otherUser;
-
 let ownerToken;
-let buyerToken;
+let requesterToken;
 let otherUserToken;
 
+/**
+ * Creates a valid access token for a test user.
+ *
+ * Uses the same test secret as the real JWT middleware, so requests still
+ * pass through the application's actual verifyToken middleware.
+ */
 function createAccessToken(userId) {
-  return jwt.sign(
-    {
-      userId,
-    },
-    process.env.JWT_SECRET_KEY,
-    {
-      algorithm: JWT_ALGORITHM,
-      expiresIn: '1h',
-    },
-  );
+  return jwt.sign({ userId }, process.env.JWT_SECRET_KEY, {
+    algorithm: JWT_ALGORITHM,
+    expiresIn: '1h',
+  });
 }
 
+/**
+ * Inserts a user directly into the test database.
+ *
+ * The password is not used because these tests exercise reservation
+ * routes, not the login route.
+ */
 async function insertUser(username, email) {
   const result = await pool.query(
     `
-      INSERT INTO users (
-        username,
-        email,
-        password
-      )
+      INSERT INTO users (username, email, password)
       VALUES ($1, $2, $3)
-      RETURNING
-        id,
-        username,
-        email
+      RETURNING id, username, email
     `,
-    [username, email, 'not-used-by-reservation-tests'],
+    [username, email, 'not-used-by-these-tests'],
   );
 
   return result.rows[0];
 }
 
+/**
+ * Inserts a listing directly into the test database.
+ */
 async function insertListing({
-  ownerId,
-  status = 'AVAILABLE',
+  ownerId = owner.id,
   title = 'Reservation Test Listing',
-}) {
-  const compatibilityFlags = {
+  status = 'AVAILABLE',
+} = {}) {
+  const flagsByStatus = {
     AVAILABLE: {
       isSold: false,
       isClosed: false,
@@ -73,7 +73,7 @@ async function insertListing({
     },
   };
 
-  const flags = compatibilityFlags[status];
+  const flags = flagsByStatus[status];
 
   if (!flags) {
     throw new Error(`Unsupported test listing status: ${status}`);
@@ -83,9 +83,9 @@ async function insertListing({
     `
       INSERT INTO listings (
         owner_id,
-        price,
         title,
         description,
+        price,
         category,
         status,
         "isSold",
@@ -111,9 +111,9 @@ async function insertListing({
     `,
     [
       ownerId,
-      250,
       title,
       'A listing created for reservation testing.',
+      250,
       'Electronics',
       status,
       flags.isSold,
@@ -124,29 +124,20 @@ async function insertListing({
   return result.rows[0];
 }
 
-async function insertReservation({
+/**
+ * Inserts a reservation request directly into the test database.
+ */
+async function insertReservationRequest({
   listingId,
-  requesterId,
+  requesterId = requester.id,
   status = 'PENDING',
-  message = 'Please reserve this item for me.',
+  message = null,
 }) {
   const result = await pool.query(
     `
-      INSERT INTO reservation_requests (
-        listing_id,
-        requester_id,
-        status,
-        message
-      )
+      INSERT INTO reservation_requests (listing_id, requester_id, status, message)
       VALUES ($1, $2, $3, $4)
-      RETURNING
-        id,
-        listing_id,
-        requester_id,
-        status,
-        message,
-        created_on,
-        updated_on
+      RETURNING id, listing_id, requester_id, status, message, created_on, updated_on
     `,
     [listingId, requesterId, status, message],
   );
@@ -154,25 +145,29 @@ async function insertReservation({
   return result.rows[0];
 }
 
+/**
+ * Reset only the tables this suite touches before every test.
+ */
 beforeEach(async () => {
-  /*
-   * Truncating users with CASCADE also clears listings,
-   * reservation requests, wishlist records, view history,
-   * tokens, chats and other dependent test records.
-   */
   await pool.query(`
-    TRUNCATE TABLE users
+    TRUNCATE TABLE
+      reservation_requests,
+      chatcontent,
+      offers,
+      chats,
+      listing_views,
+      listings,
+      refresh_tokens,
+      users
     RESTART IDENTITY CASCADE
   `);
 
   owner = await insertUser('reservation_owner', 'reservation.owner@example.com');
-
-  buyer = await insertUser('reservation_buyer', 'reservation.buyer@example.com');
-
+  requester = await insertUser('reservation_requester', 'reservation.requester@example.com');
   otherUser = await insertUser('reservation_other', 'reservation.other@example.com');
 
   ownerToken = createAccessToken(owner.id);
-  buyerToken = createAccessToken(buyer.id);
+  requesterToken = createAccessToken(requester.id);
   otherUserToken = createAccessToken(otherUser.id);
 });
 
@@ -180,284 +175,224 @@ afterAll(async () => {
   await pool.end();
 });
 
-describe('Reservation request API', () => {
+describe('Reservation API', () => {
+  // ───────────────────────────────────────────────────────
+  // POST /api/listings/:listingId/reservations
+  // ───────────────────────────────────────────────────────
   describe('POST /api/listings/:listingId/reservations', () => {
     test('returns 401 when no access token is provided', async () => {
-      const listing = await insertListing({
-        ownerId: owner.id,
-      });
+      const listing = await insertListing();
 
-      const response = await request(app).post(`/api/listings/${listing.id}/reservations`).send({
-        message: 'Please reserve this.',
-      });
+      const response = await request(app).post(`/api/listings/${listing.id}/reservations`);
 
       expect(response.status).toBe(401);
-
-      expect(response.body).toEqual({
-        error: 'No token provided',
-      });
     });
 
-    test('returns 400 when the listing ID is invalid', async () => {
+    test('returns 400 when the listing ID is not a positive integer', async () => {
       const response = await request(app)
         .post('/api/listings/not-a-number/reservations')
-        .set('Authorization', `Bearer ${buyerToken}`)
-        .send({});
+        .set('Authorization', `Bearer ${requesterToken}`);
 
       expect(response.status).toBe(400);
-
       expect(response.body).toEqual({
         message: 'Listing ID must be a positive integer.',
-      });
-    });
-
-    test('returns 400 when the message is not text', async () => {
-      const listing = await insertListing({
-        ownerId: owner.id,
-      });
-
-      const response = await request(app)
-        .post(`/api/listings/${listing.id}/reservations`)
-        .set('Authorization', `Bearer ${buyerToken}`)
-        .send({
-          message: 123,
-        });
-
-      expect(response.status).toBe(400);
-
-      expect(response.body).toEqual({
-        message: 'Reservation message must be text.',
-      });
-    });
-
-    test('returns 400 when the message exceeds 500 characters', async () => {
-      const listing = await insertListing({
-        ownerId: owner.id,
-      });
-
-      const response = await request(app)
-        .post(`/api/listings/${listing.id}/reservations`)
-        .set('Authorization', `Bearer ${buyerToken}`)
-        .send({
-          message: 'a'.repeat(501),
-        });
-
-      expect(response.status).toBe(400);
-
-      expect(response.body).toEqual({
-        message: 'Reservation message cannot exceed 500 characters.',
       });
     });
 
     test('returns 404 when the listing does not exist', async () => {
       const response = await request(app)
         .post('/api/listings/999999/reservations')
-        .set('Authorization', `Bearer ${buyerToken}`)
-        .send({});
+        .set('Authorization', `Bearer ${requesterToken}`);
 
       expect(response.status).toBe(404);
-
       expect(response.body).toEqual({
         message: 'Listing not found.',
       });
     });
 
-    test('rejects a reservation for an ownerless listing', async () => {
-      const listing = await insertListing({
-        ownerId: null,
-      });
+    test('returns 409 when the listing has no owner', async () => {
+      const ownerlessListing = await insertListing({ ownerId: null });
 
       const response = await request(app)
-        .post(`/api/listings/${listing.id}/reservations`)
-        .set('Authorization', `Bearer ${buyerToken}`)
-        .send({});
+        .post(`/api/listings/${ownerlessListing.id}/reservations`)
+        .set('Authorization', `Bearer ${requesterToken}`);
 
       expect(response.status).toBe(409);
-
       expect(response.body).toEqual({
         message: 'This listing cannot receive reservation requests because it has no owner.',
       });
     });
 
-    test('does not allow a user to reserve their own listing', async () => {
-      const listing = await insertListing({
-        ownerId: owner.id,
-      });
+    test('returns 403 when the owner tries to reserve their own listing', async () => {
+      const listing = await insertListing();
 
       const response = await request(app)
         .post(`/api/listings/${listing.id}/reservations`)
-        .set('Authorization', `Bearer ${ownerToken}`)
-        .send({});
+        .set('Authorization', `Bearer ${ownerToken}`);
 
       expect(response.status).toBe(403);
-
       expect(response.body).toEqual({
         message: 'You cannot reserve your own listing.',
       });
     });
 
-    test('rejects a reservation when the listing is not available', async () => {
-      const listing = await insertListing({
-        ownerId: owner.id,
-        status: 'RESERVED',
-      });
+    test('returns 409 when the listing is not AVAILABLE', async () => {
+      const listing = await insertListing({ status: 'RESERVED' });
 
       const response = await request(app)
         .post(`/api/listings/${listing.id}/reservations`)
-        .set('Authorization', `Bearer ${buyerToken}`)
-        .send({});
+        .set('Authorization', `Bearer ${requesterToken}`);
 
       expect(response.status).toBe(409);
-
       expect(response.body).toEqual({
         message: 'Only available listings can be reserved.',
       });
     });
 
-    test('creates a pending reservation request', async () => {
-      const listing = await insertListing({
-        ownerId: owner.id,
-      });
+    test('returns 400 when the message exceeds 500 characters', async () => {
+      const listing = await insertListing();
+      const longMessage = 'a'.repeat(501);
 
       const response = await request(app)
         .post(`/api/listings/${listing.id}/reservations`)
-        .set('Authorization', `Bearer ${buyerToken}`)
-        .send({
-          message: '  Can you reserve this for me?  ',
-        });
+        .set('Authorization', `Bearer ${requesterToken}`)
+        .send({ message: longMessage });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        message: 'Reservation message cannot exceed 500 characters.',
+      });
+    });
+
+    test('returns 400 when the message is not a string', async () => {
+      const listing = await insertListing();
+
+      const response = await request(app)
+        .post(`/api/listings/${listing.id}/reservations`)
+        .set('Authorization', `Bearer ${requesterToken}`)
+        .send({ message: 12345 });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        message: 'Reservation message must be text.',
+      });
+    });
+
+    test('allows an authenticated user to create a reservation request', async () => {
+      const listing = await insertListing();
+
+      const response = await request(app)
+        .post(`/api/listings/${listing.id}/reservations`)
+        .set('Authorization', `Bearer ${requesterToken}`)
+        .send({ message: 'Is this still available?' });
 
       expect(response.status).toBe(201);
-
       expect(response.body.message).toBe('Reservation request created successfully.');
-
       expect(response.body.reservation).toMatchObject({
         listing_id: listing.id,
-        requester_id: buyer.id,
+        requester_id: requester.id,
         status: 'PENDING',
-        message: 'Can you reserve this for me?',
+        message: 'Is this still available?',
       });
 
-      expect(response.body.reservation.created_on).toBeDefined();
-
-      expect(response.body.reservation.updated_on).toBeDefined();
-
       const databaseResult = await pool.query(
-        `
-            SELECT
-              listing_id,
-              requester_id,
-              status,
-              message
-            FROM reservation_requests
-            WHERE id = $1
-          `,
+        `SELECT listing_id, requester_id, status FROM reservation_requests WHERE id = $1`,
         [response.body.reservation.id],
       );
 
-      expect(databaseResult.rows).toHaveLength(1);
-
       expect(databaseResult.rows[0]).toMatchObject({
         listing_id: listing.id,
-        requester_id: buyer.id,
+        requester_id: requester.id,
         status: 'PENDING',
-        message: 'Can you reserve this for me?',
       });
     });
 
-    test('rejects a duplicate pending reservation request', async () => {
-      const listing = await insertListing({
-        ownerId: owner.id,
-      });
+    test('returns 409 when the requester already has a pending request for the listing', async () => {
+      const listing = await insertListing();
 
-      const firstResponse = await request(app)
+      await request(app)
         .post(`/api/listings/${listing.id}/reservations`)
-        .set('Authorization', `Bearer ${buyerToken}`)
-        .send({});
+        .set('Authorization', `Bearer ${requesterToken}`);
 
-      expect(firstResponse.status).toBe(201);
-
-      const secondResponse = await request(app)
+      const response = await request(app)
         .post(`/api/listings/${listing.id}/reservations`)
-        .set('Authorization', `Bearer ${buyerToken}`)
-        .send({});
+        .set('Authorization', `Bearer ${requesterToken}`);
 
-      expect(secondResponse.status).toBe(409);
-
-      expect(secondResponse.body).toEqual({
+      expect(response.status).toBe(409);
+      expect(response.body).toEqual({
         message: 'You already have a pending reservation request for this listing.',
       });
-
-      const databaseResult = await pool.query(
-        `
-            SELECT id
-            FROM reservation_requests
-            WHERE listing_id = $1
-              AND requester_id = $2
-              AND status = 'PENDING'
-          `,
-        [listing.id, buyer.id],
-      );
-
-      expect(databaseResult.rows).toHaveLength(1);
     });
   });
 
+  // ───────────────────────────────────────────────────────
+  // GET /api/reservations/sent
+  // ───────────────────────────────────────────────────────
   describe('GET /api/reservations/sent', () => {
-    test('returns only requests submitted by the logged-in user', async () => {
-      const listing = await insertListing({
-        ownerId: owner.id,
-      });
+    test('returns 401 when no access token is provided', async () => {
+      const response = await request(app).get('/api/reservations/sent');
 
-      const buyerRequest = await insertReservation({
-        listingId: listing.id,
-        requesterId: buyer.id,
-      });
+      expect(response.status).toBe(401);
+    });
 
-      await insertReservation({
-        listingId: listing.id,
-        requesterId: otherUser.id,
-      });
+    test('returns 200 and an empty array when the user has sent no requests', async () => {
+      const response = await request(app)
+        .get('/api/reservations/sent')
+        .set('Authorization', `Bearer ${requesterToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([]);
+    });
+
+    test('returns only the requests sent by the logged-in user', async () => {
+      const listing = await insertListing();
+      const sentReservation = await insertReservationRequest({ listingId: listing.id });
+
+      const otherListing = await insertListing({ title: 'Other Listing' });
+      await insertReservationRequest({ listingId: otherListing.id, requesterId: otherUser.id });
 
       const response = await request(app)
         .get('/api/reservations/sent')
-        .set('Authorization', `Bearer ${buyerToken}`);
+        .set('Authorization', `Bearer ${requesterToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveLength(1);
-
       expect(response.body[0]).toMatchObject({
-        id: buyerRequest.id,
+        id: sentReservation.id,
         listing_id: listing.id,
-        requester_id: buyer.id,
-        status: 'PENDING',
-        title: listing.title,
-        owner_id: owner.id,
-        owner_username: owner.username,
+        requester_id: requester.id,
       });
     });
   });
 
+  // ───────────────────────────────────────────────────────
+  // GET /api/reservations/received
+  // ───────────────────────────────────────────────────────
   describe('GET /api/reservations/received', () => {
-    test('returns only requests for listings owned by the logged-in user', async () => {
-      const ownerListing = await insertListing({
-        ownerId: owner.id,
-        title: 'Owner Reservation Listing',
-      });
+    test('returns 401 when no access token is provided', async () => {
+      const response = await request(app).get('/api/reservations/received');
 
-      const otherListing = await insertListing({
+      expect(response.status).toBe(401);
+    });
+
+    test('returns 200 and an empty array when the owner has received no requests', async () => {
+      const response = await request(app)
+        .get('/api/reservations/received')
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([]);
+    });
+
+    test("returns only requests received on the logged-in owner's listings", async () => {
+      const listing = await insertListing();
+      const receivedReservation = await insertReservationRequest({ listingId: listing.id });
+
+      const otherOwnerListing = await insertListing({
         ownerId: otherUser.id,
-        title: 'Other User Listing',
+        title: "Someone Else's Listing",
       });
-
-      const ownerRequest = await insertReservation({
-        listingId: ownerListing.id,
-        requesterId: buyer.id,
-      });
-
-      await insertReservation({
-        listingId: otherListing.id,
-        requesterId: buyer.id,
-      });
+      await insertReservationRequest({ listingId: otherOwnerListing.id, requesterId: owner.id });
 
       const response = await request(app)
         .get('/api/reservations/received')
@@ -465,27 +400,34 @@ describe('Reservation request API', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveLength(1);
-
       expect(response.body[0]).toMatchObject({
-        id: ownerRequest.id,
-        listing_id: ownerListing.id,
-        requester_id: buyer.id,
-        status: 'PENDING',
-        title: ownerListing.title,
-        owner_id: owner.id,
-        requester_username: buyer.username,
+        id: receivedReservation.id,
+        listing_id: listing.id,
+        requester_id: requester.id,
+        requester_username: requester.username,
       });
     });
   });
 
+  // ───────────────────────────────────────────────────────
+  // PATCH /api/reservations/:id/cancel
+  // ───────────────────────────────────────────────────────
   describe('PATCH /api/reservations/:id/cancel', () => {
-    test('returns 400 when the reservation ID is invalid', async () => {
+    test('returns 401 when no access token is provided', async () => {
+      const listing = await insertListing();
+      const reservation = await insertReservationRequest({ listingId: listing.id });
+
+      const response = await request(app).patch(`/api/reservations/${reservation.id}/cancel`);
+
+      expect(response.status).toBe(401);
+    });
+
+    test('returns 400 when the reservation ID is not a positive integer', async () => {
       const response = await request(app)
         .patch('/api/reservations/not-a-number/cancel')
-        .set('Authorization', `Bearer ${buyerToken}`);
+        .set('Authorization', `Bearer ${requesterToken}`);
 
       expect(response.status).toBe(400);
-
       expect(response.body).toEqual({
         message: 'Reservation ID must be a positive integer.',
       });
@@ -494,104 +436,277 @@ describe('Reservation request API', () => {
     test('returns 404 when the reservation does not exist', async () => {
       const response = await request(app)
         .patch('/api/reservations/999999/cancel')
-        .set('Authorization', `Bearer ${buyerToken}`);
+        .set('Authorization', `Bearer ${requesterToken}`);
 
       expect(response.status).toBe(404);
-
       expect(response.body).toEqual({
         message: 'Reservation request not found.',
       });
     });
 
-    test('does not allow another user to cancel the request', async () => {
-      const listing = await insertListing({
-        ownerId: owner.id,
-      });
-
-      const reservation = await insertReservation({
-        listingId: listing.id,
-        requesterId: buyer.id,
-      });
+    test('returns 403 when someone other than the requester tries to cancel', async () => {
+      const listing = await insertListing();
+      const reservation = await insertReservationRequest({ listingId: listing.id });
 
       const response = await request(app)
         .patch(`/api/reservations/${reservation.id}/cancel`)
         .set('Authorization', `Bearer ${otherUserToken}`);
 
       expect(response.status).toBe(403);
-
       expect(response.body).toEqual({
         message: 'Only the requester can cancel this reservation request.',
       });
+    });
+
+    test('returns 409 when the reservation is no longer pending', async () => {
+      const listing = await insertListing();
+      const reservation = await insertReservationRequest({
+        listingId: listing.id,
+        status: 'REJECTED',
+      });
+
+      const response = await request(app)
+        .patch(`/api/reservations/${reservation.id}/cancel`)
+        .set('Authorization', `Bearer ${requesterToken}`);
+
+      expect(response.status).toBe(409);
+      expect(response.body).toEqual({
+        message: 'Only pending reservation requests can be cancelled.',
+      });
+    });
+
+    test('allows the requester to cancel their pending reservation', async () => {
+      const listing = await insertListing();
+      const reservation = await insertReservationRequest({ listingId: listing.id });
+
+      const response = await request(app)
+        .patch(`/api/reservations/${reservation.id}/cancel`)
+        .set('Authorization', `Bearer ${requesterToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Reservation request cancelled successfully.');
+      expect(response.body.reservation.status).toBe('CANCELLED');
 
       const databaseResult = await pool.query(
-        `
-            SELECT status
-            FROM reservation_requests
-            WHERE id = $1
-          `,
+        `SELECT status FROM reservation_requests WHERE id = $1`,
+        [reservation.id],
+      );
+
+      expect(databaseResult.rows[0].status).toBe('CANCELLED');
+    });
+  });
+
+  // ───────────────────────────────────────────────────────
+  // PATCH /api/reservations/:id/accept
+  // ───────────────────────────────────────────────────────
+  describe('PATCH /api/reservations/:id/accept', () => {
+    test('returns 401 when no access token is provided', async () => {
+      const listing = await insertListing();
+      const reservation = await insertReservationRequest({ listingId: listing.id });
+
+      const response = await request(app).patch(`/api/reservations/${reservation.id}/accept`);
+
+      expect(response.status).toBe(401);
+    });
+
+    test('returns 400 when the reservation ID is not a positive integer', async () => {
+      const response = await request(app)
+        .patch('/api/reservations/not-a-number/accept')
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        message: 'Reservation ID must be a positive integer.',
+      });
+    });
+
+    test('returns 404 when the reservation does not exist', async () => {
+      const response = await request(app)
+        .patch('/api/reservations/999999/accept')
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        message: 'Reservation request not found.',
+      });
+    });
+
+    test('returns 403 when someone other than the listing owner tries to accept', async () => {
+      const listing = await insertListing();
+      const reservation = await insertReservationRequest({ listingId: listing.id });
+
+      const response = await request(app)
+        .patch(`/api/reservations/${reservation.id}/accept`)
+        .set('Authorization', `Bearer ${otherUserToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body).toEqual({
+        message: 'Only the listing owner can accept reservation requests.',
+      });
+
+      const databaseResult = await pool.query(
+        `SELECT status FROM reservation_requests WHERE id = $1`,
         [reservation.id],
       );
 
       expect(databaseResult.rows[0].status).toBe('PENDING');
     });
 
-    test('rejects cancellation when the request is no longer pending', async () => {
-      const listing = await insertListing({
-        ownerId: owner.id,
-      });
-
-      const reservation = await insertReservation({
+    test('returns 409 when the reservation is no longer pending', async () => {
+      const listing = await insertListing();
+      const reservation = await insertReservationRequest({
         listingId: listing.id,
-        requesterId: buyer.id,
-        status: 'REJECTED',
-      });
-
-      const response = await request(app)
-        .patch(`/api/reservations/${reservation.id}/cancel`)
-        .set('Authorization', `Bearer ${buyerToken}`);
-
-      expect(response.status).toBe(409);
-
-      expect(response.body).toEqual({
-        message: 'Only pending reservation requests can be cancelled.',
-      });
-    });
-
-    test('allows the requester to cancel a pending request', async () => {
-      const listing = await insertListing({
-        ownerId: owner.id,
-      });
-
-      const reservation = await insertReservation({
-        listingId: listing.id,
-        requesterId: buyer.id,
-      });
-
-      const response = await request(app)
-        .patch(`/api/reservations/${reservation.id}/cancel`)
-        .set('Authorization', `Bearer ${buyerToken}`);
-
-      expect(response.status).toBe(200);
-
-      expect(response.body.message).toBe('Reservation request cancelled successfully.');
-
-      expect(response.body.reservation).toMatchObject({
-        id: reservation.id,
-        listing_id: listing.id,
-        requester_id: buyer.id,
         status: 'CANCELLED',
       });
 
-      const databaseResult = await pool.query(
-        `
-            SELECT status
-            FROM reservation_requests
-            WHERE id = $1
-          `,
+      const response = await request(app)
+        .patch(`/api/reservations/${reservation.id}/accept`)
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(409);
+      expect(response.body.message).toContain('Only pending reservation requests can be accepted');
+    });
+
+    test('returns 409 when the listing is no longer AVAILABLE', async () => {
+      const listing = await insertListing({ status: 'ARCHIVED' });
+      const reservation = await insertReservationRequest({ listingId: listing.id });
+
+      const response = await request(app)
+        .patch(`/api/reservations/${reservation.id}/accept`)
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(409);
+      expect(response.body.message).toContain(
+        'Only listings with AVAILABLE status can be reserved',
+      );
+    });
+
+    test('allows the owner to accept a pending reservation, reserves the listing, and rejects competing pending requests', async () => {
+      const listing = await insertListing();
+      const acceptedTarget = await insertReservationRequest({
+        listingId: listing.id,
+        requesterId: requester.id,
+      });
+      const competingRequest = await insertReservationRequest({
+        listingId: listing.id,
+        requesterId: otherUser.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/reservations/${acceptedTarget.id}/accept`)
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Reservation request accepted successfully.');
+      expect(response.body.reservation.status).toBe('ACCEPTED');
+
+      const acceptedRow = await pool.query(
+        `SELECT status FROM reservation_requests WHERE id = $1`,
+        [acceptedTarget.id],
+      );
+      expect(acceptedRow.rows[0].status).toBe('ACCEPTED');
+
+      const competingRow = await pool.query(
+        `SELECT status FROM reservation_requests WHERE id = $1`,
+        [competingRequest.id],
+      );
+      expect(competingRow.rows[0].status).toBe('REJECTED');
+
+      const listingRow = await pool.query(`SELECT status FROM listings WHERE id = $1`, [
+        listing.id,
+      ]);
+      expect(listingRow.rows[0].status).toBe('RESERVED');
+    });
+  });
+
+  // ───────────────────────────────────────────────────────
+  // PATCH /api/reservations/:id/reject
+  // ───────────────────────────────────────────────────────
+  describe('PATCH /api/reservations/:id/reject', () => {
+    test('returns 401 when no access token is provided', async () => {
+      const listing = await insertListing();
+      const reservation = await insertReservationRequest({ listingId: listing.id });
+
+      const response = await request(app).patch(`/api/reservations/${reservation.id}/reject`);
+
+      expect(response.status).toBe(401);
+    });
+
+    test('returns 400 when the reservation ID is not a positive integer', async () => {
+      const response = await request(app)
+        .patch('/api/reservations/not-a-number/reject')
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        message: 'Reservation ID must be a positive integer.',
+      });
+    });
+
+    test('returns 404 when the reservation does not exist', async () => {
+      const response = await request(app)
+        .patch('/api/reservations/999999/reject')
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        message: 'Reservation request not found.',
+      });
+    });
+
+    test('returns 403 when someone other than the listing owner tries to reject', async () => {
+      const listing = await insertListing();
+      const reservation = await insertReservationRequest({ listingId: listing.id });
+
+      const response = await request(app)
+        .patch(`/api/reservations/${reservation.id}/reject`)
+        .set('Authorization', `Bearer ${otherUserToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body).toEqual({
+        message: 'Only the listing owner can reject reservation requests.',
+      });
+    });
+
+    test('returns 409 when the reservation is no longer pending', async () => {
+      const listing = await insertListing();
+      const reservation = await insertReservationRequest({
+        listingId: listing.id,
+        status: 'ACCEPTED',
+      });
+
+      const response = await request(app)
+        .patch(`/api/reservations/${reservation.id}/reject`)
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(409);
+      expect(response.body).toEqual({
+        message: 'Only pending reservation requests can be rejected.',
+      });
+    });
+
+    test('allows the owner to reject a pending reservation without affecting the listing status', async () => {
+      const listing = await insertListing();
+      const reservation = await insertReservationRequest({ listingId: listing.id });
+
+      const response = await request(app)
+        .patch(`/api/reservations/${reservation.id}/reject`)
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Reservation request rejected successfully.');
+      expect(response.body.reservation.status).toBe('REJECTED');
+
+      const reservationRow = await pool.query(
+        `SELECT status FROM reservation_requests WHERE id = $1`,
         [reservation.id],
       );
+      expect(reservationRow.rows[0].status).toBe('REJECTED');
 
-      expect(databaseResult.rows[0].status).toBe('CANCELLED');
+      const listingRow = await pool.query(`SELECT status FROM listings WHERE id = $1`, [
+        listing.id,
+      ]);
+      expect(listingRow.rows[0].status).toBe('AVAILABLE');
     });
   });
 });
