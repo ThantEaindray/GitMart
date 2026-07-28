@@ -266,9 +266,33 @@ function updateSummary() {
   ordersDelivered.textContent = deliveredCount;
 }
 
+// Update filter tab counts so buyers know each view's size before opening it.
+function updateFilterCounts() {
+  const counts = allOrders.reduce(
+    (totals, order) => {
+      const status = normalizeStatus(order.status);
+      totals.all += 1;
+      totals[status] = (totals[status] || 0) + 1;
+      return totals;
+    },
+    {
+      all: 0,
+      pending: 0,
+      processing: 0,
+      delivered: 0,
+      cancelled: 0,
+    },
+  );
+
+  document.querySelectorAll('[data-count]').forEach((countBadge) => {
+    countBadge.textContent = counts[countBadge.dataset.count] || 0;
+  });
+}
+
 // Render the order list using the active filter.
 function renderOrders() {
   updateSummary();
+  updateFilterCounts();
   const filtered =
     activeFilter === 'all'
       ? allOrders

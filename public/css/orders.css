@@ -90,6 +90,9 @@
 }
 
 .orders-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   min-height: 38px;
   padding: 0 16px;
   border: 1px solid var(--border);
@@ -111,6 +114,18 @@
   border-color: var(--accent);
   color: var(--accent);
   background: rgba(201, 168, 76, 0.06);
+}
+
+.orders-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid currentColor;
+  font-size: 0.82em;
+  line-height: 1;
 }
 
 .orders-refresh {
