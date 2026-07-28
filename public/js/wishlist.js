@@ -59,9 +59,9 @@ function renderEmpty() {
   if (!grid) return;
   grid.innerHTML =
     '<div class="listing-empty-state">' +
-    '<i class="bi bi-heart"></i>' +
+    '<a href="listings.html" style="color:inherit;text-decoration:none;"><i class="bi bi-heart" style="cursor:pointer;"></i></a>' +
     '<h3>Your wishlist is empty</h3>' +
-    '<p>Save listings you love by clicking the heart on any listing card.</p>' +
+    '<p>Browse listings and click the <i class="bi bi-heart"></i> on any card to save it here.</p>' +
     '<a href="listings.html" class="btn-primary">Browse Listings</a>' +
     '</div>';
 }
