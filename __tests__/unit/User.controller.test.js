@@ -36,7 +36,9 @@ describe('checkUsernameExists', () => {
     const res = makeRes();
     controller.checkUsernameExists(req, res, jest.fn());
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('6') }));
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('6') }),
+    );
   });
 
   it('returns 500 on DB error', () => {
@@ -147,7 +149,9 @@ describe('login', () => {
     const req = { body: { username: 'alice', password: 'pass', rememberMe: true } };
     const res = makeRes();
     const next = jest.fn();
-    mockFn(model.getUserByUsername, null, [{ id: 7, username: 'alice', password: 'hash', isStaff: false }]);
+    mockFn(model.getUserByUsername, null, [
+      { id: 7, username: 'alice', password: 'hash', isStaff: false },
+    ]);
     controller.login(req, res, next);
     expect(res.locals.userId).toBe(7);
     expect(res.locals.rememberMe).toBe(true);
@@ -158,7 +162,9 @@ describe('login', () => {
     const req = { body: { username: 'alice', password: 'pass' } };
     const res = makeRes();
     const next = jest.fn();
-    mockFn(model.getUserByUsername, null, [{ id: 7, username: 'alice', password: 'hash', isStaff: false }]);
+    mockFn(model.getUserByUsername, null, [
+      { id: 7, username: 'alice', password: 'hash', isStaff: false },
+    ]);
     controller.login(req, res, next);
     expect(res.locals.rememberMe).toBe(false);
   });
@@ -544,7 +550,9 @@ describe('login - extra cases', () => {
     const req = { body: { username: 'alice', password: 'pass' } };
     const res = makeRes();
     const next = jest.fn();
-    mockFn(model.getUserByUsername, null, [{ id: 7, username: 'alice', password: 'hashed_pw', isStaff: false }]);
+    mockFn(model.getUserByUsername, null, [
+      { id: 7, username: 'alice', password: 'hashed_pw', isStaff: false },
+    ]);
     controller.login(req, res, next);
     expect(res.locals.hash).toBe('hashed_pw');
   });
@@ -553,7 +561,9 @@ describe('login - extra cases', () => {
     const req = { body: { username: 'alice', password: 'pass' } };
     const res = makeRes();
     const next = jest.fn();
-    mockFn(model.getUserByUsername, null, [{ id: 7, username: 'alice', password: 'hash', isStaff: true }]);
+    mockFn(model.getUserByUsername, null, [
+      { id: 7, username: 'alice', password: 'hash', isStaff: true },
+    ]);
     controller.login(req, res, next);
     expect(res.locals.isStaff).toBe(true);
   });
@@ -690,7 +700,9 @@ describe('updateProfileImage - extra cases', () => {
     const res = makeRes({ userId: 1 });
     mockFn(model.updateProfileImage, null, [{ profile_image: 'abc123' }]);
     controller.updateProfileImage(req, res);
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: 'Profile image updated successfully.' }));
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Profile image updated successfully.' }),
+    );
   });
 });
 
@@ -873,6 +885,99 @@ describe('getPublicProfile', () => {
     controller.getPublicProfile(req, res);
     expect(model.getPublicProfile).toHaveBeenCalledWith(
       expect.objectContaining({ userId: '42' }),
+      expect.any(Function),
+    );
+  });
+});
+
+// ── clearProfileImage ─────────────────────────────────────────────────────────
+
+describe('clearProfileImage', () => {
+  it('returns 500 on DB error', () => {
+    const res = makeRes({ userId: 1 });
+    mockFn(model.clearProfileImage, new Error('DB error'));
+    controller.clearProfileImage({}, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: expect.any(String) }));
+  });
+
+  it('returns 200 on success', () => {
+    const res = makeRes({ userId: 1 });
+    mockFn(model.clearProfileImage, null, []);
+    controller.clearProfileImage({}, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('returns json with message "Profile image removed."', () => {
+    const res = makeRes({ userId: 1 });
+    mockFn(model.clearProfileImage, null, []);
+    controller.clearProfileImage({}, res);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Profile image removed.' });
+  });
+
+  it('passes userId from res.locals to the model', () => {
+    const res = makeRes({ userId: 42 });
+    mockFn(model.clearProfileImage, null, []);
+    controller.clearProfileImage({}, res);
+    expect(model.clearProfileImage).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 42 }),
+      expect.any(Function),
+    );
+  });
+
+  it('model is called exactly once per request', () => {
+    jest.clearAllMocks();
+    const res = makeRes({ userId: 1 });
+    mockFn(model.clearProfileImage, null, []);
+    controller.clearProfileImage({}, res);
+    expect(model.clearProfileImage).toHaveBeenCalledTimes(1);
+  });
+
+  it('500 json response contains a message string', () => {
+    const res = makeRes({ userId: 1 });
+    mockFn(model.clearProfileImage, new Error('DB error'));
+    controller.clearProfileImage({}, res);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: 'Internal server error' }));
+  });
+});
+
+describe('clearProfileImage - extra cases', () => {
+  it('does not call res.status(400) on success', () => {
+    const res = makeRes({ userId: 1 });
+    mockFn(model.clearProfileImage, null, []);
+    controller.clearProfileImage({}, res);
+    expect(res.status).not.toHaveBeenCalledWith(400);
+    expect(res.status).not.toHaveBeenCalledWith(500);
+  });
+
+  it('works for different user ids', () => {
+    for (const uid of [1, 5, 99, 100]) {
+      const res = makeRes({ userId: uid });
+      mockFn(model.clearProfileImage, null, []);
+      controller.clearProfileImage({}, res);
+      expect(model.clearProfileImage).toHaveBeenCalledWith(
+        expect.objectContaining({ id: uid }),
+        expect.any(Function),
+      );
+      jest.clearAllMocks();
+    }
+  });
+
+  it('does not need req.body (body is ignored)', () => {
+    const req = { body: { someField: 'value' } };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.clearProfileImage, null, []);
+    controller.clearProfileImage(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('does not need req.params (params are ignored)', () => {
+    const req = { params: { userId: '99' } };
+    const res = makeRes({ userId: 1 });
+    mockFn(model.clearProfileImage, null, []);
+    controller.clearProfileImage(req, res);
+    expect(model.clearProfileImage).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1 }),
       expect.any(Function),
     );
   });
