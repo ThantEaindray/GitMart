@@ -834,3 +834,98 @@ describe('logout - extra cases', () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 });
+
+// ── getPublicProfile ──────────────────────────────────────────────────────────
+
+describe('getPublicProfile', () => {
+  it('returns 500 on DB error', () => {
+    const req = { params: { userId: '5' } };
+    const res = makeRes();
+    mockFn(model.getPublicProfile, new Error('DB error'));
+    controller.getPublicProfile(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: expect.any(String) }));
+  });
+
+  it('returns 404 when user not found', () => {
+    const req = { params: { userId: '999' } };
+    const res = makeRes();
+    mockFn(model.getPublicProfile, null, []);
+    controller.getPublicProfile(req, res);
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: expect.any(String) }));
+  });
+
+  it('returns 200 with the public profile on success', () => {
+    const req = { params: { userId: '5' } };
+    const res = makeRes();
+    const profile = { id: 5, username: 'alice', listing_count: 3 };
+    mockFn(model.getPublicProfile, null, [profile]);
+    controller.getPublicProfile(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(profile);
+  });
+
+  it('passes userId from req.params to the model', () => {
+    const req = { params: { userId: '42' } };
+    const res = makeRes();
+    mockFn(model.getPublicProfile, null, [{ id: 42 }]);
+    controller.getPublicProfile(req, res);
+    expect(model.getPublicProfile).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: '42' }),
+      expect.any(Function),
+    );
+  });
+});
+
+// ── getSellerReviews ──────────────────────────────────────────────────────────
+
+describe('getSellerReviews', () => {
+  it('returns 500 on DB error', () => {
+    const req = { params: { userId: '5' } };
+    const res = makeRes();
+    mockFn(model.getSellerReviews, new Error('DB error'));
+    controller.getSellerReviews(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: expect.any(String) }));
+  });
+
+  it('returns 200 with reviews array on success', () => {
+    const req = { params: { userId: '5' } };
+    const res = makeRes();
+    const reviews = [{ id: 1, rating: 4, comment: 'Great', listing_title: 'Watch' }];
+    mockFn(model.getSellerReviews, null, reviews);
+    controller.getSellerReviews(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(reviews);
+  });
+
+  it('returns 200 with empty array when seller has no reviews', () => {
+    const req = { params: { userId: '5' } };
+    const res = makeRes();
+    mockFn(model.getSellerReviews, null, []);
+    controller.getSellerReviews(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith([]);
+  });
+
+  it('passes userId from req.params to the model', () => {
+    const req = { params: { userId: '99' } };
+    const res = makeRes();
+    mockFn(model.getSellerReviews, null, []);
+    controller.getSellerReviews(req, res);
+    expect(model.getSellerReviews).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: '99' }),
+      expect.any(Function),
+    );
+  });
+
+  it('returns the exact rows array from the model', () => {
+    const req = { params: { userId: '5' } };
+    const res = makeRes();
+    const reviews = [{ id: 1 }, { id: 2 }];
+    mockFn(model.getSellerReviews, null, reviews);
+    controller.getSellerReviews(req, res);
+    expect(res.json).toHaveBeenCalledWith(reviews);
+  });
+});
