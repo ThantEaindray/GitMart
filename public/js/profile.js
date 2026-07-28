@@ -1,5 +1,3 @@
-
-
 document.addEventListener('DOMContentLoaded', () => {
   const token = localStorage.getItem('token');
 
@@ -80,7 +78,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (data.profile_image) {
         showProfileImage(data.profile_image);
-        localStorage.setItem(getProfileImageStorageKey(), `data:image/jpeg;base64,${data.profile_image}`);
+        localStorage.setItem(
+          getProfileImageStorageKey(),
+          `data:image/jpeg;base64,${data.profile_image}`,
+        );
       } else {
         const savedProfileImage = localStorage.getItem(getProfileImageStorageKey());
         if (savedProfileImage) {

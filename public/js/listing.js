@@ -424,7 +424,9 @@ function renderListing(listing) {
 
 function loadSellerInfo(ownerId) {
   fetch('/api/users/' + ownerId + '/public')
-    .then(function (r) { return r.json(); })
+    .then(function (r) {
+      return r.json();
+    })
     .then(function (data) {
       var link = document.getElementById('seller-name-link');
       if (link && data.username) link.textContent = data.username;

@@ -937,7 +937,9 @@ describe('clearProfileImage', () => {
     const res = makeRes({ userId: 1 });
     mockFn(model.clearProfileImage, new Error('DB error'));
     controller.clearProfileImage({}, res);
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: 'Internal server error' }));
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Internal server error' }),
+    );
   });
 });
 

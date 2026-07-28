@@ -1,6 +1,21 @@
 const pool = require('../../src/models/db');
 const {
-  getUserByUsername, getUserByEmail, createUser, getUserById, getUserSettings, saveRefreshToken, getRefreshToken, deleteRefreshToken, deleteAllRefreshTokensForUser, updateProfileImage, updateDisplayName, updateNotifications, deleteUser, getUserPasswordById, updateUserPassword, updateUserSettings,
+  getUserByUsername,
+  getUserByEmail,
+  createUser,
+  getUserById,
+  getUserSettings,
+  saveRefreshToken,
+  getRefreshToken,
+  deleteRefreshToken,
+  deleteAllRefreshTokensForUser,
+  updateProfileImage,
+  updateDisplayName,
+  updateNotifications,
+  deleteUser,
+  getUserPasswordById,
+  updateUserPassword,
+  updateUserSettings,
 } = require('../../src/models/User.model');
 
 jest.mock('../../src/models/db', () => ({ query: jest.fn(), end: jest.fn() }));

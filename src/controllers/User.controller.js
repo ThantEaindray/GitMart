@@ -70,7 +70,7 @@ module.exports.register = (req, res, next) => {
 };
 
 module.exports.login = (req, res, next) => {
-  console.log('login')
+  console.log('login');
   if (req.body.username === undefined || req.body.password === undefined) {
     return res.status(400).json({ message: 'Username or password is missing.' });
   }
@@ -78,7 +78,7 @@ module.exports.login = (req, res, next) => {
   const data = { username: req.body.username };
 
   const callback = (error, result) => {
-    console.log('callback')
+    console.log('callback');
     if (error) {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
@@ -341,21 +341,21 @@ module.exports.getSellerReviews = (req, res) => {
 
 module.exports.namesPictures = (req, res, next) => {
   const data = {
-    ids: res.locals.toLoad
-  }
-  res.locals.namesImgs = new Array
+    ids: res.locals.toLoad,
+  };
+  res.locals.namesImgs = new Array();
   const callback = (err, results, _fields) => {
     if (err) {
-      console.error("problem getting chat user info", err)
-      return res.status(500).json(err)
+      console.error('problem getting chat user info', err);
+      return res.status(500).json(err);
     }
-    res.locals.namesImgs.push(results.rows)
+    res.locals.namesImgs.push(results.rows);
     //now we wanna see if the result length is the same as the tolaod and if it is then we next since that means its done but if it isnt then we dont since its still going
     if (res.locals.namesImgs.length == data.ids.length) {
-      next()
+      next();
     }
-  }
+  };
   data.ids.forEach((e) => {
-    model.namesPictures(e, callback)
-  })
-}
+    model.namesPictures(e, callback);
+  });
+};

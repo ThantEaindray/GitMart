@@ -118,10 +118,10 @@ async function toggleWishlist(productId) {
 // ── PREFERENCES ───────────────────────────────────────────────────────────
 
 const CURRENCIES = {
-  USD: { symbol: '$',  rate: 1    },
+  USD: { symbol: '$', rate: 1 },
   SGD: { symbol: 'S$', rate: 1.35 },
-  EUR: { symbol: '€',  rate: 0.92 },
-  GBP: { symbol: '£',  rate: 0.79 },
+  EUR: { symbol: '€', rate: 0.92 },
+  GBP: { symbol: '£', rate: 0.79 },
 };
 
 function formatPrice(usdAmount) {

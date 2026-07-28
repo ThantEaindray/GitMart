@@ -22,7 +22,11 @@ router.get(
   listingController.sendDashboard,
 );
 router.get('/listings/most-viewed', listingController.getMostViewed);
-router.get('/listings/recently-viewed', jwtMiddleware.verifyToken, listingController.getRecentlyViewed);
+router.get(
+  '/listings/recently-viewed',
+  jwtMiddleware.verifyToken,
+  listingController.getRecentlyViewed,
+);
 router.get('/listings/search', listingController.searchListings);
 
 router.get('/listings/:id', jwtMiddleware.optionalAuth, listingController.getListingById);

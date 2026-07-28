@@ -117,9 +117,7 @@ describe('GET /api/listings/:id/reviews', () => {
 describe('POST /api/listings/:id/reviews', () => {
   // Invalid partition: no token → 401
   test('should return 401 when no auth token is provided', async () => {
-    const res = await request(app)
-      .post(`/api/listings/${listingId}/reviews`)
-      .send({ rating: 4 });
+    const res = await request(app).post(`/api/listings/${listingId}/reviews`).send({ rating: 4 });
 
     expect(res.status).toBe(401);
   });

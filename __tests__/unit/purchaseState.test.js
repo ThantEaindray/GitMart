@@ -137,11 +137,7 @@ describe('markPurchasedItemsSold', () => {
   });
 
   it('marks all items when multiple items are passed', () => {
-    ps.markPurchasedItemsSold([
-      { listingId: 100 },
-      { productId: 101 },
-      { listingId: 102 },
-    ]);
+    ps.markPurchasedItemsSold([{ listingId: 100 }, { productId: 101 }, { listingId: 102 }]);
     expect(ps.isListingSold(100)).toBe(true);
     expect(ps.isProductSold(101)).toBe(true);
     expect(ps.isListingSold(102)).toBe(true);

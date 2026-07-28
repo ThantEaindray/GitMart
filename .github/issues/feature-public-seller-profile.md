@@ -15,6 +15,7 @@ Buyers currently have no way to evaluate a seller beyond a single listing. There
 **1. Public seller profile page** (`/html/seller.html?id=<userId>`)
 
 Display a seller's public identity and track record:
+
 - Username, member-since date, listing count
 - Grid of their active listings (reuses the existing listings card component)
 - Aggregated reviews section: all reviews left across every listing they own, with the listing title as context
@@ -25,10 +26,10 @@ On `listing.html`, make the seller's name a link that navigates to their profile
 
 **3. New API endpoints**
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | `/api/users/:userId/public` | none | Returns username, created_on, listing count |
-| GET | `/api/users/:userId/reviews` | none | Returns all reviews across that seller's listings, joined with listing title |
+| Method | Endpoint                     | Auth | Description                                                                  |
+| ------ | ---------------------------- | ---- | ---------------------------------------------------------------------------- |
+| GET    | `/api/users/:userId/public`  | none | Returns username, created_on, listing count                                  |
+| GET    | `/api/users/:userId/reviews` | none | Returns all reviews across that seller's listings, joined with listing title |
 
 The existing `GET /api/listings/owner/:ownerId` endpoint already returns the seller's active listings, so no new query is needed there.
 

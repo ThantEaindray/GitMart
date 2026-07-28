@@ -6,7 +6,12 @@ const pool = require('../../src/models/db');
 
 let insertedIds = [];
 
-async function insertProduct({ name, category = 'Electronics', description = 'Test item', price = 99.99 }) {
+async function insertProduct({
+  name,
+  category = 'Electronics',
+  description = 'Test item',
+  price = 99.99,
+}) {
   const result = await pool.query(
     `INSERT INTO products (name, category, description, price)
      VALUES ($1, $2, $3, $4)
@@ -163,7 +168,9 @@ describe('GET /products?search=query', () => {
 
   test('search takes priority when both search and category are provided', async () => {
     const p = await insertProduct({ name: 'test_prod_searchpriority', category: 'TestCat' });
-    const res = await request(app).get('/products?search=test_prod_searchpriority&category=OtherCat');
+    const res = await request(app).get(
+      '/products?search=test_prod_searchpriority&category=OtherCat',
+    );
     expect(res.status).toBe(200);
     const found = res.body.find((item) => item.id === p.id);
     expect(found).toBeDefined();
@@ -267,7 +274,11 @@ describe('GET /products/:id', () => {
   });
 
   test('returned product has all required fields', async () => {
-    const p = await insertProduct({ name: 'test_prod_allfields', category: 'TestCat', price: 55.0 });
+    const p = await insertProduct({
+      name: 'test_prod_allfields',
+      category: 'TestCat',
+      price: 55.0,
+    });
     const res = await request(app).get(`/products/${p.id}`);
     expect(res.body).toHaveProperty('id');
     expect(res.body).toHaveProperty('name');

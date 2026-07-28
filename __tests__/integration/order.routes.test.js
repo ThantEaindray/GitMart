@@ -280,9 +280,7 @@ describe('GET /api/orders', () => {
   });
 
   test('returns 200 with array for authenticated user', async () => {
-    const res = await request(app)
-      .get('/api/orders')
-      .set('Authorization', `Bearer ${tokenA}`);
+    const res = await request(app).get('/api/orders').set('Authorization', `Bearer ${tokenA}`);
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
   });

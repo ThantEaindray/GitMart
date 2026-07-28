@@ -28,9 +28,16 @@
   border-color: var(--accent);
 }
 
-.search-filter-input { flex: 1; min-width: 180px; }
-.search-filter-price  { width: 100px; }
-.search-filter-select { cursor: pointer; }
+.search-filter-input {
+  flex: 1;
+  min-width: 180px;
+}
+.search-filter-price {
+  width: 100px;
+}
+.search-filter-select {
+  cursor: pointer;
+}
 
 /* ── AUTH PAGES: LOGIN / REGISTER / PROFILE ── */
 
@@ -317,7 +324,9 @@
   font-size: 0.88rem;
   color: var(--muted);
   margin-bottom: 0.6rem;
-  transition: border-color 0.2s, color 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
 }
 
 .upload-zone:hover {
@@ -330,7 +339,7 @@
   flex-shrink: 0;
 }
 
-.upload-zone input[type="file"] {
+.upload-zone input[type='file'] {
   display: none;
 }
 

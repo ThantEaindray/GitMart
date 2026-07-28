@@ -41,14 +41,17 @@ describe('Review.model - createReview', () => {
   test('should insert review and return it via callback', (done) => {
     mockQuery(null, [fakeReview]);
 
-    createReview({ listingId: 10, reviewerId: 5, rating: 4, comment: 'Great item' }, (err, result) => {
-      expect(err).toBeNull();
-      expect(pool.query).toHaveBeenCalledTimes(1);
-      const [, values] = pool.query.mock.calls[0];
-      expect(values).toEqual([10, 5, 4, 'Great item']);
-      expect(result.rows[0]).toEqual(fakeReview);
-      done();
-    });
+    createReview(
+      { listingId: 10, reviewerId: 5, rating: 4, comment: 'Great item' },
+      (err, result) => {
+        expect(err).toBeNull();
+        expect(pool.query).toHaveBeenCalledTimes(1);
+        const [, values] = pool.query.mock.calls[0];
+        expect(values).toEqual([10, 5, 4, 'Great item']);
+        expect(result.rows[0]).toEqual(fakeReview);
+        done();
+      },
+    );
   });
 
   test('should pass null comment correctly to pool.query', (done) => {
@@ -131,7 +134,13 @@ describe('Review.model - getReviewsByListing', () => {
   });
 
   test('should return all reviews when listing has multiple', (done) => {
-    const second = { ...fakeReviewWithUser, id: 2, rating: 5, reviewer_id: 6, reviewer_name: 'user2' };
+    const second = {
+      ...fakeReviewWithUser,
+      id: 2,
+      rating: 5,
+      reviewer_id: 6,
+      reviewer_name: 'user2',
+    };
     mockQuery(null, [fakeReviewWithUser, second]);
 
     getReviewsByListing({ listingId: 10 }, (err, result) => {

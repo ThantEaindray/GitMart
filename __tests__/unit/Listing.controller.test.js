@@ -3,7 +3,9 @@ const model = require('../../src/models/Listing.model');
 const _purchaseState = require('../../src/models/purchaseState');
 
 jest.mock('../../src/models/Listing.model');
-jest.mock('../../src/models/purchaseState', () => ({ isListingSold: jest.fn().mockReturnValue(false) }));
+jest.mock('../../src/models/purchaseState', () => ({
+  isListingSold: jest.fn().mockReturnValue(false),
+}));
 jest.mock('@google/generative-ai');
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -412,7 +414,11 @@ describe('deleteListing', () => {
 
 describe('updateListingStatus', () => {
   const fakeLifecycleListing = {
-    id: 1, owner_id: 42, status: 'AVAILABLE', isSold: false, isClosed: false,
+    id: 1,
+    owner_id: 42,
+    status: 'AVAILABLE',
+    isSold: false,
+    isClosed: false,
   };
 
   it('returns 400 when listing id is not a valid integer', () => {
@@ -484,7 +490,9 @@ describe('updateListingStatus', () => {
   it('returns 409 when the requested transition is not allowed', () => {
     const req = { params: { id: '1' }, body: { status: 'AVAILABLE' } };
     const res = makeRes({ userId: 42 });
-    mockFn(model.getListingLifecycleById, null, [{ ...fakeLifecycleListing, status: 'SOLD', isSold: true }]);
+    mockFn(model.getListingLifecycleById, null, [
+      { ...fakeLifecycleListing, status: 'SOLD', isSold: true },
+    ]);
     controller.updateListingStatus(req, res);
     expect(res.status).toHaveBeenCalledWith(409);
   });
@@ -492,7 +500,9 @@ describe('updateListingStatus', () => {
   it('returns 500 on DB update error after successful lookup', () => {
     const req = { params: { id: '1' }, body: { status: 'RESERVED' } };
     const res = makeRes({ userId: 42 });
-    model.getListingLifecycleById.mockImplementation((_d, cb) => cb(null, { rows: [fakeLifecycleListing] }));
+    model.getListingLifecycleById.mockImplementation((_d, cb) =>
+      cb(null, { rows: [fakeLifecycleListing] }),
+    );
     mockFn(model.updateListingStatus, new Error('DB error'));
     controller.updateListingStatus(req, res);
     expect(res.status).toHaveBeenCalledWith(500);
@@ -501,7 +511,9 @@ describe('updateListingStatus', () => {
   it('returns 409 when update returns empty rows (concurrent status change)', () => {
     const req = { params: { id: '1' }, body: { status: 'RESERVED' } };
     const res = makeRes({ userId: 42 });
-    model.getListingLifecycleById.mockImplementation((_d, cb) => cb(null, { rows: [fakeLifecycleListing] }));
+    model.getListingLifecycleById.mockImplementation((_d, cb) =>
+      cb(null, { rows: [fakeLifecycleListing] }),
+    );
     mockFn(model.updateListingStatus, null, []);
     controller.updateListingStatus(req, res);
     expect(res.status).toHaveBeenCalledWith(409);
@@ -510,8 +522,12 @@ describe('updateListingStatus', () => {
   it('returns 200 on a successful AVAILABLE → RESERVED transition', () => {
     const req = { params: { id: '1' }, body: { status: 'RESERVED' } };
     const res = makeRes({ userId: 42 });
-    model.getListingLifecycleById.mockImplementation((_d, cb) => cb(null, { rows: [fakeLifecycleListing] }));
-    mockFn(model.updateListingStatus, null, [{ id: 1, status: 'RESERVED', isSold: false, isClosed: false }]);
+    model.getListingLifecycleById.mockImplementation((_d, cb) =>
+      cb(null, { rows: [fakeLifecycleListing] }),
+    );
+    mockFn(model.updateListingStatus, null, [
+      { id: 1, status: 'RESERVED', isSold: false, isClosed: false },
+    ]);
     controller.updateListingStatus(req, res);
     expect(res.status).toHaveBeenCalledWith(200);
   });
@@ -519,8 +535,12 @@ describe('updateListingStatus', () => {
   it('returns 200 on a successful AVAILABLE → SOLD transition', () => {
     const req = { params: { id: '1' }, body: { status: 'SOLD' } };
     const res = makeRes({ userId: 42 });
-    model.getListingLifecycleById.mockImplementation((_d, cb) => cb(null, { rows: [fakeLifecycleListing] }));
-    mockFn(model.updateListingStatus, null, [{ id: 1, status: 'SOLD', isSold: true, isClosed: false }]);
+    model.getListingLifecycleById.mockImplementation((_d, cb) =>
+      cb(null, { rows: [fakeLifecycleListing] }),
+    );
+    mockFn(model.updateListingStatus, null, [
+      { id: 1, status: 'SOLD', isSold: true, isClosed: false },
+    ]);
     controller.updateListingStatus(req, res);
     expect(res.status).toHaveBeenCalledWith(200);
   });
@@ -639,12 +659,26 @@ describe('searchListings - extra edge cases', () => {
   });
 
   it('passes all query filters to the model', () => {
-    const req = { query: { search: 'rolex', minPrice: '100', maxPrice: '500', sort: 'cheapest', category: 'Watches' } };
+    const req = {
+      query: {
+        search: 'rolex',
+        minPrice: '100',
+        maxPrice: '500',
+        sort: 'cheapest',
+        category: 'Watches',
+      },
+    };
     const res = makeRes();
     mockFn(model.searchListings, null, []);
     controller.searchListings(req, res);
     expect(model.searchListings).toHaveBeenCalledWith(
-      expect.objectContaining({ search: 'rolex', minPrice: '100', maxPrice: '500', sort: 'cheapest', category: 'Watches' }),
+      expect.objectContaining({
+        search: 'rolex',
+        minPrice: '100',
+        maxPrice: '500',
+        sort: 'cheapest',
+        category: 'Watches',
+      }),
       expect.any(Function),
     );
   });

@@ -15,21 +15,86 @@
     <link rel="stylesheet" href="../css/noir.css" />
     <link rel="stylesheet" href="../css/listings.css" />
     <style>
-      .seller-hero { padding: 48px 60px 32px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 2rem; }
-      .seller-avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--muted); flex-shrink: 0; }
-      .seller-meta { display: flex; flex-direction: column; gap: 0.3rem; }
-      .seller-username { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; }
-      .seller-since { font-size: 0.85rem; color: var(--muted); }
-      .seller-stat { font-size: 0.9rem; color: var(--accent, #c9a96e); font-weight: 600; }
-      .seller-section { padding: 40px 60px; }
-      .seller-section + .seller-section { border-top: 1px solid var(--border); }
-      .sp-rv-card { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem; max-width: 680px; }
-      .sp-rv-header { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.3rem; }
-      .sp-rv-stars { color: var(--accent, #c9a96e); font-size: 1.05rem; }
-      .sp-rv-author { font-weight: 600; font-size: 0.85rem; }
-      .sp-rv-listing { font-size: 0.8rem; color: var(--muted); }
-      .sp-rv-date { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
-      .sp-rv-comment { margin: 0.3rem 0 0; font-size: 0.9rem; line-height: 1.5; }
+      .seller-hero {
+        padding: 48px 60px 32px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+      }
+      .seller-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: var(--muted);
+        flex-shrink: 0;
+      }
+      .seller-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+      }
+      .seller-username {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+      }
+      .seller-since {
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .seller-stat {
+        font-size: 0.9rem;
+        color: var(--accent, #c9a96e);
+        font-weight: 600;
+      }
+      .seller-section {
+        padding: 40px 60px;
+      }
+      .seller-section + .seller-section {
+        border-top: 1px solid var(--border);
+      }
+      .sp-rv-card {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+        max-width: 680px;
+      }
+      .sp-rv-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.3rem;
+      }
+      .sp-rv-stars {
+        color: var(--accent, #c9a96e);
+        font-size: 1.05rem;
+      }
+      .sp-rv-author {
+        font-weight: 600;
+        font-size: 0.85rem;
+      }
+      .sp-rv-listing {
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .sp-rv-date {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-left: auto;
+      }
+      .sp-rv-comment {
+        margin: 0.3rem 0 0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
     </style>
     <script>
       var t = localStorage.getItem('theme');
@@ -50,8 +115,12 @@
         <li><a href="listing-create.html">Create Listing</a></li>
       </ul>
       <div class="nav-right">
-        <a class="icon-btn" id="btn-account" href="login.html" title="Login"><i class="bi bi-person"></i></a>
-        <button class="icon-btn" id="btn-wishlist" title="Wishlist"><i class="bi bi-heart"></i></button>
+        <a class="icon-btn" id="btn-account" href="login.html" title="Login"
+          ><i class="bi bi-person"></i
+        ></a>
+        <button class="icon-btn" id="btn-wishlist" title="Wishlist">
+          <i class="bi bi-heart"></i>
+        </button>
         <a class="icon-btn" href="checkout.html" title="Cart"><i class="bi bi-bag"></i></a>
         <a class="icon-btn" href="chats.html" title="Chats"><i class="bi bi-chat-left-dots"></i></a>
         <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
@@ -71,12 +140,14 @@
 
     <!-- Active listings -->
     <div class="seller-section">
-      <div class="section-header" style="margin-bottom: 1.5rem;">
+      <div class="section-header" style="margin-bottom: 1.5rem">
         <div>
           <div class="hero-tag">Marketplace</div>
           <h2 class="section-title" id="listings-heading">Active Listings</h2>
         </div>
-        <a id="see-all-link" href="listings.html" class="see-all" style="display:none;">See all listings →</a>
+        <a id="see-all-link" href="listings.html" class="see-all" style="display: none"
+          >See all listings →</a
+        >
       </div>
       <div class="products" id="seller-listings-grid">
         <p class="status-text">Loading listings…</p>
@@ -85,7 +156,7 @@
 
     <!-- Reviews received -->
     <div class="seller-section">
-      <div class="section-header" style="margin-bottom: 1.5rem;">
+      <div class="section-header" style="margin-bottom: 1.5rem">
         <div>
           <div class="hero-tag">Community</div>
           <h2 class="section-title">Reviews Received</h2>

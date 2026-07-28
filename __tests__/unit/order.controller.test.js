@@ -376,9 +376,7 @@ describe('createOrder - success', () => {
     model.createOrder.mockResolvedValue(fakeOrder);
     controller.createOrder(req, res, next);
     await Promise.resolve();
-    expect(model.createOrder).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 42 }),
-    );
+    expect(model.createOrder).toHaveBeenCalledWith(expect.objectContaining({ userId: 42 }));
   });
 
   it('merges req.body fields into the order data', async () => {

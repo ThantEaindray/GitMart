@@ -176,11 +176,16 @@ test.describe('Wishlist', () => {
     await setAuth(page, buyerToken, buyerId);
     await page.goto(`${BASE}/html/wishlist.html`);
     await page.waitForSelector('.listing-empty-state', { timeout: 8000 });
-    await expect(page.locator('.listing-empty-state a[href="listings.html"]').first()).toBeVisible();
+    await expect(
+      page.locator('.listing-empty-state a[href="listings.html"]').first(),
+    ).toBeVisible();
   });
 
   // Valid partition: clicking the heart on listing detail adds the listing to the wishlist
-  test('clicking heart button on listing detail adds listing to wishlist', async ({ page, request }) => {
+  test('clicking heart button on listing detail adds listing to wishlist', async ({
+    page,
+    request,
+  }) => {
     // Ensure wishlist is clean before test
     await request.delete(`${BASE}/api/wishlist/${testListingId}`, {
       headers: { Authorization: `Bearer ${buyerToken}` },
