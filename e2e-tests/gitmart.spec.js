@@ -165,6 +165,51 @@ test.describe('Wishlist', () => {
     await page.waitForSelector('.product-name', { timeout: 8000 });
     await expect(page.locator('#btn-detail-heart')).toBeVisible();
   });
+
+  // Boundary: empty wishlist shows the clickable link to browse listings
+  test('wishlist empty state shows a link to browse listings', async ({ page, request }) => {
+    // Clear wishlist so empty state is guaranteed
+    await request.delete(`${BASE}/api/wishlist/${testListingId}`, {
+      headers: { Authorization: `Bearer ${buyerToken}` },
+    });
+    await page.goto(`${BASE}/html/listings.html`);
+    await setAuth(page, buyerToken, buyerId);
+    await page.goto(`${BASE}/html/wishlist.html`);
+    await page.waitForSelector('.listing-empty-state', { timeout: 8000 });
+    await expect(page.locator('.listing-empty-state a[href="listings.html"]').first()).toBeVisible();
+  });
+
+  // Valid partition: clicking the heart on listing detail adds the listing to the wishlist
+  test('clicking heart button on listing detail adds listing to wishlist', async ({ page, request }) => {
+    // Ensure wishlist is clean before test
+    await request.delete(`${BASE}/api/wishlist/${testListingId}`, {
+      headers: { Authorization: `Bearer ${buyerToken}` },
+    });
+    await page.goto(`${BASE}/html/listings.html`);
+    await setAuth(page, buyerToken, buyerId);
+    await page.goto(`${BASE}/html/listing.html?id=${testListingId}`);
+    await page.waitForSelector('.product-name', { timeout: 8000 });
+    await page.locator('#btn-detail-heart').click();
+    // Verify via API that listing is now in wishlist
+    const res = await request.get(`${BASE}/api/wishlist`, {
+      headers: { Authorization: `Bearer ${buyerToken}` },
+    });
+    const items = await res.json();
+    expect(items.find((i) => i.listing_id === testListingId)).toBeDefined();
+  });
+
+  // Valid partition: listing added via heart appears as a card on wishlist page
+  test('wishlist page shows listing card after adding via heart', async ({ page, request }) => {
+    // Seed the wishlist via API to make this test independent
+    await request.post(`${BASE}/api/wishlist/${testListingId}`, {
+      headers: { Authorization: `Bearer ${buyerToken}` },
+    });
+    await page.goto(`${BASE}/html/listings.html`);
+    await setAuth(page, buyerToken, buyerId);
+    await page.goto(`${BASE}/html/wishlist.html`);
+    await page.waitForSelector('.card', { timeout: 8000 });
+    await expect(page.locator('.card').first()).toBeVisible();
+  });
 });
 
 // ── Feature 5: Recently Viewed ────────────────────────────────────────────────
