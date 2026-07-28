@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileImagePreview = document.getElementById('profileImagePreview');
   const profileImageInput = document.getElementById('profileImageInput');
   const uploadProfileImageBtn = document.getElementById('uploadProfileImageBtn');
+  const removeProfileImageBtn = document.getElementById('removeProfileImageBtn');
 
   let selectedProfileImageBase64 = null;
 
@@ -156,6 +157,26 @@ document.addEventListener('DOMContentLoaded', () => {
           console.error('Profile image upload error:', error);
           showWarning('Something went wrong while uploading profile image.');
         });
+    });
+  }
+
+  if (removeProfileImageBtn) {
+    removeProfileImageBtn.addEventListener('click', () => {
+      authFetch('/api/me/profile-image', { method: 'DELETE' })
+        .then((response) => response.json().then((data) => ({ status: response.status, data })))
+        .then(({ status, data }) => {
+          if (status !== 200) {
+            showWarning(data.message || 'Failed to remove profile image.');
+            return;
+          }
+          if (profileImagePreview) {
+            profileImagePreview.innerHTML = '<i class="bi bi-person"></i>';
+          }
+          localStorage.removeItem(getProfileImageStorageKey());
+          selectedProfileImageBase64 = null;
+          showWarning('Profile photo removed.');
+        })
+        .catch(() => showWarning('Something went wrong while removing profile image.'));
     });
   }
 });

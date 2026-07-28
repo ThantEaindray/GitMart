@@ -157,13 +157,22 @@ module.exports.namesPictures = (data, callback) => {
 module.exports.getPublicProfile = (data, callback) => {
   const SQLSTATEMENT = `
     SELECT u.id, u.username, u.created_on,
-           COUNT(l.id) FILTER (WHERE l.status = 'AVAILABLE') AS listing_count
+           COUNT(l.id) FILTER (WHERE l.status = 'AVAILABLE') AS listing_count,
+           CASE
+             WHEN u.icon IS NULL THEN NULL
+             ELSE encode(u.icon, 'base64')
+           END AS profile_image
     FROM users u
     LEFT JOIN listings l ON l.owner_id = u.id
     WHERE u.id = $1
     GROUP BY u.id
   `;
   pool.query(SQLSTATEMENT, [data.userId], callback);
+};
+
+module.exports.clearProfileImage = (data, callback) => {
+  const SQLSTATEMENT = `UPDATE users SET icon = NULL WHERE id = $1`;
+  pool.query(SQLSTATEMENT, [data.id], callback);
 };
 
 module.exports.getSellerReviews = (data, callback) => {

@@ -41,8 +41,12 @@ function onProfileLoaded(result) {
 
   document.title = 'GitMart — ' + p.username;
 
+  var avatarHtml = p.profile_image
+    ? '<img src="data:image/jpeg;base64,' + p.profile_image + '" alt="' + escapeHtml(p.username) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />'
+    : '<i class="bi bi-person"></i>';
+
   hero.innerHTML =
-    '<div class="seller-avatar"><i class="bi bi-person"></i></div>' +
+    '<div class="seller-avatar">' + avatarHtml + '</div>' +
     '<div class="seller-meta">' +
     '<div class="seller-username" id="seller-username">' + escapeHtml(p.username) + '</div>' +
     '<div class="seller-since">Member since ' + since + '</div>' +

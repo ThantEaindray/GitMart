@@ -50,6 +50,7 @@ router.post(
 router.put('/me/profile', jwtMiddleware.verifyToken, userController.updateDisplayName);
 
 router.put('/me/profile-image', jwtMiddleware.verifyToken, userController.updateProfileImage);
+router.delete('/me/profile-image', jwtMiddleware.verifyToken, userController.clearProfileImage);
 
 // Update Notification Preferences
 router.put('/me/notifications', jwtMiddleware.verifyToken, userController.updateNotifications);

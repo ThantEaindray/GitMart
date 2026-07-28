@@ -179,6 +179,20 @@ module.exports.updateProfileImage = (req, res) => {
   model.updateProfileImage(data, callback);
 };
 
+module.exports.clearProfileImage = (req, res) => {
+  const data = { id: res.locals.userId };
+
+  const callback = (error) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    return res.status(200).json({ message: 'Profile image removed.' });
+  };
+
+  model.clearProfileImage(data, callback);
+};
+
 module.exports.updateNotifications = (req, res) => {
   const data = {
     id: res.locals.userId,
