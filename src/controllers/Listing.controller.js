@@ -6,12 +6,12 @@ const {
   canTransitionListingStatus,
   getLegacyListingFlags,
 } = require('../utils/listingLifecycle');
-const { isListingSold } = require('../models/purchaseState');
+const { isListingSold } = require('../utils/purchaseState');
 
 function applyRuntimeSoldState(listing) {
   return {
     ...listing,
-    isSold: Boolean(listing.isSold || isListingSold(listing.id)),
+    isSold: Boolean(listing.isSold || isListingSold({ id: listing.id })),
   };
 }
 
@@ -278,58 +278,47 @@ module.exports.updateListing = (req, res) => {
   model.updateListing(data, callback);
 };
 
-// PATCH /api/listings/:id/status
-module.exports.updateListingStatus = (req, res) => {
-  const listingId = Number(req.params.id);
+// PATCH /api/listings/:id/status — step 1: validate input
+module.exports.validateListingStatusInput = (req, res, next) => {
+  const listingId         = Number(req.params.id);
   const { status: requestedStatus } = req.body || {};
 
   if (!Number.isInteger(listingId) || listingId <= 0) {
-    return res.status(400).json({
-      message: 'Listing ID must be a positive integer.',
-    });
+    return res.status(400).json({ message: 'Listing ID must be a positive integer.' });
   }
-
   if (typeof requestedStatus !== 'string' || requestedStatus.trim() === '') {
-    return res.status(400).json({
-      message: 'Status is required.',
-    });
+    return res.status(400).json({ message: 'Status is required.' });
   }
 
   const nextStatus = normalizeListingStatus(requestedStatus);
 
   if (!isValidListingStatus(nextStatus)) {
-    return res.status(400).json({
-      message: 'Status must be AVAILABLE, RESERVED, SOLD or ARCHIVED.',
-    });
+    return res.status(400).json({ message: 'Status must be AVAILABLE, RESERVED, SOLD or ARCHIVED.' });
   }
 
-  const lookupData = {
-    id: listingId,
-  };
+  res.locals.nextStatus = nextStatus;
+  next();
+};
 
-  const lookupCallback = (lookupError, lookupResult) => {
-    if (lookupError) {
-      console.log(lookupError);
+// PATCH /api/listings/:id/status — step 2: fetch listing and validate ownership + transition
+module.exports.loadListingForStatusUpdate = (req, res, next) => {
+  const data = { id: Number(req.params.id) };
 
-      return res.status(500).json({
-        message: 'Internal server error',
-      });
+  const callback = (error, result) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Listing not found.' });
     }
 
-    if (lookupResult.rows.length === 0) {
-      return res.status(404).json({
-        message: 'Listing not found.',
-      });
-    }
-
-    const listing = lookupResult.rows[0];
+    const listing    = result.rows[0];
+    const nextStatus = res.locals.nextStatus;
 
     if (Number(listing.owner_id) !== Number(res.locals.userId)) {
-      return res.status(403).json({
-        message: 'Only the listing owner can change its status.',
-      });
+      return res.status(403).json({ message: 'Only the listing owner can change its status.' });
     }
-
     if (!canTransitionListingStatus(listing.status, nextStatus)) {
       return res.status(409).json({
         message: `Cannot change listing status from ${listing.status} to ${nextStatus}.`,
@@ -338,41 +327,41 @@ module.exports.updateListingStatus = (req, res) => {
 
     const { isSold, isClosed } = getLegacyListingFlags(nextStatus);
 
-    const updateData = {
-      id: listingId,
-      owner_id: res.locals.userId,
+    res.locals.statusUpdateData = {
+      id:             Number(req.params.id),
+      owner_id:       res.locals.userId,
       current_status: listing.status,
-      status: nextStatus,
+      status:         nextStatus,
       isSold,
       isClosed,
     };
-
-    const updateCallback = (updateError, updateResult) => {
-      if (updateError) {
-        console.log(updateError);
-
-        return res.status(500).json({
-          message: 'Internal server error',
-        });
-      }
-
-      if (updateResult.rows.length === 0) {
-        return res.status(409).json({
-          message:
-            'The listing status changed before this request was completed. Please try again.',
-        });
-      }
-
-      return res.status(200).json({
-        message: `Listing status changed from ${listing.status} to ${nextStatus}.`,
-        listing: updateResult.rows[0],
-      });
-    };
-
-    return model.updateListingStatus(updateData, updateCallback);
+    next();
   };
 
-  return model.getListingLifecycleById(lookupData, lookupCallback);
+  model.getListingLifecycleById(data, callback);
+};
+
+// PATCH /api/listings/:id/status — step 3: apply the update and respond
+module.exports.updateListingStatus = (req, res) => {
+  const data = res.locals.statusUpdateData;
+
+  const callback = (error, result) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    if (result.rows.length === 0) {
+      return res.status(409).json({
+        message: 'The listing status changed before this request was completed. Please try again.',
+      });
+    }
+    return res.status(200).json({
+      message: `Listing status changed from ${data.current_status} to ${data.status}.`,
+      listing: result.rows[0],
+    });
+  };
+
+  model.updateListingStatus(data, callback);
 };
 
 // DELETE /api/listings/:id

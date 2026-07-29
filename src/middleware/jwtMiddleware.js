@@ -24,11 +24,16 @@ module.exports.generateToken = (req, res, next) => {
 
 module.exports.verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  // EventSource cannot send custom headers, so accept token via query param as fallback
+  const token =
+    authHeader && authHeader.startsWith('Bearer ')
+      ? authHeader.substring(7)
+      : req.query.token || null;
+
+  if (!token) {
     return res.status(401).json({ error: 'No token provided' });
   }
 
-  const token = authHeader.substring(7);
   jwt.verify(token, accessSecret, (err, decoded) => {
     if (err) return res.status(401).json({ error: 'Invalid token' });
     res.locals.userId = decoded.user_id ?? decoded.userId ?? decoded.id ?? decoded.sub;

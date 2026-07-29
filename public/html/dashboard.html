@@ -13,6 +13,7 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
     />
     <link rel="stylesheet" href="../css/noir.css" />
+    <link rel="stylesheet" href="../css/notifications.css" />
     <link rel="stylesheet" href="../css/dashboard.css" />
     <script>
       var t = localStorage.getItem('theme');
@@ -27,12 +28,24 @@
     <nav class="nav">
       <div class="logo">GitMart</div>
 
-      <ul class="nav-links">
-        <li><a href="noir.html">Home</a></li>
-        <li><a href="products.html">Products</a></li>
-        <li><a href="listings.html">Listings</a></li>
-        <li><a href="listing-create.html">Create Listing</a></li>
-      </ul>
+      <button
+        class="nav-hamburger"
+        type="button"
+        aria-label="Toggle navigation"
+        aria-expanded="false"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="nav-collapse" id="nav-menu">
+        <ul class="nav-links">
+          <li><a href="noir.html">Home</a></li>
+          <li><a href="products.html">Products</a></li>
+          <li><a href="listings.html">Listings</a></li>
+          <li><a href="listing-create.html">Create Listing</a></li>
+        </ul>
+      </div>
 
       <div class="nav-right">
         <a class="icon-btn" id="btn-account" href="login.html" title="Login"
@@ -130,5 +143,6 @@
     <script src="../js/prefs.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/dashboard.js"></script>
+    <script src="../js/notif-badge.js"></script>
   </body>
 </html>

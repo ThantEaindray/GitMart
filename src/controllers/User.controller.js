@@ -70,7 +70,6 @@ module.exports.register = (req, res, next) => {
 };
 
 module.exports.login = (req, res, next) => {
-  console.log('login');
   if (req.body.username === undefined || req.body.password === undefined) {
     return res.status(400).json({ message: 'Username or password is missing.' });
   }
@@ -78,7 +77,6 @@ module.exports.login = (req, res, next) => {
   const data = { username: req.body.username };
 
   const callback = (error, result) => {
-    console.log('callback');
     if (error) {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });

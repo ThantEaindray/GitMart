@@ -16,6 +16,8 @@
     <link rel="stylesheet" href="../css/noir.css" />
     <link rel="stylesheet" href="../css/auth.css" />
     <link rel="stylesheet" href="../css/listings.css" />
+    <link rel="stylesheet" href="../css/compare.css" />
+    <link rel="stylesheet" href="../css/notifications.css" />
     <script>
       var t = localStorage.getItem('theme');
       var f = localStorage.getItem('font');
@@ -30,12 +32,24 @@
     <nav class="nav">
       <div class="logo">GitMart</div>
 
-      <ul class="nav-links">
-        <li><a href="noir.html">Home</a></li>
-        <li><a href="products.html">Products</a></li>
-        <li><a href="listings.html">Listings</a></li>
-        <li><a href="listing-create.html">Create Listing</a></li>
-      </ul>
+      <button
+        class="nav-hamburger"
+        type="button"
+        aria-label="Toggle navigation"
+        aria-expanded="false"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="nav-collapse" id="nav-menu">
+        <ul class="nav-links">
+          <li><a href="noir.html">Home</a></li>
+          <li><a href="products.html">Products</a></li>
+          <li><a href="listings.html">Listings</a></li>
+          <li><a href="listing-create.html">Create Listing</a></li>
+        </ul>
+      </div>
 
       <div class="nav-right">
         <a class="icon-btn" id="btn-account" href="login.html" title="Login"
@@ -171,5 +185,7 @@
     <script src="../js/prefs.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/listings.js"></script>
+    <script src="../js/compare-tray.js"></script>
+    <script src="../js/notif-badge.js"></script>
   </body>
 </html>

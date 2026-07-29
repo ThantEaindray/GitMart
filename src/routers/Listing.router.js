@@ -36,6 +36,8 @@ router.post('/listings', jwtMiddleware.verifyToken, listingController.createList
 router.patch(
   '/listings/:id/status',
   jwtMiddleware.verifyToken,
+  listingController.validateListingStatusInput,
+  listingController.loadListingForStatusUpdate,
   listingController.updateListingStatus,
 );
 router.patch('/listings/:id', jwtMiddleware.verifyToken, listingController.updateListing);

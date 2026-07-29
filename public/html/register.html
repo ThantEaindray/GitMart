@@ -30,12 +30,24 @@
     <nav class="nav">
       <div class="logo">GitMart</div>
 
-      <ul class="nav-links">
-        <li><a href="noir.html">Home</a></li>
-        <li><a href="products.html">Products</a></li>
-        <li><a href="listings.html">Listings</a></li>
-        <li><a href="listing-create.html">Create Listing</a></li>
-      </ul>
+      <button
+        class="nav-hamburger"
+        type="button"
+        aria-label="Toggle navigation"
+        aria-expanded="false"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="nav-collapse" id="nav-menu">
+        <ul class="nav-links">
+          <li><a href="noir.html">Home</a></li>
+          <li><a href="products.html">Products</a></li>
+          <li><a href="listings.html">Listings</a></li>
+          <li><a href="listing-create.html">Create Listing</a></li>
+        </ul>
+      </div>
 
       <div class="nav-right">
         <a class="icon-btn" href="login.html" title="Login"><i class="bi bi-person"></i></a>
