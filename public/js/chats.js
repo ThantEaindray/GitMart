@@ -52,7 +52,7 @@ function renderChats(results) {
 
 document.addEventListener("DOMContentLoaded", () => {
   //immediately load the webSocket before we do anything else and store it locally for future use
-  const webSocket = new WebSocket('ws://localhost:443/')
+  const webSocket = new WebSocket(`ws://${location.hostname}:3000/`)
   localStorage.setItem(webSocket, webSocket)
   //so first things first we need to do the most basic of calling the api to get the users chats to load in, first things first\
   //check for a logged in user

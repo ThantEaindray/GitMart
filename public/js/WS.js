@@ -3,6 +3,7 @@ const token = localStorage.getItem('token')
 const uId = localStorage.getItem('loggedInUserId')
 let openChat = localStorage.getItem('openChat')
 const webSocket = localStorage.getItem('webSocket');
+const images = require ('./images')
 
 //so we need to set it up to send over some info about the user on the initial websocket connection
 webSocket.onopen = () => {
@@ -36,23 +37,15 @@ webSocket.onmessage = (event) => {
       }
       //so now that we have the positioning we wanna check that its sent to the intended chat
       if (data.chat == openChat) {
-        if (content.textcontent !== undefined)
-          document.getElementById("messages").innerHTML += `
-            <div class="row p-2 ${position}">
-              <div class="col-4">
-                <div class="card p-2 ${cardcolour}" >
-                  <p class="p-1">${data.content}</p>
-                </div>
-              </div>
-            </div>
-          `
+        //ok so we need to do the setup for the unread flag here
+        if (data.to == uId && data.chat !== openChat) {
+          //unread chat fn goes here
+          }
+        //the part which is gonna call the image functions 
+        if (data.cont_type === "img") {
+          
+        }
       }
-    }
-    //ok so we need to do the setup for the unread flag here
-    if (data.to == uId && data.chat !== openChat) {
-      //unread chat fn goes here
-    }
-  }
   if (data.type == "info") {
     //so we need to get the info here which is just the connections so we just have to get it to like innerhtml and stuff 
     if (data.inftype == "Conns") {
@@ -69,7 +62,8 @@ function sendTxt(content, toId) {
     chat: openChat,
     from: uId,
     to: toId, 
-    textcontent: content
+    cont_type: "txt",
+    cont: content
   } 
   document.getElementById('message').value = ''
   //just a barebones bit of verification to make sure things dont break down

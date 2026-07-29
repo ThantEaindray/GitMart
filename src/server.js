@@ -18,12 +18,11 @@ app.listen(PORT, () => {
 
 
 const { WebSocketServer } = require('ws')
-const WS_PORT = process.env.WS_PORT || 443;
+const WS_PORT = process.env.WS_PORT || 3000;
 const ws = new WebSocketServer({ port: WS_PORT })
 let connections = new Array
 //array which holds the list of connections to the socket so we know which one is which to send messages to them
 //now we tell it what to do upon a new connection
-<<<<<<< HEAD
 
 //alright lets get this started how do we make the websockets work as intended
 //ok so theres 3 types of websocket messages we can get
@@ -50,7 +49,7 @@ ws.on('message', (data) => {
   }
   //now we need to handle the messages if its an actual message
   if (parsed.type == "message") {
-    //so having it send to only the specific user seems a bit too hard I'll settle for online indicators first
+    //so messages need to be handled differently depending on what sort of data it is (image or text but the fun part is that can be clientside)
     ws.clients.forEach((cli) => {
       cli.send(
         JSON.stringify({
@@ -58,6 +57,7 @@ ws.on('message', (data) => {
           from: parsed.from,
           to: parsed.to,
           chat: parsed.chat,
+          cont_type: parsed.cont_type,
           content: parsed.cont
         })
       )
