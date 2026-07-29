@@ -1,6 +1,7 @@
 // ── TOAST ─────────────────────────────────────────────────────────────────
 
 var currentListing = null;
+var currentBuyerReservation = null;
 var _isWishlisted = false;
 var _currentListingId = null;
 
@@ -324,13 +325,67 @@ function addToCart() {
 function resetReservationButton() {
   const button = document.getElementById('btn-request-reservation');
 
+  currentBuyerReservation = null;
+
   if (!button) return;
 
   button.disabled = false;
+  button.onclick = requestReservation;
   button.innerHTML = `
     <i class="bi bi-calendar-check"></i>
     Request Reservation
   `;
+}
+
+function showPendingReservationButton(reservation) {
+  const button = document.getElementById('btn-request-reservation');
+
+  if (!button || !reservation || !reservation.id) {
+    return;
+  }
+
+  currentBuyerReservation = reservation;
+
+  button.disabled = false;
+  button.onclick = cancelBuyerReservation;
+
+  button.innerHTML = `
+    <i class="bi bi-x-circle"></i>
+    Cancel Reservation Request
+  `;
+}
+
+function cancelBuyerReservation() {
+  if (!currentBuyerReservation || !currentBuyerReservation.id) {
+    showToast('No pending reservation request found.');
+    return;
+  }
+
+  const button = document.getElementById('btn-request-reservation');
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Cancelling...';
+  }
+
+  authFetch(`/api/reservations/${currentBuyerReservation.id}/cancel`, {
+    method: 'PATCH',
+  })
+    .then(parseResponse)
+    .then(function (result) {
+      if (result.status !== 200) {
+        showToast(result.data.message || 'Failed to cancel reservation request.');
+        showPendingReservationButton(currentBuyerReservation);
+        return;
+      }
+
+      showToast(result.data.message || 'Reservation request cancelled.');
+      resetReservationButton();
+    })
+    .catch(function () {
+      showToast('Something went wrong while cancelling the reservation request.');
+      showPendingReservationButton(currentBuyerReservation);
+    });
 }
 
 function requestReservation() {
@@ -366,6 +421,13 @@ function requestReservation() {
       }
 
       showToast(result.data.message || 'Reservation request submitted.');
+
+      const reservation = result.data.reservation;
+
+      if (reservation && reservation.id) {
+        showPendingReservationButton(reservation);
+        return;
+      }
 
       if (button) {
         button.disabled = true;
