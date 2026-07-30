@@ -9,15 +9,23 @@ const COMPARE_KEY = 'compareItems';
 // ── Storage helper ────────────────────────────────────────────────────────
 
 function getStoredItems() {
-  try { return JSON.parse(localStorage.getItem(COMPARE_KEY) || '[]'); }
-  catch (e) { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(COMPARE_KEY) || '[]');
+  } catch (e) {
+    return [];
+  }
 }
 
 function removeStoredItem(id) {
   const current = getStoredItems();
-  localStorage.setItem(COMPARE_KEY, JSON.stringify(
-    current.filter(function notId(i) { return String(i.id) !== String(id); }),
-  ));
+  localStorage.setItem(
+    COMPARE_KEY,
+    JSON.stringify(
+      current.filter(function notId(i) {
+        return String(i.id) !== String(id);
+      }),
+    ),
+  );
 }
 
 // ── Formatting helpers ────────────────────────────────────────────────────
@@ -29,16 +37,16 @@ function formatPrice(val) {
 
 function relativeDate(iso) {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-  if (days === 0)   return 'Today';
-  if (days === 1)   return 'Yesterday';
-  if (days < 30)    return days + ' days ago';
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 30) return days + ' days ago';
   return new Date(iso).toLocaleDateString();
 }
 
 function statusLabel(listing) {
-  if (listing.isSold)   return { text: 'Sold',      cls: 'compare-status-sold'      };
-  if (listing.isClosed) return { text: 'Closed',    cls: 'compare-status-closed'    };
-  return                       { text: 'Available', cls: 'compare-status-available' };
+  if (listing.isSold) return { text: 'Sold', cls: 'compare-status-sold' };
+  if (listing.isClosed) return { text: 'Closed', cls: 'compare-status-closed' };
+  return { text: 'Available', cls: 'compare-status-available' };
 }
 
 // ── API ───────────────────────────────────────────────────────────────────
@@ -58,9 +66,9 @@ function renderEmpty() {
   const page = document.getElementById('compare-content');
   page.innerHTML =
     '<div class="compare-empty">' +
-      '<h2>Nothing to compare</h2>' +
-      '<p>Add listings from the browse page using the compare button on each card.</p>' +
-      '<a class="btn-primary" href="listings.html" style="text-decoration:none">Browse Listings</a>' +
+    '<h2>Nothing to compare</h2>' +
+    '<p>Add listings from the browse page using the compare button on each card.</p>' +
+    '<a class="btn-primary" href="listings.html" style="text-decoration:none">Browse Listings</a>' +
     '</div>';
 }
 
@@ -118,27 +126,31 @@ function buildHeaderRow(listings, count) {
   for (let i = 0; i < listings.length; i++) {
     cells +=
       '<div class="compare-cell header-cell">' +
-        '<div class="compare-item-title">' + listings[i].title + '</div>' +
-        '<button class="compare-item-remove" data-id="' + listings[i].id + '" type="button">Remove</button>' +
+      '<div class="compare-item-title">' +
+      listings[i].title +
+      '</div>' +
+      '<button class="compare-item-remove" data-id="' +
+      listings[i].id +
+      '" type="button">Remove</button>' +
       '</div>';
   }
   if (count < 3) {
     cells +=
       '<a class="compare-cell compare-add-slot" href="listings.html">' +
-        '<i class="bi bi-plus-lg" style="font-size:1.2rem"></i>' +
-        '<span>Add a listing</span>' +
+      '<i class="bi bi-plus-lg" style="font-size:1.2rem"></i>' +
+      '<span>Add a listing</span>' +
       '</a>';
   }
   return '<div class="compare-row">' + cells + '</div>';
 }
 
 const COMPARE_ROWS = [
-  { label: 'Price',       key: 'price'       },
-  { label: 'Category',    key: 'category'    },
-  { label: 'Status',      key: 'status'      },
-  { label: 'Rating',      key: 'rating'      },
-  { label: 'Reviews',     key: 'reviews'     },
-  { label: 'Listed',      key: 'created_on'  },
+  { label: 'Price', key: 'price' },
+  { label: 'Category', key: 'category' },
+  { label: 'Status', key: 'status' },
+  { label: 'Rating', key: 'rating' },
+  { label: 'Reviews', key: 'reviews' },
+  { label: 'Listed', key: 'created_on' },
   { label: 'Description', key: 'description' },
 ];
 
@@ -148,18 +160,20 @@ function buildDataRowHtml(row) {
 }
 
 function renderTable(listings) {
-  const count   = listings.length;
+  const count = listings.length;
   const content = document.getElementById('compare-content');
 
   // Pass context via function properties (avoids anonymous closure)
   buildDataRowHtml._listings = listings;
-  buildDataRowHtml._count    = count;
+  buildDataRowHtml._count = count;
 
   const rowsHtml = COMPARE_ROWS.map(buildDataRowHtml).join('');
   content.innerHTML =
-    '<div class="compare-grid cols-' + count + '">' +
-      buildHeaderRow(listings, count) +
-      rowsHtml +
+    '<div class="compare-grid cols-' +
+    count +
+    '">' +
+    buildHeaderRow(listings, count) +
+    rowsHtml +
     '</div>';
 
   // Wire remove buttons via event delegation
@@ -167,7 +181,11 @@ function renderTable(listings) {
 
   if (window.gsap) {
     gsap.from(content.querySelectorAll('.compare-cell'), {
-      opacity: 0, y: 10, duration: 0.3, stagger: 0.02, ease: 'power2.out',
+      opacity: 0,
+      y: 10,
+      duration: 0.3,
+      stagger: 0.02,
+      ease: 'power2.out',
     });
   }
 }
@@ -187,7 +205,7 @@ function renderLoadError() {
   const content = document.getElementById('compare-content');
   content.innerHTML =
     '<p class="status-text" style="padding:40px 0">' +
-      'Failed to load listings. <a href="listings.html" style="color:var(--accent)">Go back</a>' +
+    'Failed to load listings. <a href="listings.html" style="color:var(--accent)">Go back</a>' +
     '</p>';
 }
 
@@ -198,7 +216,9 @@ function onListingsLoaded(listings) {
 }
 
 function initCompare() {
-  const ids     = getStoredItems().map(function getId(i) { return i.id; });
+  const ids = getStoredItems().map(function getId(i) {
+    return i.id;
+  });
   const content = document.getElementById('compare-content');
 
   if (!ids.length) {
@@ -209,9 +229,7 @@ function initCompare() {
   content.innerHTML = '<p class="status-text" style="padding:40px 0">Loading listings…</p>';
 
   // Fetch all listings in parallel, then render
-  Promise.all(ids.map(fetchListing))
-    .then(onListingsLoaded)
-    .catch(renderLoadError);
+  Promise.all(ids.map(fetchListing)).then(onListingsLoaded).catch(renderLoadError);
 }
 
 document.addEventListener('DOMContentLoaded', function onDOMReady() {

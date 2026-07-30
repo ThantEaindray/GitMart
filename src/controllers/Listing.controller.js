@@ -280,7 +280,7 @@ module.exports.updateListing = (req, res) => {
 
 // PATCH /api/listings/:id/status — step 1: validate input
 module.exports.validateListingStatusInput = (req, res, next) => {
-  const listingId         = Number(req.params.id);
+  const listingId = Number(req.params.id);
   const { status: requestedStatus } = req.body || {};
 
   if (!Number.isInteger(listingId) || listingId <= 0) {
@@ -293,7 +293,9 @@ module.exports.validateListingStatusInput = (req, res, next) => {
   const nextStatus = normalizeListingStatus(requestedStatus);
 
   if (!isValidListingStatus(nextStatus)) {
-    return res.status(400).json({ message: 'Status must be AVAILABLE, RESERVED, SOLD or ARCHIVED.' });
+    return res
+      .status(400)
+      .json({ message: 'Status must be AVAILABLE, RESERVED, SOLD or ARCHIVED.' });
   }
 
   res.locals.nextStatus = nextStatus;
@@ -313,7 +315,7 @@ module.exports.loadListingForStatusUpdate = (req, res, next) => {
       return res.status(404).json({ message: 'Listing not found.' });
     }
 
-    const listing    = result.rows[0];
+    const listing = result.rows[0];
     const nextStatus = res.locals.nextStatus;
 
     if (Number(listing.owner_id) !== Number(res.locals.userId)) {
@@ -328,10 +330,10 @@ module.exports.loadListingForStatusUpdate = (req, res, next) => {
     const { isSold, isClosed } = getLegacyListingFlags(nextStatus);
 
     res.locals.statusUpdateData = {
-      id:             Number(req.params.id),
-      owner_id:       res.locals.userId,
+      id: Number(req.params.id),
+      owner_id: res.locals.userId,
       current_status: listing.status,
-      status:         nextStatus,
+      status: nextStatus,
       isSold,
       isClosed,
     };

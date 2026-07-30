@@ -4,9 +4,9 @@
 
 // ── Module state ──────────────────────────────────────────────────────────
 
-let notifBadge    = null;   // <span> badge element
-let notifBellLink = null;   // <a> bell element
-let notifSSE      = null;   // active EventSource
+let notifBadge = null; // <span> badge element
+let notifBellLink = null; // <a> bell element
+let notifSSE = null; // active EventSource
 
 // ── Bell injection ────────────────────────────────────────────────────────
 
@@ -14,14 +14,14 @@ function injectBell() {
   const navRight = document.querySelector('.nav-right');
   if (!navRight || navRight.querySelector('.notif-bell')) return; // already present
 
-  notifBellLink       = document.createElement('a');
-  notifBellLink.href  = 'notifications.html';
+  notifBellLink = document.createElement('a');
+  notifBellLink.href = 'notifications.html';
   notifBellLink.className = 'icon-btn notif-bell';
   notifBellLink.title = 'Notifications';
   notifBellLink.innerHTML = '<i class="bi bi-bell"></i>';
 
-  notifBadge              = document.createElement('span');
-  notifBadge.className    = 'notif-badge';
+  notifBadge = document.createElement('span');
+  notifBadge.className = 'notif-badge';
   notifBadge.style.display = 'none';
   notifBellLink.appendChild(notifBadge);
 
@@ -113,9 +113,9 @@ function connectSSE() {
   // The server's verifyToken middleware accepts ?token= as a fallback.
   notifSSE = new EventSource('/api/notifications/stream?token=' + encodeURIComponent(token));
 
-  notifSSE.addEventListener('init',         onSSEInit);
+  notifSSE.addEventListener('init', onSSEInit);
   notifSSE.addEventListener('notification', onSSENotification);
-  notifSSE.addEventListener('badge',        onSSEBadge);
+  notifSSE.addEventListener('badge', onSSEBadge);
   notifSSE.onerror = onSSEError;
 }
 

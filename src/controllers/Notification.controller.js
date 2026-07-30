@@ -1,5 +1,5 @@
 // Notification.controller.js
-const model      = require('../utils/notificationStore');
+const model = require('../utils/notificationStore');
 const sseManager = require('../utils/sseManager');
 
 // ── GET /api/notifications/stream ────────────────────────────────────────
@@ -25,7 +25,7 @@ module.exports.stream = (req, res) => {
   const keepAlive = setInterval(() => {
     try {
       res.write(': keep-alive\n\n');
-    } catch (e) {
+    } catch (_e) {
       clearInterval(keepAlive);
     }
   }, 20000);

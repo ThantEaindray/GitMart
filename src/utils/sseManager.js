@@ -3,11 +3,15 @@
 const clients = {};
 
 module.exports.register = function registerClient(userId, res) {
-  const key      = String(userId);
+  const key = String(userId);
   const existing = clients[key];
   // Close any existing connection for this user (e.g. page refresh)
   if (existing) {
-    try { existing.end(); } catch (e) { /* already closed */ }
+    try {
+      existing.end();
+    } catch (_e) {
+      /* already closed */
+    }
   }
   clients[key] = res;
 };
@@ -22,7 +26,7 @@ module.exports.send = function sendEvent(userId, eventType, data) {
   try {
     res.write('event: ' + eventType + '\ndata: ' + JSON.stringify(data) + '\n\n');
     return true;
-  } catch (e) {
+  } catch (_e) {
     delete clients[String(userId)];
     return false;
   }

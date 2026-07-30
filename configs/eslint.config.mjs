@@ -129,6 +129,8 @@ export default [
     files: ['public/**/*.js'],
     languageOptions: {
       globals: {
+        gsap: 'readonly',
+        ScrollTrigger: 'readonly',
         authFetch: 'writable',
         fetchMethod: 'writable',
         formatPrice: 'writable',

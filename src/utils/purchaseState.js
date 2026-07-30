@@ -10,9 +10,9 @@ const soldListingIds = new Set();
 function getPurchasedIds(items) {
   return (items || []).reduce(
     (ids, item) => {
-      const isOneOff  = Boolean(item.isOneOff || item.listingId);
+      const isOneOff = Boolean(item.isOneOff || item.listingId);
       const productId = item.productId ?? (!isOneOff ? item.id : null);
-      const listingId = item.listingId ?? (isOneOff  ? item.id : null);
+      const listingId = item.listingId ?? (isOneOff ? item.id : null);
       if (productId != null) ids.productIds.add(String(productId));
       if (listingId != null) ids.listingIds.add(String(listingId));
       return ids;

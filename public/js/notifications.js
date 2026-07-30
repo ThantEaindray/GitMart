@@ -5,8 +5,8 @@
 
 // ── Guard: only run on the notifications page ─────────────────────────────
 
-const notifList     = document.getElementById('notif-list');
-const notifMarkAll  = document.getElementById('btn-mark-all');
+const notifList = document.getElementById('notif-list');
+const notifMarkAll = document.getElementById('btn-mark-all');
 if (!notifList) throw new Error('notifications.js loaded on wrong page');
 
 // ── Module state ──────────────────────────────────────────────────────────
@@ -18,21 +18,21 @@ let notifPageSSE = null;
 function relativeTime(iso) {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1)  return 'Just now';
+  if (mins < 1) return 'Just now';
   if (mins < 60) return mins + 'm ago';
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24)  return hrs + 'h ago';
+  if (hrs < 24) return hrs + 'h ago';
   const days = Math.floor(hrs / 24);
   if (days === 1) return 'Yesterday';
-  if (days < 7)   return days + 'd ago';
+  if (days < 7) return days + 'd ago';
   return new Date(iso).toLocaleDateString();
 }
 
 function groupLabel(iso) {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-  if (days === 0)  return 'Today';
-  if (days === 1)  return 'Yesterday';
-  if (days < 7)    return 'This week';
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return 'This week';
   return 'Older';
 }
 
@@ -47,7 +47,9 @@ function makeMarkReadHandler(n, itemEl) {
   function onItemClick() {
     if (n.isRead) return;
     authFetch('/api/notifications/' + n.id + '/read', { method: 'PATCH' })
-      .then(function handleMarkRead() { onMarkReadSuccess(n, itemEl); })
+      .then(function handleMarkRead() {
+        onMarkReadSuccess(n, itemEl);
+      })
       .catch(function noop() {});
   }
   return onItemClick;
@@ -57,15 +59,23 @@ function makeMarkReadHandler(n, itemEl) {
 
 function buildNotifItem(n) {
   const item = document.createElement('div');
-  item.className   = 'notif-item ' + (n.isRead ? 'read' : 'unread');
-  item.dataset.id  = n.id;
-  item.innerHTML   =
-    '<div class="notif-icon"><i class="bi ' + n.icon + '"></i></div>' +
+  item.className = 'notif-item ' + (n.isRead ? 'read' : 'unread');
+  item.dataset.id = n.id;
+  item.innerHTML =
+    '<div class="notif-icon"><i class="bi ' +
+    n.icon +
+    '"></i></div>' +
     '<div class="notif-body">' +
-      '<div class="notif-title">'   + n.title   + '</div>' +
-      '<div class="notif-message">' + n.message + '</div>' +
+    '<div class="notif-title">' +
+    n.title +
     '</div>' +
-    '<div class="notif-time">' + relativeTime(n.createdAt) + '</div>' +
+    '<div class="notif-message">' +
+    n.message +
+    '</div>' +
+    '</div>' +
+    '<div class="notif-time">' +
+    relativeTime(n.createdAt) +
+    '</div>' +
     '<div class="notif-dot"></div>';
 
   item.addEventListener('click', makeMarkReadHandler(n, item));
@@ -76,7 +86,7 @@ function buildNotifItem(n) {
 
 function buildGroupLabel(text) {
   const label = document.createElement('div');
-  label.className   = 'notif-group-label';
+  label.className = 'notif-group-label';
   label.textContent = text;
   return label;
 }
@@ -96,9 +106,9 @@ function renderAll(notifications) {
   if (!notifications.length) {
     notifList.innerHTML =
       '<div class="notif-empty">' +
-        '<div class="notif-empty-icon"><i class="bi bi-bell-slash"></i></div>' +
-        '<h3>All caught up</h3>' +
-        '<p>No notifications yet. Activity on your orders and listings will appear here.</p>' +
+      '<div class="notif-empty-icon"><i class="bi bi-bell-slash"></i></div>' +
+      '<h3>All caught up</h3>' +
+      '<p>No notifications yet. Activity on your orders and listings will appear here.</p>' +
       '</div>';
     return;
   }
@@ -117,7 +127,11 @@ function renderAll(notifications) {
 
   if (window.gsap) {
     gsap.from(notifList.querySelectorAll('.notif-item'), {
-      opacity: 0, y: 12, duration: 0.3, stagger: 0.05, ease: 'power2.out',
+      opacity: 0,
+      y: 12,
+      duration: 0.3,
+      stagger: 0.05,
+      ease: 'power2.out',
     });
   }
 }
@@ -164,10 +178,7 @@ function onLoadData(data) {
 
 function loadNotifications() {
   notifList.innerHTML = '<p class="status-text" style="padding:40px 0">Loading…</p>';
-  authFetch('/api/notifications')
-    .then(onLoadResponse)
-    .then(onLoadData)
-    .catch(onLoadError);
+  authFetch('/api/notifications').then(onLoadResponse).then(onLoadData).catch(onLoadError);
 }
 
 // ── SSE connection ────────────────────────────────────────────────────────

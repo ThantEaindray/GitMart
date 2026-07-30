@@ -15,7 +15,7 @@ function sendError(res, status, message) {
 // ── Create reservation — step 1: validate input ───────────────────────────
 
 module.exports.validateReservationInput = (req, res, next) => {
-  const listingId            = Number(req.params.listingId);
+  const listingId = Number(req.params.listingId);
   const { message: rawMessage } = req.body || {};
 
   if (!isPositiveInteger(listingId)) {
@@ -40,8 +40,8 @@ module.exports.validateReservationInput = (req, res, next) => {
 
 module.exports.loadListingForReservation = (req, res, next) => {
   const { listingId } = res.locals.reservationInput;
-  const requesterId   = Number(res.locals.userId);
-  const data          = { listing_id: listingId };
+  const requesterId = Number(res.locals.userId);
+  const data = { listing_id: listingId };
 
   const callback = (error, result) => {
     if (error) {
@@ -55,7 +55,11 @@ module.exports.loadListingForReservation = (req, res, next) => {
     const listing = result.rows[0];
 
     if (!listing.owner_id) {
-      return sendError(res, 409, 'This listing cannot receive reservation requests because it has no owner.');
+      return sendError(
+        res,
+        409,
+        'This listing cannot receive reservation requests because it has no owner.',
+      );
     }
     if (Number(listing.owner_id) === requesterId) {
       return sendError(res, 403, 'You cannot reserve your own listing.');
@@ -75,8 +79,8 @@ module.exports.loadListingForReservation = (req, res, next) => {
 
 module.exports.checkNoPendingRequest = (req, res, next) => {
   const { listingId } = res.locals.reservationInput;
-  const requesterId   = Number(res.locals.userId);
-  const data          = { listing_id: listingId, requester_id: requesterId };
+  const requesterId = Number(res.locals.userId);
+  const data = { listing_id: listingId, requester_id: requesterId };
 
   const callback = (error, result) => {
     if (error) {
@@ -84,7 +88,11 @@ module.exports.checkNoPendingRequest = (req, res, next) => {
       return sendError(res, 500, 'Internal server error.');
     }
     if (result.rows.length > 0) {
-      return sendError(res, 409, 'You already have a pending reservation request for this listing.');
+      return sendError(
+        res,
+        409,
+        'You already have a pending reservation request for this listing.',
+      );
     }
     next();
   };
@@ -97,13 +105,17 @@ module.exports.checkNoPendingRequest = (req, res, next) => {
 // POST /api/listings/:listingId/reservations
 module.exports.createReservationRequest = (req, res) => {
   const { listingId, message } = res.locals.reservationInput;
-  const requesterId            = Number(res.locals.userId);
-  const data                   = { listing_id: listingId, requester_id: requesterId, message };
+  const requesterId = Number(res.locals.userId);
+  const data = { listing_id: listingId, requester_id: requesterId, message };
 
   const callback = (error, result) => {
     if (error) {
       if (error.code === '23505') {
-        return sendError(res, 409, 'You already have a pending reservation request for this listing.');
+        return sendError(
+          res,
+          409,
+          'You already have a pending reservation request for this listing.',
+        );
       }
       if (error.code === '23514') {
         return sendError(res, 400, 'The reservation request contains invalid data.');
@@ -112,7 +124,7 @@ module.exports.createReservationRequest = (req, res) => {
       return sendError(res, 500, 'Internal server error.');
     }
     return res.status(201).json({
-      message:     'Reservation request created successfully.',
+      message: 'Reservation request created successfully.',
       reservation: result.rows[0],
     });
   };
@@ -158,7 +170,7 @@ module.exports.getReceivedReservations = (req, res) => {
 
 module.exports.loadReservationForCancel = (req, res, next) => {
   const reservationId = Number(req.params.id);
-  const requesterId   = Number(res.locals.userId);
+  const requesterId = Number(res.locals.userId);
 
   if (!isPositiveInteger(reservationId)) {
     return sendError(res, 400, 'Reservation ID must be a positive integer.');
@@ -196,7 +208,7 @@ module.exports.loadReservationForCancel = (req, res, next) => {
 // PATCH /api/reservations/:id/cancel
 module.exports.cancelReservationRequest = (req, res) => {
   const reservation = res.locals.reservationToCancel;
-  const data        = { id: reservation.id, requester_id: Number(res.locals.userId) };
+  const data = { id: reservation.id, requester_id: Number(res.locals.userId) };
 
   const callback = (error, result) => {
     if (error) {
@@ -207,7 +219,7 @@ module.exports.cancelReservationRequest = (req, res) => {
       return sendError(res, 409, 'The reservation request is no longer pending.');
     }
     return res.status(200).json({
-      message:     'Reservation request cancelled successfully.',
+      message: 'Reservation request cancelled successfully.',
       reservation: result.rows[0],
     });
   };

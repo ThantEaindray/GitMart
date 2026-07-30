@@ -35,30 +35,30 @@ function initHero() {
   const heroContent = document.querySelector('.hero-content');
   if (!heroContent) return;
 
-  const heroTag  = heroContent.querySelector('.hero-tag');
-  const heroH1   = heroContent.querySelector('h1');
-  const heroP    = heroContent.querySelector('p');
+  const heroTag = heroContent.querySelector('.hero-tag');
+  const heroH1 = heroContent.querySelector('h1');
+  const heroP = heroContent.querySelector('p');
   const heroBtns = heroContent.querySelectorAll('.btn-primary, .btn-outline');
-  const heroImg  = document.querySelector('.hero-img');
-  const tl       = gsap.timeline({ defaults: { ease: 'power2.out' } });
+  const heroImg = document.querySelector('.hero-img');
+  const tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
 
-  if (heroTag)       tl.from(heroTag,   { y: 16, opacity: 0, duration: 0.4 }, 0.25);
-  if (heroH1)        tl.from(heroH1,    { y: 28, opacity: 0, duration: 0.6 }, 0.38);
-  if (heroP)         tl.from(heroP,     { y: 18, opacity: 0, duration: 0.45 }, 0.56);
+  if (heroTag) tl.from(heroTag, { y: 16, opacity: 0, duration: 0.4 }, 0.25);
+  if (heroH1) tl.from(heroH1, { y: 28, opacity: 0, duration: 0.6 }, 0.38);
+  if (heroP) tl.from(heroP, { y: 18, opacity: 0, duration: 0.45 }, 0.56);
   if (heroBtns.length) tl.from(heroBtns, { y: 14, opacity: 0, duration: 0.4, stagger: 0.1 }, 0.7);
-  if (heroImg)       tl.from(heroImg,   { x: 28, opacity: 0, duration: 0.65 }, 0.42);
+  if (heroImg) tl.from(heroImg, { x: 28, opacity: 0, duration: 0.65 }, 0.42);
 }
 
 // ── Auth pages ────────────────────────────────────────────────────────────
 
 function initAuth() {
   const authIntro = document.querySelector('.auth-intro');
-  const authCard  = document.querySelector('.auth-card');
+  const authCard = document.querySelector('.auth-card');
   if (!authIntro && !authCard) return;
 
   const authTl = gsap.timeline({ defaults: { ease: 'power2.out' } });
   if (authIntro) authTl.from(authIntro, { x: -24, opacity: 0, duration: 0.55 }, 0.2);
-  if (authCard)  authTl.from(authCard,  { y: 24,  opacity: 0, duration: 0.5  }, 0.3);
+  if (authCard) authTl.from(authCard, { y: 24, opacity: 0, duration: 0.5 }, 0.3);
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────
@@ -72,7 +72,14 @@ function initSettings() {
   if (!settingsHeading) return;
 
   const targets = [settingsHeading, document.querySelector('.settings-sub')].filter(Boolean);
-  gsap.from(targets, { y: 18, opacity: 0, duration: 0.45, stagger: 0.08, ease: 'power2.out', delay: 0.2 });
+  gsap.from(targets, {
+    y: 18,
+    opacity: 0,
+    duration: 0.45,
+    stagger: 0.08,
+    ease: 'power2.out',
+    delay: 0.2,
+  });
   gsap.utils.toArray('.tab-btn').forEach(animateTabBtn);
 }
 
@@ -81,7 +88,10 @@ function initSettings() {
 function animateSectionHeader(el) {
   gsap.from(el, {
     scrollTrigger: { trigger: el, start: 'top 88%' },
-    y: 22, opacity: 0, duration: 0.48, ease: 'power2.out',
+    y: 22,
+    opacity: 0,
+    duration: 0.48,
+    ease: 'power2.out',
   });
 }
 
@@ -96,7 +106,11 @@ function initThemeCards() {
   if (!themeCards.length) return;
   gsap.from(themeCards, {
     scrollTrigger: { trigger: themeCards[0], start: 'top 90%' },
-    y: 16, opacity: 0, duration: 0.38, stagger: 0.07, ease: 'power2.out',
+    y: 16,
+    opacity: 0,
+    duration: 0.38,
+    stagger: 0.07,
+    ease: 'power2.out',
   });
 }
 
@@ -105,12 +119,17 @@ function initThemeCards() {
 function animateProfileSection(el) {
   gsap.from(el, {
     scrollTrigger: { trigger: el, start: 'top 88%' },
-    y: 20, opacity: 0, duration: 0.5, ease: 'power2.out',
+    y: 20,
+    opacity: 0,
+    duration: 0.5,
+    ease: 'power2.out',
   });
 }
 
 function initProfileSections() {
-  gsap.utils.toArray('.profile-header, .profile-details, .seller-profile').forEach(animateProfileSection);
+  gsap.utils
+    .toArray('.profile-header, .profile-details, .seller-profile')
+    .forEach(animateProfileSection);
 }
 
 // ── Dynamic card observer ─────────────────────────────────────────────────
@@ -120,8 +139,12 @@ function initProfileSections() {
 function isTrackedCard(node) {
   if (node.nodeType !== 1) return false;
   const cls = node.classList;
-  return cls.contains('card') || cls.contains('order-card') ||
-         cls.contains('rv-card') || cls.contains('sp-rv-card');
+  return (
+    cls.contains('card') ||
+    cls.contains('order-card') ||
+    cls.contains('rv-card') ||
+    cls.contains('sp-rv-card')
+  );
 }
 
 function onCardsAdded(mutations) {
@@ -133,7 +156,14 @@ function onCardsAdded(mutations) {
     }
   }
   if (!batch.length) return;
-  gsap.from(batch, { opacity: 0, y: 20, duration: 0.38, stagger: 0.07, ease: 'power2.out', clearProps: 'all' });
+  gsap.from(batch, {
+    opacity: 0,
+    y: 20,
+    duration: 0.38,
+    stagger: 0.07,
+    ease: 'power2.out',
+    clearProps: 'all',
+  });
   batch.forEach(attachCardHover);
 }
 
@@ -154,7 +184,8 @@ function isLoadingState(el) {
       cls.indexOf('status-text') < 0 &&
       cls.indexOf('orders-status') < 0 &&
       el.children[i].tagName.toLowerCase() !== 'p'
-    ) return false;
+    )
+      return false;
   }
   return true;
 }
@@ -210,16 +241,16 @@ function makeSkeletonWatcher(el, count, makeFn) {
 
 function initSkeletonLoaders() {
   makeSkeletonWatcher(document.getElementById('products-grid'), 8, makeCardSkeleton);
-  makeSkeletonWatcher(document.getElementById('listingsGrid'),  8, makeCardSkeleton);
-  makeSkeletonWatcher(document.getElementById('wishlistGrid'),  6, makeCardSkeleton);
-  makeSkeletonWatcher(document.getElementById('ordersList'),    4, makeOrderSkeleton);
+  makeSkeletonWatcher(document.getElementById('listingsGrid'), 8, makeCardSkeleton);
+  makeSkeletonWatcher(document.getElementById('wishlistGrid'), 6, makeCardSkeleton);
+  makeSkeletonWatcher(document.getElementById('ordersList'), 4, makeOrderSkeleton);
 }
 
 // ── Hamburger nav ─────────────────────────────────────────────────────────
 
 let hamburger = null;
-let navMenu   = null;
-let menuOpen  = false;
+let navMenu = null;
+let menuOpen = false;
 
 function isMobile() {
   return window.innerWidth <= 768;
@@ -262,7 +293,7 @@ function attachNavLinkClose(link) {
 
 function initHamburger() {
   hamburger = document.querySelector('.nav-hamburger');
-  navMenu   = document.querySelector('.nav-collapse');
+  navMenu = document.querySelector('.nav-collapse');
   if (!hamburger || !navMenu) return;
 
   syncMenuState();
@@ -283,7 +314,13 @@ function onCardMouseMove(e) {
   const rect = this.getBoundingClientRect();
   const x = (e.clientX - rect.left) / rect.width - 0.5;
   const y = (e.clientY - rect.top) / rect.height - 0.5;
-  gsap.to(this, { rotateY: x * 14, rotateX: -y * 10, duration: 0.25, ease: 'power2.out', overwrite: 'auto' });
+  gsap.to(this, {
+    rotateY: x * 14,
+    rotateX: -y * 10,
+    duration: 0.25,
+    ease: 'power2.out',
+    overwrite: 'auto',
+  });
 }
 
 function onCardMouseLeave() {
@@ -294,7 +331,7 @@ function attachCardHover(card) {
   if (card._hoverAttached) return;
   card._hoverAttached = true;
   card.addEventListener('mouseenter', onCardMouseEnter);
-  card.addEventListener('mousemove',  onCardMouseMove);
+  card.addEventListener('mousemove', onCardMouseMove);
   card.addEventListener('mouseleave', onCardMouseLeave);
 }
 
@@ -334,15 +371,15 @@ function onButtonClick(e) {
   const btn = e.target.closest('.btn-primary, .btn-outline');
   if (!btn) return;
 
-  const href  = btn.tagName.toLowerCase() === 'a' ? btn.getAttribute('href') : null;
+  const href = btn.tagName.toLowerCase() === 'a' ? btn.getAttribute('href') : null;
   const isNav = href && href !== '#' && !href.startsWith('javascript');
   if (isNav) e.preventDefault();
 
-  const rect   = btn.getBoundingClientRect();
+  const rect = btn.getBoundingClientRect();
   const ripple = document.createElement('span');
-  ripple.className  = 'btn-ripple';
-  ripple.style.left = (e.clientX - rect.left) + 'px';
-  ripple.style.top  = (e.clientY - rect.top)  + 'px';
+  ripple.className = 'btn-ripple';
+  ripple.style.left = e.clientX - rect.left + 'px';
+  ripple.style.top = e.clientY - rect.top + 'px';
   ripple.style.background = btn.classList.contains('btn-outline')
     ? 'var(--accent)'
     : 'rgba(255,255,255,0.9)';
@@ -351,27 +388,42 @@ function onButtonClick(e) {
   gsap.fromTo(
     ripple,
     { scale: 0, opacity: 0.6 },
-    { scale: 40, opacity: 0, duration: isNav ? 0.32 : 0.55, ease: 'power1.out',
-      onComplete: makeRippleComplete(isNav ? href : null) },
+    {
+      scale: 40,
+      opacity: 0,
+      duration: isNav ? 0.32 : 0.55,
+      ease: 'power1.out',
+      onComplete: makeRippleComplete(isNav ? href : null),
+    },
   );
 }
 
 function attachIconBtnHover(btn) {
-  btn.addEventListener('mouseenter', function () { gsap.to(this, { scale: 1.14, duration: 0.18, ease: 'power2.out' }); });
-  btn.addEventListener('mouseleave', function () { gsap.to(this, { scale: 1,    duration: 0.2,  ease: 'power2.out' }); });
+  btn.addEventListener('mouseenter', function () {
+    gsap.to(this, { scale: 1.14, duration: 0.18, ease: 'power2.out' });
+  });
+  btn.addEventListener('mouseleave', function () {
+    gsap.to(this, { scale: 1, duration: 0.2, ease: 'power2.out' });
+  });
 }
 
 function initButtonInteractions() {
   document.addEventListener('mousedown', onButtonMouseDown);
-  document.addEventListener('click',     onButtonClick);
+  document.addEventListener('click', onButtonClick);
   document.querySelectorAll('.icon-btn').forEach(attachIconBtnHover);
 }
 
 // ── Dashboard / orders counter animation ─────────────────────────────────
 
 const STAT_IDS = [
-  'stat-total', 'stat-active', 'stat-sold', 'stat-avg', 'stat-views',
-  'ordersCount', 'ordersPending', 'ordersSpend',
+  'stat-total',
+  'stat-active',
+  'stat-sold',
+  'stat-avg',
+  'stat-views',
+  'ordersCount',
+  'ordersPending',
+  'ordersSpend',
 ];
 
 // Factory creates a self-contained observer + animation for one stat element.
@@ -382,7 +434,8 @@ function makeStatCounter(el) {
   const counter = { val: 0 };
 
   function onStatUpdate() {
-    el.textContent = prefix + (isDecimal ? counter.val.toFixed(2) : Math.round(counter.val)) + suffix;
+    el.textContent =
+      prefix + (isDecimal ? counter.val.toFixed(2) : Math.round(counter.val)) + suffix;
   }
 
   function onStatComplete() {
@@ -400,7 +453,13 @@ function makeStatCounter(el) {
     prefix = originalText.match(/^[^\d]*/)[0];
     suffix = originalText.match(/[^\d.]*$/)[0];
     counter.val = 0;
-    gsap.to(counter, { val: num, duration: 1.2, ease: 'power2.out', onUpdate: onStatUpdate, onComplete: onStatComplete });
+    gsap.to(counter, {
+      val: num,
+      duration: 1.2,
+      ease: 'power2.out',
+      onUpdate: onStatUpdate,
+      onComplete: onStatComplete,
+    });
   }
 
   statObserver = new MutationObserver(onStatChange);
@@ -419,15 +478,18 @@ function initCounterAnimation() {
 // ── Nav sliding underline indicator ──────────────────────────────────────
 
 let navIndicator = null;
-let navLinksEl   = null;
+let navLinksEl = null;
 
 function onNavLinkMouseEnter() {
   if (window.innerWidth <= 768) return;
-  const navRect  = navLinksEl.getBoundingClientRect();
+  const navRect = navLinksEl.getBoundingClientRect();
   const linkRect = this.getBoundingClientRect();
   gsap.to(navIndicator, {
-    left: linkRect.left - navRect.left, width: linkRect.width,
-    opacity: 1, duration: 0.25, ease: 'power2.out',
+    left: linkRect.left - navRect.left,
+    width: linkRect.width,
+    opacity: 1,
+    duration: 0.25,
+    ease: 'power2.out',
   });
 }
 
@@ -458,15 +520,24 @@ function onHeartBounceComplete() {
 }
 
 function heartBounce(el) {
-  gsap.fromTo(el,
+  gsap.fromTo(
+    el,
     { scale: 1 },
-    { scale: 1.45, duration: 0.14, ease: 'power2.out', yoyo: true, repeat: 1, onComplete: onHeartBounceComplete },
+    {
+      scale: 1.45,
+      duration: 0.14,
+      ease: 'power2.out',
+      yoyo: true,
+      repeat: 1,
+      onComplete: onHeartBounceComplete,
+    },
   );
 }
 
 function fadeInCards(selector) {
   const els = document.querySelectorAll(selector);
-  if (els.length) gsap.from(els, { opacity: 0, y: 20, duration: 0.38, stagger: 0.07, ease: 'power2.out' });
+  if (els.length)
+    gsap.from(els, { opacity: 0, y: 20, duration: 0.38, stagger: 0.07, ease: 'power2.out' });
 }
 
 function exposeHelpers() {

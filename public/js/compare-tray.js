@@ -5,13 +5,16 @@
 // ── Constants ─────────────────────────────────────────────────────────────
 
 const COMPARE_STORAGE_KEY = 'compareItems';
-const COMPARE_MAX         = 3;
+const COMPARE_MAX = 3;
 
 // ── Storage helpers ───────────────────────────────────────────────────────
 
 function getCompareItems() {
-  try { return JSON.parse(localStorage.getItem(COMPARE_STORAGE_KEY) || '[]'); }
-  catch (e) { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(COMPARE_STORAGE_KEY) || '[]');
+  } catch (e) {
+    return [];
+  }
 }
 
 function saveCompareItems(items) {
@@ -19,20 +22,22 @@ function saveCompareItems(items) {
 }
 
 function isCompared(id) {
-  return getCompareItems().some(function checkId(item) { return String(item.id) === String(id); });
+  return getCompareItems().some(function checkId(item) {
+    return String(item.id) === String(id);
+  });
 }
 
 // ── Card data extraction ──────────────────────────────────────────────────
 
 function extractCardData(card) {
-  const nameEl  = card.querySelector('.card-name');
-  const catEl   = card.querySelector('.card-cat');
+  const nameEl = card.querySelector('.card-name');
+  const catEl = card.querySelector('.card-cat');
   const priceEl = card.querySelector('.card-price');
   return {
-    id:       card.dataset.id,
-    title:    nameEl  ? nameEl.textContent.trim()                                         : 'Listing',
-    category: catEl   ? catEl.textContent.trim()                                          : '',
-    price:    priceEl ? (priceEl.getAttribute('data-price') || priceEl.textContent.trim()) : '0',
+    id: card.dataset.id,
+    title: nameEl ? nameEl.textContent.trim() : 'Listing',
+    category: catEl ? catEl.textContent.trim() : '',
+    price: priceEl ? priceEl.getAttribute('data-price') || priceEl.textContent.trim() : '0',
   };
 }
 
@@ -46,9 +51,11 @@ function syncCompareBtn(btn, id) {
 }
 
 function syncAllCompareBtnsForId(id) {
-  document.querySelectorAll('.card[data-id="' + id + '"] .btn-compare').forEach(
-    function resyncBtn(btn) { syncCompareBtn(btn, id); },
-  );
+  document
+    .querySelectorAll('.card[data-id="' + id + '"] .btn-compare')
+    .forEach(function resyncBtn(btn) {
+      syncCompareBtn(btn, id);
+    });
 }
 
 // ── Toast notification ────────────────────────────────────────────────────
@@ -59,15 +66,19 @@ function showToast(msg) {
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(el._toastTimer);
-  el._toastTimer = setTimeout(function hideToast() { el.classList.remove('show'); }, 2800);
+  el._toastTimer = setTimeout(function hideToast() {
+    el.classList.remove('show');
+  }, 2800);
 }
 
 // ── Toggle item in compare list ───────────────────────────────────────────
 
 function toggleCompareItem(card) {
-  const id    = card.dataset.id;
+  const id = card.dataset.id;
   const items = getCompareItems();
-  const idx   = items.findIndex(function matchId(i) { return String(i.id) === String(id); });
+  const idx = items.findIndex(function matchId(i) {
+    return String(i.id) === String(id);
+  });
 
   if (idx > -1) {
     items.splice(idx, 1);
@@ -90,9 +101,9 @@ function attachCompareBtn(card) {
   if (card._compareAttached || !card.dataset.id) return;
   card._compareAttached = true;
 
-  const btn   = document.createElement('button');
+  const btn = document.createElement('button');
   btn.className = 'btn-compare';
-  btn.type      = 'button';
+  btn.type = 'button';
   syncCompareBtn(btn, card.dataset.id);
   card.appendChild(btn);
 }
@@ -105,7 +116,7 @@ function attachCompareBtn(card) {
 let compareTrayEl = null;
 
 function buildCompareTray() {
-  compareTrayEl           = document.createElement('div');
+  compareTrayEl = document.createElement('div');
   compareTrayEl.className = 'compare-tray';
   document.body.appendChild(compareTrayEl);
 }
@@ -113,8 +124,12 @@ function buildCompareTray() {
 function buildChipHtml(item) {
   return (
     '<div class="compare-chip">' +
-      '<span class="compare-chip-name">' + item.title + '</span>' +
-      '<button class="compare-chip-remove" type="button" data-id="' + item.id + '" title="Remove">×</button>' +
+    '<span class="compare-chip-name">' +
+    item.title +
+    '</span>' +
+    '<button class="compare-chip-remove" type="button" data-id="' +
+    item.id +
+    '" title="Remove">×</button>' +
     '</div>'
   );
 }
@@ -132,13 +147,19 @@ function renderCompareTray() {
   const chipsHtml = items.map(buildChipHtml).join('');
   compareTrayEl.innerHTML =
     '<div class="compare-tray-inner">' +
-      '<span class="compare-tray-label">Compare</span>' +
-      '<div class="compare-tray-chips">' + chipsHtml + '</div>' +
-      '<div class="compare-tray-actions">' +
-        '<span class="compare-tray-count">' + items.length + '/' + COMPARE_MAX + '</span>' +
-        '<button class="compare-tray-clear" type="button">Clear</button>' +
-        '<a class="btn-primary compare-tray-go" href="compare.html">Compare Now</a>' +
-      '</div>' +
+    '<span class="compare-tray-label">Compare</span>' +
+    '<div class="compare-tray-chips">' +
+    chipsHtml +
+    '</div>' +
+    '<div class="compare-tray-actions">' +
+    '<span class="compare-tray-count">' +
+    items.length +
+    '/' +
+    COMPARE_MAX +
+    '</span>' +
+    '<button class="compare-tray-clear" type="button">Clear</button>' +
+    '<a class="btn-primary compare-tray-go" href="compare.html">Compare Now</a>' +
+    '</div>' +
     '</div>';
 
   compareTrayEl.classList.add('visible');
@@ -147,9 +168,13 @@ function renderCompareTray() {
 // ── Tray interaction (event delegation) ──────────────────────────────────
 
 function onChipRemoveClick(btn) {
-  const id    = btn.dataset.id;
+  const id = btn.dataset.id;
   const items = getCompareItems();
-  saveCompareItems(items.filter(function notThis(i) { return String(i.id) !== String(id); }));
+  saveCompareItems(
+    items.filter(function notThis(i) {
+      return String(i.id) !== String(id);
+    }),
+  );
   syncAllCompareBtnsForId(id);
   renderCompareTray();
 }
@@ -157,7 +182,9 @@ function onChipRemoveClick(btn) {
 function onClearAllClick() {
   const currentItems = getCompareItems();
   saveCompareItems([]);
-  currentItems.forEach(function resync(item) { syncAllCompareBtnsForId(item.id); });
+  currentItems.forEach(function resync(item) {
+    syncAllCompareBtnsForId(item.id);
+  });
   renderCompareTray();
 }
 
@@ -176,10 +203,15 @@ function onDocumentClick(e) {
 
   // Remove chip in the tray
   const removeBtn = e.target.closest('.compare-chip-remove');
-  if (removeBtn) { onChipRemoveClick(removeBtn); return; }
+  if (removeBtn) {
+    onChipRemoveClick(removeBtn);
+    return;
+  }
 
   // Clear all button in the tray
-  if (e.target.closest('.compare-tray-clear')) { onClearAllClick(); }
+  if (e.target.closest('.compare-tray-clear')) {
+    onClearAllClick();
+  }
 }
 
 // ── MutationObserver: attach button to cards injected after page load ─────

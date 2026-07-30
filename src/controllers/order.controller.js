@@ -1,5 +1,5 @@
 // order.controller.js
-const model      = require('../utils/orderStore');
+const model = require('../utils/orderStore');
 const notifModel = require('../utils/notificationStore');
 const sseManager = require('../utils/sseManager');
 
@@ -8,8 +8,8 @@ const ALLOWED_STATUSES = ['Pending', 'Processing', 'Delivered', 'Cancelled'];
 
 // Field-format rules that must match the frontend checkout form.
 const CHECKOUT_PATTERNS = {
-  email:      /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  phone:      /^\+65\s\d{4}\s\d{4}$/,
+  email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  phone: /^\+65\s\d{4}\s\d{4}$/,
   postalCode: /^[0-9]{6}$/,
   unitNumber: /^#\d{2}-\d{2,4}$/,
 };
@@ -19,7 +19,7 @@ const CHECKOUT_PATTERNS = {
 // notifModel callbacks are synchronous (in-memory), so no nesting is needed.
 
 function pushOrderNotification(userId, type, title, message) {
-  const n     = notifModel.create({ userId, type, title, message });
+  const n = notifModel.create({ userId, type, title, message });
   const count = notifModel.getUnreadCount({ userId });
   sseManager.send(userId, 'notification', n);
   sseManager.send(userId, 'badge', { unreadCount: count });
@@ -31,9 +31,14 @@ module.exports.createOrder = (req, res, next) => {
   const data = { ...req.body, userId: res.locals.userId };
 
   if (
-    !data.fullName    || !data.emailAddress || !data.phoneNumber ||
-    !data.address     || !data.unitNumber   || !data.postalCode  ||
-    !data.deliveryMethod || !data.paymentMethod
+    !data.fullName ||
+    !data.emailAddress ||
+    !data.phoneNumber ||
+    !data.address ||
+    !data.unitNumber ||
+    !data.postalCode ||
+    !data.deliveryMethod ||
+    !data.paymentMethod
   ) {
     return res.status(400).json({ message: 'Required checkout order details are missing.' });
   }

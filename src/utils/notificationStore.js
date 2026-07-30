@@ -7,17 +7,19 @@ const notifications = [];
 let nextId = 1;
 
 const TYPE_ICONS = {
-  order:        'bi-bag-check',
+  order: 'bi-bag-check',
   order_status: 'bi-arrow-repeat',
-  wishlist:     'bi-heart',
-  message:      'bi-chat-left-dots',
-  system:       'bi-info-circle',
+  wishlist: 'bi-heart',
+  message: 'bi-chat-left-dots',
+  system: 'bi-info-circle',
 };
 
 // ── Predicate helpers ─────────────────────────────────────────────────────
 
 function belongsToUser(uid) {
-  return function matchUser(n) { return n.userId === uid; };
+  return function matchUser(n) {
+    return n.userId === uid;
+  };
 }
 
 function isUnread(n) {
@@ -25,24 +27,28 @@ function isUnread(n) {
 }
 
 function matchesId(id, uid) {
-  return function matchNotif(n) { return n.id === Number(id) && n.userId === uid; };
+  return function matchNotif(n) {
+    return n.id === Number(id) && n.userId === uid;
+  };
 }
 
 function markAsRead(uid) {
-  return function setRead(n) { if (n.userId === uid) n.isRead = true; };
+  return function setRead(n) {
+    if (n.userId === uid) n.isRead = true;
+  };
 }
 
 // ── Exports ───────────────────────────────────────────────────────────────
 
 module.exports.create = (data, callback) => {
   const n = {
-    id:        nextId++,
-    userId:    String(data.userId),
-    type:      data.type,
-    icon:      TYPE_ICONS[data.type] || 'bi-bell',
-    title:     data.title,
-    message:   data.message,
-    isRead:    false,
+    id: nextId++,
+    userId: String(data.userId),
+    type: data.type,
+    icon: TYPE_ICONS[data.type] || 'bi-bell',
+    title: data.title,
+    message: data.message,
+    isRead: false,
     createdAt: new Date().toISOString(),
   };
   notifications.push(n);
@@ -51,7 +57,10 @@ module.exports.create = (data, callback) => {
 };
 
 module.exports.getByUser = (data, callback) => {
-  const result = notifications.filter(belongsToUser(String(data.userId))).slice().reverse();
+  const result = notifications
+    .filter(belongsToUser(String(data.userId)))
+    .slice()
+    .reverse();
   if (callback) callback(null, result);
   return result;
 };
