@@ -5,21 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ST0526 CI/CD Project</title>
     <style>
-      body { font-family: sans-serif; max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
-      table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-      th, td { border: 1px solid #ccc; padding: 0.5rem 0.75rem; text-align: left; }
-      th { background: #f4f4f4; }
-      form { display: flex; gap: 0.5rem; align-items: flex-end; margin-top: 1rem; }
-      label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; }
-      input { padding: 0.4rem 0.6rem; border: 1px solid #ccc; border-radius: 4px; }
-      button { padding: 0.4rem 0.9rem; cursor: pointer; }
+      body {
+        font-family: sans-serif;
+        max-width: 700px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+      }
+      th {
+        background: #f4f4f4;
+      }
+      form {
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-end;
+        margin-top: 1rem;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        font-size: 0.9rem;
+      }
+      input {
+        padding: 0.4rem 0.6rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      button {
+        padding: 0.4rem 0.9rem;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
     <h1>ST0526 CI/CD Project</h1>
 
     <form id="somethingForm">
-      <label for="somethingName">Name
+      <label for="somethingName"
+        >Name
         <input id="somethingName" name="name" type="text" required />
       </label>
       <button type="submit">Enter</button>
@@ -64,8 +98,9 @@
       }
 
       function deleteSomething(id, tr) {
-        fetch(`/somethings/${id}`, { method: 'DELETE' })
-          .then((r) => { if (r.ok) tr.remove(); });
+        fetch(`/somethings/${id}`, { method: 'DELETE' }).then((r) => {
+          if (r.ok) tr.remove();
+        });
       }
 
       form.addEventListener('submit', (e) => {

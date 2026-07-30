@@ -3,11 +3,11 @@ const { test, expect } = require('@playwright/test');
 const BASE = 'http://localhost:3001';
 
 const REV_SELLER = { username: 'rev_seller', email: 'rev_seller@e2e.com', password: 'RevSeller99' };
-const REV_BUYER  = { username: 'rev_buyer',  email: 'rev_buyer@e2e.com',  password: 'RevBuyer99'  };
+const REV_BUYER = { username: 'rev_buyer', email: 'rev_buyer@e2e.com', password: 'RevBuyer99' };
 
-let sellerToken  = null;
-let buyerToken   = null;
-let buyerUserId  = null;
+let sellerToken = null;
+let buyerToken = null;
+let buyerUserId = null;
 let testListingId = null;
 
 // Run all tests serially so shared state (tokens, listing, review) is reliable
@@ -38,7 +38,7 @@ test.beforeAll(async ({ request }) => {
     data: { username: REV_BUYER.username, password: REV_BUYER.password },
   });
   const buyerData = await buyerLogin.json();
-  buyerToken  = buyerData.token;
+  buyerToken = buyerData.token;
   buyerUserId = buyerData.userId;
 
   const listingRes = await request.post(`${BASE}/api/listings`, {

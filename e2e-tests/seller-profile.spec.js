@@ -3,11 +3,11 @@ const { test, expect } = require('@playwright/test');
 const BASE = 'http://localhost:3001';
 
 const SP_SELLER = { username: 'sp_seller', email: 'sp_seller@e2e.com', password: 'SpSeller99' };
-const SP_BUYER  = { username: 'sp_buyer',  email: 'sp_buyer@e2e.com',  password: 'SpBuyer99'  };
+const SP_BUYER = { username: 'sp_buyer', email: 'sp_buyer@e2e.com', password: 'SpBuyer99' };
 
-let sellerToken  = null;
-let sellerId     = null;
-let buyerToken   = null;
+let sellerToken = null;
+let sellerId = null;
+let buyerToken = null;
 let testListingId = null;
 
 // Run all tests serially so shared state is reliable
@@ -23,7 +23,7 @@ test.beforeAll(async ({ request }) => {
   });
   const sellerData = await sellerLogin.json();
   sellerToken = sellerData.token;
-  sellerId    = sellerData.userId;
+  sellerId = sellerData.userId;
 
   await request.post(`${BASE}/api/register`, { data: SP_BUYER });
   const buyerLogin = await request.post(`${BASE}/api/login`, {
@@ -92,7 +92,9 @@ test.describe('Seller Profile – Reviews', () => {
   test("reviews received on seller's listings appear on the profile", async ({ page }) => {
     await page.goto(`${BASE}/html/seller.html?id=${sellerId}`);
     await page.waitForSelector('#seller-reviews-list .sp-rv-card', { timeout: 8000 });
-    await expect(page.locator('#seller-reviews-list')).toContainText('Excellent seller, highly recommended!');
+    await expect(page.locator('#seller-reviews-list')).toContainText(
+      'Excellent seller, highly recommended!',
+    );
   });
 
   // Valid partition: seller reviews API returns aggregated reviews with listing title

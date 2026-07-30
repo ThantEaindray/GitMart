@@ -184,11 +184,16 @@ function initDisplayName() {
     })
       .then((res) => res.json())
       .then((data) => {
-        const msg = data.message === 'Display name updated.' ? 'Display name saved.' : (data.message || 'Failed to save.');
+        const msg =
+          data.message === 'Display name updated.'
+            ? 'Display name saved.'
+            : data.message || 'Failed to save.';
         showToast(msg);
       })
       .catch(() => showToast('Failed to save display name.'))
-      .finally(() => { btn.disabled = false; });
+      .finally(() => {
+        btn.disabled = false;
+      });
   });
 }
 
@@ -252,7 +257,9 @@ function initPasswordChange() {
         }
       })
       .catch(() => showToast('Failed to update password.'))
-      .finally(() => { btn.disabled = false; });
+      .finally(() => {
+        btn.disabled = false;
+      });
   });
 }
 

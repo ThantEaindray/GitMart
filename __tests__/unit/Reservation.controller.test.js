@@ -55,6 +55,13 @@ afterAll(() => {
 
 describe('Reservation.controller', () => {
   describe('createReservationRequest', () => {
+    function runCreateChain(req, res) {
+      const next3 = jest.fn(() => controller.createReservationRequest(req, res));
+      const next2 = jest.fn(() => controller.checkNoPendingRequest(req, res, next3));
+      const next1 = jest.fn(() => controller.loadListingForReservation(req, res, next2));
+      controller.validateReservationInput(req, res, next1);
+    }
+
     test('returns 400 when listing ID is invalid', () => {
       const req = createRequest({
         params: {
@@ -64,7 +71,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
 
@@ -87,7 +94,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
 
@@ -108,7 +115,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
 
@@ -132,7 +139,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
 
@@ -158,7 +165,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
 
@@ -188,7 +195,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(409);
 
@@ -218,7 +225,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(403);
 
@@ -248,7 +255,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(409);
 
@@ -284,7 +291,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
 
@@ -325,7 +332,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(409);
 
@@ -366,7 +373,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(409);
 
@@ -407,7 +414,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
 
@@ -448,7 +455,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
 
@@ -516,7 +523,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse('20');
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
 
@@ -573,7 +580,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
 
@@ -633,7 +640,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.createReservationRequest(req, res);
+      runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
 
@@ -734,6 +741,11 @@ describe('Reservation.controller', () => {
   });
 
   describe('cancelReservationRequest', () => {
+    function runCancelChain(req, res) {
+      const next = jest.fn(() => controller.cancelReservationRequest(req, res));
+      controller.loadReservationForCancel(req, res, next);
+    }
+
     test('returns 400 for invalid reservation ID', () => {
       const req = createRequest({
         params: {
@@ -743,7 +755,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.cancelReservationRequest(req, res);
+      runCancelChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
 
@@ -763,7 +775,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.cancelReservationRequest(req, res);
+      runCancelChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });
@@ -783,7 +795,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.cancelReservationRequest(req, res);
+      runCancelChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
 
@@ -813,7 +825,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.cancelReservationRequest(req, res);
+      runCancelChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(403);
     });
@@ -839,7 +851,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.cancelReservationRequest(req, res);
+      runCancelChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(409);
 
@@ -873,7 +885,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.cancelReservationRequest(req, res);
+      runCancelChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });
@@ -905,7 +917,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(20);
 
-      controller.cancelReservationRequest(req, res);
+      runCancelChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(409);
 
@@ -952,7 +964,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse('20');
 
-      controller.cancelReservationRequest(req, res);
+      runCancelChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
 
@@ -1126,6 +1138,11 @@ describe('Reservation.controller', () => {
   });
 
   describe('rejectReservationRequest', () => {
+    function runRejectChain(req, res) {
+      const next = jest.fn(() => controller.rejectReservationRequest(req, res));
+      controller.loadReservationForReject(req, res, next);
+    }
+
     test('returns 400 for invalid reservation ID', () => {
       const req = createRequest({
         params: {
@@ -1135,7 +1152,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(10);
 
-      controller.rejectReservationRequest(req, res);
+      runRejectChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
 
@@ -1155,7 +1172,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(10);
 
-      controller.rejectReservationRequest(req, res);
+      runRejectChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });
@@ -1175,7 +1192,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(10);
 
-      controller.rejectReservationRequest(req, res);
+      runRejectChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
     });
@@ -1201,7 +1218,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(10);
 
-      controller.rejectReservationRequest(req, res);
+      runRejectChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(403);
 
@@ -1231,7 +1248,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(10);
 
-      controller.rejectReservationRequest(req, res);
+      runRejectChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(409);
 
@@ -1265,7 +1282,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(10);
 
-      controller.rejectReservationRequest(req, res);
+      runRejectChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });
@@ -1297,7 +1314,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse(10);
 
-      controller.rejectReservationRequest(req, res);
+      runRejectChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(409);
 
@@ -1344,7 +1361,7 @@ describe('Reservation.controller', () => {
 
       const res = createResponse('10');
 
-      controller.rejectReservationRequest(req, res);
+      runRejectChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
 

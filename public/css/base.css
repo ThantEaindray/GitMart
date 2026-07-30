@@ -98,3 +98,116 @@ body {
   letter-spacing: 0.08em;
   padding: 20px 0;
 }
+
+/* ── BUTTON RIPPLE ── */
+.btn-primary,
+.btn-outline {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ripple {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: scale(0);
+}
+
+/* ── SCROLL PROGRESS BAR ── */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--accent);
+  transform-origin: left;
+  transform: scaleX(0);
+  z-index: 300;
+  pointer-events: none;
+}
+
+/* ── NAV SLIDING INDICATOR ── */
+.nav-indicator {
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  height: 1px;
+  width: 0;
+  background: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── SKELETON LOADERS ── */
+.sk-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sk-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--surface);
+  position: relative;
+  overflow: hidden;
+}
+
+.sk-img::after,
+.sk-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 100%
+  );
+  animation: sk-shimmer 1.5s ease-in-out infinite;
+}
+
+.sk-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sk-line {
+  height: 11px;
+  background: var(--surface);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sk-line-sm {
+  height: 9px;
+}
+
+.sk-order {
+  border: 1px solid var(--border);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--card);
+  margin-bottom: 12px;
+}
+
+@keyframes sk-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}

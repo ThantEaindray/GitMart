@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const registerForm = document.getElementById('registerForm');
-  const warningCard  = document.getElementById('warningCard');
-  const warningText  = document.getElementById('warningText');
+  const warningCard = document.getElementById('warningCard');
+  const warningText = document.getElementById('warningText');
 
   const showWarning = (msg) => {
     warningText.textContent = msg;
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const val = e.target.value;
     updateReq('req-length', val.length >= 8);
     updateReq('req-number', /\d/.test(val));
-    updateReq('req-upper',  /[A-Z]/.test(val));
+    updateReq('req-upper', /[A-Z]/.test(val));
   });
 
   if (!registerForm) {
@@ -74,9 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     clearAllErrors();
 
-    const username        = document.getElementById('username').value.trim();
-    const email           = document.getElementById('email').value.trim();
-    const password        = document.getElementById('password').value;
+    const username = document.getElementById('username').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
 
     let valid = true;
@@ -85,7 +85,10 @@ document.addEventListener('DOMContentLoaded', () => {
       showFieldError('username', 'Username is required.');
       valid = false;
     } else if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-      showFieldError('username', 'Username must be 3–20 characters (letters, numbers, underscores only).');
+      showFieldError(
+        'username',
+        'Username must be 3–20 characters (letters, numbers, underscores only).',
+      );
       valid = false;
     }
 
@@ -120,9 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, email, password }),
     })
-      .then((response) =>
-        response.json().then((data) => ({ status: response.status, data }))
-      )
+      .then((response) => response.json().then((data) => ({ status: response.status, data })))
       .then(({ status, data }) => {
         if (status === 201) {
           // Redirect to login with a success flag — user logs in manually

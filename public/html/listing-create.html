@@ -1,150 +1,175 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitMart — Create Listing</title>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GitMart — Create Listing</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="stylesheet" href="../css/noir.css" />
+    <link rel="stylesheet" href="../css/notifications.css" />
+    <link rel="stylesheet" href="../css/auth.css" />
+    <link rel="stylesheet" href="../css/listings.css" />
+    <script>
+      var t = localStorage.getItem('theme');
+      var f = localStorage.getItem('font');
+      var m = localStorage.getItem('motion');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+      if (f) document.documentElement.setAttribute('data-font', f);
+      if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
+    </script>
+  </head>
 
-  <link
-    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
-    rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link rel="stylesheet" href="../css/noir.css" />
-  <link rel="stylesheet" href="../css/auth.css" />
-  <link rel="stylesheet" href="../css/listings.css" />
-  <script>
-    var t = localStorage.getItem('theme');
-    var f = localStorage.getItem('font');
-    var m = localStorage.getItem('motion');
-    if (t) document.documentElement.setAttribute('data-theme', t);
-    if (f) document.documentElement.setAttribute('data-font', f);
-    if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
-  </script>
-</head>
+  <body>
+    <nav class="nav">
+      <div class="logo">GitMart</div>
 
-<body>
-  <nav class="nav">
-    <div class="logo">GitMart</div>
-
-    <ul class="nav-links">
-      <li><a href="noir.html">Home</a></li>
-      <li><a href="products.html">Products</a></li>
-      <li><a href="listings.html">Listings</a></li>
-      <li><a href="listing-create.html">Create Listing</a></li>
-    </ul>
-
-    <div class="nav-right">
-      <a class="icon-btn" id="btn-account" href="login.html" title="Login"><i class="bi bi-person"></i></a>
-      <button class="icon-btn" id="btn-wishlist" title="Wishlist"><i class="bi bi-heart"></i></button>
-      <a class="icon-btn" href="checkout.html" title="Cart"><i class="bi bi-bag"></i></a>
-      <a class="icon-btn" href="chats.html" title="Chats"><i class="bi bi-chat-left-dots"></i></a>
-      <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
-    </div>
-  </nav>
-
-  <main class="auth-page">
-    <section class="auth-intro">
-      <div class="hero-tag">Sell on GitMart</div>
-      <h1>Create a New Listing</h1>
-      <p>
-        Add your item details so other users can browse it on the GitMart marketplace.
-      </p>
-    </section>
-
-    <section class="auth-card">
-      <h2>Listing Details</h2>
-      <p class="auth-subtitle">Fill in the item information before publishing your listing.</p>
-
-      <div id="warningCard" class="auth-alert d-none">
-        <span id="warningText"></span>
+      <button
+        class="nav-hamburger"
+        type="button"
+        aria-label="Toggle navigation"
+        aria-expanded="false"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="nav-collapse" id="nav-menu">
+        <ul class="nav-links">
+          <li><a href="noir.html">Home</a></li>
+          <li><a href="products.html">Products</a></li>
+          <li><a href="listings.html">Listings</a></li>
+          <li><a href="listing-create.html">Create Listing</a></li>
+        </ul>
       </div>
 
-      <div class="analyse-section">
-        <div class="analyse-header">
-          <i class="bi bi-stars"></i>
-          <div>
-            <p class="analyse-title">AI Photo Analysis</p>
-            <p class="analyse-desc">Upload a photo and AI will suggest a title and description.</p>
-          </div>
-        </div>
-        <label class="upload-zone" for="imageInput">
-          <i class="bi bi-camera"></i>
-          <span id="upload-label">Choose a photo…</span>
-          <input id="imageInput" type="file" accept="image/*" />
-        </label>
-        <button type="button" id="btn-analyse" class="btn-outline analyse-btn">Analyse Image</button>
-        <button type="button" id="btnUseCoverImage" class="cover-image-choice">
-          <i class="bi bi-image"></i>
-          <span>Use this photo as the cover image</span>
+      <div class="nav-right">
+        <a class="icon-btn" id="btn-account" href="login.html" title="Login"
+          ><i class="bi bi-person"></i
+        ></a>
+        <button class="icon-btn" id="btn-wishlist" title="Wishlist">
+          <i class="bi bi-heart"></i>
         </button>
-
-        <p id="coverImageStatus" class="cover-image-status">
-          No cover image selected yet.
-        </p>
+        <a class="icon-btn" href="checkout.html" title="Cart"><i class="bi bi-bag"></i></a>
+        <a class="icon-btn" href="chats.html" title="Chats"><i class="bi bi-chat-left-dots"></i></a>
+        <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
       </div>
+    </nav>
 
-      <hr class="analyse-divider" />
+    <main class="auth-page">
+      <section class="auth-intro">
+        <div class="hero-tag">Sell on GitMart</div>
+        <h1>Create a New Listing</h1>
+        <p>Add your item details so other users can browse it on the GitMart marketplace.</p>
+      </section>
 
-      <form id="listingCreateForm" class="auth-form">
-        <div class="form-group">
-          <label for="title">Title</label>
-          <input id="title" type="text" />
+      <section class="auth-card">
+        <h2>Listing Details</h2>
+        <p class="auth-subtitle">Fill in the item information before publishing your listing.</p>
+
+        <div id="warningCard" class="auth-alert d-none">
+          <span id="warningText"></span>
         </div>
 
-        <div class="form-group">
-          <label for="description">Description</label>
-          <input id="description" type="text" />
+        <div class="analyse-section">
+          <div class="analyse-header">
+            <i class="bi bi-stars"></i>
+            <div>
+              <p class="analyse-title">AI Photo Analysis</p>
+              <p class="analyse-desc">
+                Upload a photo and AI will suggest a title and description.
+              </p>
+            </div>
+          </div>
+          <label class="upload-zone" for="imageInput">
+            <i class="bi bi-camera"></i>
+            <span id="upload-label">Choose a photo…</span>
+            <input id="imageInput" type="file" accept="image/*" />
+          </label>
+          <button type="button" id="btn-analyse" class="btn-outline analyse-btn">
+            Analyse Image
+          </button>
+          <button type="button" id="btnUseCoverImage" class="cover-image-choice">
+            <i class="bi bi-image"></i>
+            <span>Use this photo as the cover image</span>
+          </button>
+
+          <p id="coverImageStatus" class="cover-image-status">No cover image selected yet.</p>
         </div>
 
-        <div class="form-group">
-          <label for="category">Category</label>
-          <select id="category">
-            <option value="">Select a category…</option>
-            <option value="Electronics">Electronics</option>
-            <option value="Fashion">Fashion &amp; Accessories</option>
-            <option value="Furniture">Furniture &amp; Home</option>
-            <option value="Collectibles">Collectibles &amp; Toys</option>
-            <option value="Sports">Sports &amp; Outdoors</option>
-            <option value="Books">Books &amp; Media</option>
-            <option value="Others">Others</option>
-          </select>
+        <hr class="analyse-divider" />
+
+        <form id="listingCreateForm" class="auth-form">
+          <div class="form-group">
+            <label for="title">Title</label>
+            <input id="title" type="text" />
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description</label>
+            <input id="description" type="text" />
+          </div>
+
+          <div class="form-group">
+            <label for="category">Category</label>
+            <select id="category">
+              <option value="">Select a category…</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Fashion">Fashion &amp; Accessories</option>
+              <option value="Furniture">Furniture &amp; Home</option>
+              <option value="Collectibles">Collectibles &amp; Toys</option>
+              <option value="Sports">Sports &amp; Outdoors</option>
+              <option value="Books">Books &amp; Media</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="price" id="price-label">Price</label>
+            <input id="price" type="number" min="0.01" step="0.01" />
+          </div>
+
+          <button type="submit" class="btn-primary auth-btn">Create Listing</button>
+        </form>
+
+        <p class="auth-switch">
+          Want to browse first?
+          <a href="listings.html">View listings</a>
+        </p>
+      </section>
+    </main>
+    <!-- ── COVER IMAGE CONFIRMATION MODAL ── -->
+    <div class="listing-modal d-none" id="coverImageModal">
+      <div class="listing-modal-card">
+        <h3>Use Cover Image?</h3>
+        <p class="listing-modal-message">
+          Are you sure you want to use the selected photo as the cover image for this listing?
+        </p>
+
+        <div class="listing-modal-actions">
+          <button type="button" class="btn-secondary" id="btnCancelCoverImage">No</button>
+          <button type="button" class="btn-primary" id="btnConfirmCoverImage">
+            Yes, Use Image
+          </button>
         </div>
-
-        <div class="form-group">
-          <label for="price" id="price-label">Price</label>
-          <input id="price" type="number" min="0.01" step="0.01" />
-        </div>
-
-        <button type="submit" class="btn-primary auth-btn">Create Listing</button>
-      </form>
-
-      <p class="auth-switch">
-        Want to browse first?
-        <a href="listings.html">View listings</a>
-      </p>
-    </section>
-  </main>
-  <!-- ── COVER IMAGE CONFIRMATION MODAL ── -->
-  <div class="listing-modal d-none" id="coverImageModal">
-    <div class="listing-modal-card">
-      <h3>Use Cover Image?</h3>
-      <p class="listing-modal-message">
-        Are you sure you want to use the selected photo as the cover image for this listing?
-      </p>
-
-      <div class="listing-modal-actions">
-        <button type="button" class="btn-secondary" id="btnCancelCoverImage">No</button>
-        <button type="button" class="btn-primary" id="btnConfirmCoverImage">Yes, Use Image</button>
       </div>
     </div>
-  </div>
 
-  <div class="toast" id="toast"></div>
+    <div class="toast" id="toast"></div>
 
-  <script src="../js/prefs.js"></script>
-  <script src="../js/api.js"></script>
-  <script src="../js/listings.js"></script>
-</body>
-
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+    <script src="../js/gsap-animations.js"></script>
+    <script src="../js/prefs.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/listings.js"></script>
+    <script src="../js/notif-badge.js"></script>
+  </body>
 </html>

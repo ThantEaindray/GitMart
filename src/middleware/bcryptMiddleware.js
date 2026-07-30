@@ -13,14 +13,14 @@ module.exports.comparePassword = (req, res, next) => {
   if (!pepper) {
     console.error('BCRYPT_PEPPER is missing.');
     return res.status(500).json({
-      message: 'Server configuration error.'
+      message: 'Server configuration error.',
     });
   }
 
   if (!res.locals.hash) {
     console.error('Password hash is missing before bcrypt compare.');
     return res.status(500).json({
-      message: 'Password hash missing during login.'
+      message: 'Password hash missing during login.',
     });
   }
 
@@ -28,7 +28,7 @@ module.exports.comparePassword = (req, res, next) => {
     if (err) {
       console.error('Error bcrypt:', err);
       return res.status(500).json({
-        message: 'Password comparison failed.'
+        message: 'Password comparison failed.',
       });
     }
 
@@ -78,7 +78,7 @@ module.exports.hashPassword = (req, res, next) => {
   if (!pepper) {
     console.error('BCRYPT_PEPPER is missing.');
     return res.status(500).json({
-      message: 'Server configuration error.'
+      message: 'Server configuration error.',
     });
   }
 
@@ -86,7 +86,7 @@ module.exports.hashPassword = (req, res, next) => {
     if (err) {
       console.error('Error bcrypt:', err);
       return res.status(500).json({
-        message: 'Password hashing failed.'
+        message: 'Password hashing failed.',
       });
     }
 
