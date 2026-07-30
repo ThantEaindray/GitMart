@@ -620,6 +620,34 @@ function loadOwnerReservationRequests() {
     });
 }
 
+function loadBuyerReservationState() {
+  authFetch('/api/reservations/sent')
+    .then(parseResponse)
+    .then(function (result) {
+      if (result.status !== 200) {
+        resetReservationButton();
+        return;
+      }
+
+      const reservation = (Array.isArray(result.data) ? result.data : []).find(function (item) {
+        return (
+          Number(item.listing_id) === Number(currentListing.id) &&
+          String(item.status).toUpperCase() === 'PENDING'
+        );
+      });
+
+      if (reservation) {
+        currentBuyerReservation = reservation;
+        showPendingReservationButton(reservation);
+      } else {
+        resetReservationButton();
+      }
+    })
+    .catch(function () {
+      resetReservationButton();
+    });
+}
+
 function setReservationDecisionDisabled(reservationId, disabled) {
   document
     .querySelectorAll(`[data-reservation-action][data-reservation-id="${reservationId}"]`)
@@ -979,6 +1007,9 @@ function onListingLoaded(result) {
   }
 
   renderListing(result.data);
+  if (!isListingOwner(result.data)) {
+    loadBuyerReservationState();
+  }
   loadDetailWishlistState();
   loadRelatedListings(result.data.category);
   if (result.data.owner_id) loadSellerInfo(result.data.owner_id);
