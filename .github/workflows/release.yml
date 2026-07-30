@@ -76,3 +76,15 @@ jobs:
               draft: false,
               prerelease: tag.includes('-'),
             });
+
+      - name: Deploy to AWS EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/gitmart
+            git pull origin main
+            npm ci --omit=dev
+            pm2 restart gitmart --update-env

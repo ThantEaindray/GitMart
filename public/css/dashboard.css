@@ -129,6 +129,15 @@
   border: 1px solid;
 }
 
-.badge-active { color: var(--accent); border-color: var(--accent); }
-.badge-sold   { color: var(--muted);  border-color: var(--border); }
-.badge-closed { color: var(--muted);  border-color: var(--border); }
+.badge-active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.badge-sold {
+  color: var(--muted);
+  border-color: var(--border);
+}
+.badge-closed {
+  color: var(--muted);
+  border-color: var(--border);
+}

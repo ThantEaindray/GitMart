@@ -1,66 +1,358 @@
 /* ── RESPONSIVE ── */
-@media (max-width: 800px) {
-  .nav {
-    padding: 16px 20px;
-  }
 
-  .nav-links {
-    display: none;
+/* ── TABLET / SMALL DESKTOP (≤992px) ── */
+@media (max-width: 992px) {
+  .nav {
+    padding: 18px 32px;
   }
 
   .hero {
-    grid-template-columns: 1fr;
-    padding: 40px 20px;
-  }
-
-  .hero h1 {
-    font-size: 36px;
+    padding: 60px 32px;
   }
 
   .section {
-    padding: 30px 20px;
+    padding: 48px 32px;
   }
 
   .products {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .auth-page {
+    padding: 3rem 5vw;
+    gap: 2rem;
+  }
+
+  .seller-hero {
+    padding: 36px 32px 28px;
+  }
+
+  .seller-section {
+    padding: 32px 32px;
+  }
+
+  #reviews-section {
+    padding: 36px 32px 48px;
+  }
+}
+
+/* ── MOBILE (≤768px) ── */
+@media (max-width: 768px) {
+  /* ── Nav ── */
+  .nav {
+    padding: 14px 20px;
+    position: relative;
+  }
+
+  .nav-hamburger {
+    display: flex;
+  }
+
+  .nav-collapse {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    z-index: 99;
+    overflow: hidden;
+  }
+
+  .nav-collapse .nav-links {
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+    padding: 6px 20px 14px;
+  }
+
+  .nav-collapse .nav-links li {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-collapse .nav-links li:last-child {
+    border-bottom: none;
+  }
+
+  .nav-collapse .nav-links a {
+    display: block;
+    padding: 13px 0;
+    font-size: 0.9rem;
+  }
+
+  .nav-right {
+    gap: 12px;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    grid-template-columns: 1fr;
+    padding: 36px 20px;
+    gap: 24px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2rem, 8vw, 3.2rem);
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .hero-actions .btn-primary,
+  .hero-actions .btn-outline {
+    width: 100%;
+    text-align: center;
+  }
+
+  .btn-outline {
+    margin-left: 0;
+  }
+
+  /* ── Sections ── */
+  .section {
+    padding: 28px 20px;
+  }
+
+  .section-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* ── Products grid ── */
+  .products {
     grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
   }
 
-  .search-bar.open {
-    padding: 12px 20px;
-  }
-
+  /* ── Breadcrumb ── */
   .breadcrumb-bar {
-    padding: 16px 20px 0;
+    padding: 14px 20px 0;
   }
 
+  /* ── Product detail ── */
   .product-detail {
     grid-template-columns: 1fr;
-    padding: 20px 20px 60px;
-    gap: 30px;
+    padding: 20px 20px 48px;
+    gap: 24px;
   }
 
   .product-name {
-    font-size: 28px;
+    font-size: 1.8rem;
   }
 
   .product-price {
-    font-size: 24px;
+    font-size: 1.5rem;
   }
 
+  /* ── Listings ── */
+  .listings-page {
+    padding: 24px 20px;
+  }
+
+  .listing-search-sort {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .listing-filter-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+  }
+
+  /* ── Auth / Login / Register / Profile ── */
+  .auth-page {
+    grid-template-columns: 1fr;
+    padding: 2rem 20px;
+    gap: 1.5rem;
+    min-height: auto;
+  }
+
+  .auth-card {
+    justify-self: stretch;
+    max-width: 100%;
+  }
+
+  .auth-intro h1 {
+    font-size: clamp(2rem, 9vw, 3rem);
+  }
+
+  .profile-actions {
+    flex-direction: column;
+  }
+
+  .profile-actions .btn-outline {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+  }
+
+  /* ── Settings ── */
   .settings-page {
-    padding: 30px 20px;
+    padding: 24px 20px;
+  }
+
+  .settings-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-btn {
+    padding: 10px 16px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .theme-grid {
     grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   }
 
-  .settings-tabs {
-    overflow-x: auto;
+  .settings-fields {
+    flex-direction: column;
   }
 
-  .tab-btn {
-    padding: 10px 16px;
+  /* ── Dashboard ── */
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dash-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* ── Orders ── */
+  .orders-page {
+    padding: 24px 20px;
+  }
+
+  .orders-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .orders-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .orders-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    padding-bottom: 2px;
+    display: flex;
+  }
+
+  .orders-tab {
     white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── Seller ── */
+  .seller-hero {
+    padding: 28px 20px 20px;
+    gap: 1.25rem;
+  }
+
+  .seller-section {
+    padding: 24px 20px;
+  }
+
+  /* ── Search bar ── */
+  .search-bar.open {
+    padding: 12px 20px;
+  }
+
+  /* ── Checkout ── */
+  .checkout-page {
+    grid-template-columns: 1fr;
+    padding: 24px 20px;
+    gap: 24px;
+  }
+
+  /* ── Reviews section ── */
+  #reviews-section {
+    padding: 24px 20px 40px;
+  }
+
+  /* ── Search filter bar ── */
+  .search-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-filter-input,
+  .search-filter-price {
+    width: 100%;
+  }
+}
+
+/* ── SMALL MOBILE (≤480px) ── */
+@media (max-width: 480px) {
+  .nav-right {
+    gap: 8px;
+  }
+
+  .products {
+    grid-template-columns: 1fr;
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero-tag {
+    font-size: 0.7rem;
+  }
+
+  .section-title {
+    font-size: 1.6rem;
+  }
+
+  .orders-summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .dash-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .orders-tab {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  .btn-primary,
+  .btn-outline {
+    padding: 12px 20px;
+    font-size: 0.85rem;
+  }
+
+  .icon-btn {
+    font-size: 1rem;
+  }
+
+  .seller-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 1.5rem;
+  }
+
+  .seller-username {
+    font-size: 1.4rem;
   }
 }

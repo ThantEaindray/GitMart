@@ -220,7 +220,10 @@ describe('getWishlist - extra cases', () => {
   });
 
   it('returns the exact rows array from the model', () => {
-    const items = [{ listing_id: 1, title: 'Watch' }, { listing_id: 2, title: 'Bag' }];
+    const items = [
+      { listing_id: 1, title: 'Watch' },
+      { listing_id: 2, title: 'Bag' },
+    ];
     const res = makeRes({ userId: 1 });
     mockFn(model.getWishlistByUser, null, items);
     controller.getWishlist({}, res);

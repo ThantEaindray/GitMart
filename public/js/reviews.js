@@ -25,14 +25,22 @@ function renderReviewCard(review, myUserId) {
     ? '<button class="rv-delete" onclick="deleteReview(' + review.id + ')">Delete</button>'
     : '';
   var date = new Date(review.created_on).toLocaleDateString(undefined, {
-    year: 'numeric', month: 'short', day: 'numeric',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
   });
   return (
-    '<div class="rv-card" id="rv-' + review.id + '">' +
+    '<div class="rv-card" id="rv-' +
+    review.id +
+    '">' +
     '<div class="rv-header">' +
     renderStarDisplay(review.rating) +
-    '<span class="rv-author">' + escapeHtml(review.reviewer_name) + '</span>' +
-    '<span class="rv-date">' + date + '</span>' +
+    '<span class="rv-author">' +
+    escapeHtml(review.reviewer_name) +
+    '</span>' +
+    '<span class="rv-date">' +
+    date +
+    '</span>' +
     deleteBtn +
     '</div>' +
     (review.comment ? '<p class="rv-comment">' + escapeHtml(review.comment) + '</p>' : '') +
@@ -69,9 +77,11 @@ function onReviewsLoaded(result) {
     return;
   }
 
-  list.innerHTML = result.data.map(function (r) {
-    return renderReviewCard(r, myUserId);
-  }).join('');
+  list.innerHTML = result.data
+    .map(function (r) {
+      return renderReviewCard(r, myUserId);
+    })
+    .join('');
 }
 
 function loadReviews() {
@@ -80,7 +90,9 @@ function loadReviews() {
   list.innerHTML = '<p class="status-text">Loading reviews…</p>';
   fetch('/api/listings/' + _reviewListingId + '/reviews')
     .then(function (r) {
-      return r.json().then(function (d) { return { status: r.status, data: d }; });
+      return r.json().then(function (d) {
+        return { status: r.status, data: d };
+      });
     })
     .then(onReviewsLoaded)
     .catch(function () {
@@ -90,13 +102,14 @@ function loadReviews() {
 }
 
 function deleteReview(reviewId) {
-  authFetch('/api/listings/' + _reviewListingId + '/reviews/' + reviewId, { method: 'DELETE' })
-    .then(function (r) {
-      if (r.ok) {
-        loadReviews();
-        renderReviewForm();
-      }
-    });
+  authFetch('/api/listings/' + _reviewListingId + '/reviews/' + reviewId, {
+    method: 'DELETE',
+  }).then(function (r) {
+    if (r.ok) {
+      loadReviews();
+      renderReviewForm();
+    }
+  });
 }
 
 window.deleteReview = deleteReview;
@@ -110,7 +123,8 @@ function renderReviewForm() {
   var isOwner = token && myUserId && Number(myUserId) === Number(_reviewOwnerId);
 
   if (!token) {
-    container.innerHTML = '<p class="status-text"><a href="login.html">Log in</a> to leave a review.</p>';
+    container.innerHTML =
+      '<p class="status-text"><a href="login.html">Log in</a> to leave a review.</p>';
     return;
   }
 
@@ -143,8 +157,12 @@ function renderReviewForm() {
   }
 
   stars.forEach(function (star) {
-    star.addEventListener('mouseenter', function () { updateStars(Number(star.dataset.value)); });
-    star.addEventListener('mouseleave', function () { updateStars(selectedRating); });
+    star.addEventListener('mouseenter', function () {
+      updateStars(Number(star.dataset.value));
+    });
+    star.addEventListener('mouseleave', function () {
+      updateStars(selectedRating);
+    });
     star.addEventListener('click', function () {
       selectedRating = Number(star.dataset.value);
       updateStars(selectedRating);
@@ -163,7 +181,9 @@ function renderReviewForm() {
       body: JSON.stringify({ rating: selectedRating, comment: comment || null }),
     })
       .then(function (r) {
-        return r.json().then(function (d) { return { status: r.status, data: d }; });
+        return r.json().then(function (d) {
+          return { status: r.status, data: d };
+        });
       })
       .then(function (result) {
         if (result.status === 201) {

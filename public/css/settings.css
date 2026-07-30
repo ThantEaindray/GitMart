@@ -41,7 +41,9 @@
   text-transform: uppercase;
   color: var(--muted);
   background: var(--card);
-  transition: border-color 0.2s, color 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
 }
 
 .settings-chip:hover,
@@ -69,7 +71,9 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
-  transition: color 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
   margin-bottom: -1px;
 }
 
@@ -103,7 +107,9 @@
   font-size: 0.87em;
   letter-spacing: 0.08em;
   opacity: 0;
-  transition: opacity 0.25s, transform 0.25s;
+  transition:
+    opacity 0.25s,
+    transform 0.25s;
   z-index: 999;
   pointer-events: none;
 }
@@ -299,7 +305,9 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 600;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
   margin-top: 16px;
 }
 

@@ -1,41 +1,56 @@
+process.env.JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || 'integration-test-access-secret';
+
+jest.setTimeout(20000);
+jest.retryTimes(2);
+
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
 const app = require('../../src/app');
 const pool = require('../../src/models/db');
 
-// ── Auth state (populated in beforeAll) ──────────────────
+const JWT_ALG = process.env.JWT_ALGORITHM || 'HS256';
+
 let authToken;
 let testUserId;
 let testListingId;
 
-// ── DB Setup / Teardown ──────────────────────────────────
-// Schema is already created by jest globalSetup (scripts/reset.js).
-// We register + login one test user before all tests, then re-seed a fresh
-// listing before each test so concurrent integration test workers cannot
-// interfere via their own DELETE FROM listings beforeEach hooks.
+function makeToken(userId) {
+  return jwt.sign({ userId }, process.env.JWT_SECRET_KEY, {
+    algorithm: JWT_ALG,
+    expiresIn: '1h',
+  });
+}
+
+// ── DB Setup / Teardown ──────────────────────────────────────────────────────
+// listing.routes.test.js runs TRUNCATE TABLE listings, users RESTART IDENTITY
+// CASCADE in its own beforeEach, which cascades to wishlist. This wipes our
+// user and listing between tests and can deadlock with our INSERT INTO listings.
+// Fix: re-insert user (ON CONFLICT DO NOTHING) and re-read the current id in
+// every beforeEach so stale ids / tokens are never used. jest.retryTimes(2)
+// handles transient deadlocks by replaying the whole test including beforeEach.
 
 beforeAll(async () => {
-  // Clean any stale data from prior runs
-  await pool.query("DELETE FROM users WHERE username = 'wishlisttest'");
-
-  // Register test user
-  await request(app).post('/api/register').send({
-    username: 'wishlisttest',
-    email: 'wishlisttest@test.com',
-    password: 'test1234',
-  });
-
-  // Login to get token and userId
-  const loginRes = await request(app).post('/api/login').send({
-    username: 'wishlisttest',
-    password: 'test1234',
-  });
-
-  authToken = loginRes.body.token;
-  testUserId = loginRes.body.userId;
+  await pool.query(
+    `DELETE FROM wishlist WHERE user_id IN (SELECT id FROM users WHERE username = 'wl_wishlist')`,
+  );
+  await pool.query(
+    `DELETE FROM listings WHERE owner_id IN (SELECT id FROM users WHERE username = 'wl_wishlist')`,
+  );
+  await pool.query(`DELETE FROM users WHERE username = 'wl_wishlist'`);
 });
 
 beforeEach(async () => {
-  // Clear this user's wishlist, then re-seed a fresh listing each test
+  // Re-insert user in case another suite's TRUNCATE wiped it
+  await pool.query(
+    `INSERT INTO users (username, email, password)
+     VALUES ('wl_wishlist', 'wl_wishlist@test.com', 'placeholder')
+     ON CONFLICT (username) DO NOTHING`,
+  );
+  // Always read the current id — RESTART IDENTITY can change it after a TRUNCATE
+  const userRow = await pool.query(`SELECT id FROM users WHERE username = 'wl_wishlist'`);
+  testUserId = userRow.rows[0].id;
+  authToken = makeToken(testUserId);
+
   await pool.query('DELETE FROM wishlist WHERE user_id = $1', [testUserId]);
   await pool.query('DELETE FROM listings WHERE owner_id = $1', [testUserId]);
   const listingRes = await pool.query(
@@ -48,10 +63,22 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  await pool.query('DELETE FROM wishlist WHERE user_id = $1', [testUserId]);
-  await pool.query('DELETE FROM listings WHERE owner_id = $1', [testUserId]);
-  await pool.query("DELETE FROM users WHERE username = 'wishlisttest'");
-  await pool.end();
+  try {
+    await pool.query(
+      `DELETE FROM wishlist WHERE user_id IN (SELECT id FROM users WHERE username = 'wl_wishlist')`,
+    );
+    await pool.query(
+      `DELETE FROM listings WHERE owner_id IN (SELECT id FROM users WHERE username = 'wl_wishlist')`,
+    );
+    await pool.query(`DELETE FROM users WHERE username = 'wl_wishlist'`);
+  } catch (_) {
+    // best-effort cleanup
+  }
+  try {
+    await pool.end();
+  } catch (_) {
+    // ignore
+  }
 });
 
 // ─────────────────────────────────────────────────────────
@@ -67,9 +94,7 @@ describe('GET /api/wishlist', () => {
 
   // Boundary: empty wishlist returns empty array
   test('should return 200 and empty array when wishlist is empty', async () => {
-    const res = await request(app)
-      .get('/api/wishlist')
-      .set('Authorization', `Bearer ${authToken}`);
+    const res = await request(app).get('/api/wishlist').set('Authorization', `Bearer ${authToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
@@ -82,9 +107,7 @@ describe('GET /api/wishlist', () => {
       testListingId,
     ]);
 
-    const res = await request(app)
-      .get('/api/wishlist')
-      .set('Authorization', `Bearer ${authToken}`);
+    const res = await request(app).get('/api/wishlist').set('Authorization', `Bearer ${authToken}`);
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);

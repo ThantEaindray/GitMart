@@ -13,7 +13,7 @@
   <h1>QA Report</h1>
   <pre>============================================================
   QA REPORT
-  Generated: 2026-03-31T17:29:26.831Z
+  Generated: 2026-07-28T09:10:59.757Z
 ============================================================
 
 ────────────────────────────────────────────────────────────
@@ -23,8 +23,95 @@
 1. LINT (eslint)
 
 
+C:\Users\koklo\Downloads\ay2627s1-project-git-5-1\__tests__\integration\order.routes.test.js
+   63:13  error  'fullName' is assigned a value but never used. Allowed unused vars must match /^_/u        no-unused-vars
+   73:13  error  'emailAddress' is assigned a value but never used. Allowed unused vars must match /^_/u    no-unused-vars
+   82:13  error  'phoneNumber' is assigned a value but never used. Allowed unused vars must match /^_/u     no-unused-vars
+   91:13  error  'address' is assigned a value but never used. Allowed unused vars must match /^_/u         no-unused-vars
+  100:13  error  'unitNumber' is assigned a value but never used. Allowed unused vars must match /^_/u      no-unused-vars
+  109:13  error  'postalCode' is assigned a value but never used. Allowed unused vars must match /^_/u      no-unused-vars
+  118:13  error  'deliveryMethod' is assigned a value but never used. Allowed unused vars must match /^_/u  no-unused-vars
+  127:13  error  'paymentMethod' is assigned a value but never used. Allowed unused vars must match /^_/u   no-unused-vars
 
-   <span style="color:#22c55e;font-weight:bold">[PASS]</span> No ESLint rule violations found.
+C:\Users\koklo\Downloads\ay2627s1-project-git-5-1\__tests__\integration\user.routes.test.js
+  34:12  error  '_' is defined but never used  no-unused-vars
+  39:12  error  '_' is defined but never used  no-unused-vars
+
+C:\Users\koklo\Downloads\ay2627s1-project-git-5-1\__tests__\unit\order.controller.test.js
+   44:13  error  'fullName' is assigned a value but never used. Allowed unused vars must match /^_/u        no-unused-vars
+   53:13  error  'emailAddress' is assigned a value but never used. Allowed unused vars must match /^_/u    no-unused-vars
+   61:13  error  'phoneNumber' is assigned a value but never used. Allowed unused vars must match /^_/u     no-unused-vars
+   69:13  error  'address' is assigned a value but never used. Allowed unused vars must match /^_/u         no-unused-vars
+   77:13  error  'unitNumber' is assigned a value but never used. Allowed unused vars must match /^_/u      no-unused-vars
+   85:13  error  'postalCode' is assigned a value but never used. Allowed unused vars must match /^_/u      no-unused-vars
+   93:13  error  'deliveryMethod' is assigned a value but never used. Allowed unused vars must match /^_/u  no-unused-vars
+  101:13  error  'paymentMethod' is assigned a value but never used. Allowed unused vars must match /^_/u   no-unused-vars
+
+C:\Users\koklo\Downloads\ay2627s1-project-git-5-1\public\js\WS.js
+  35:10  warning  'sendTxt' is defined but never used. Allowed unused vars must match /^_/u  no-unused-vars
+  50:12  warning  'data' is defined but never used. Allowed unused args must match /^_/u     no-unused-vars
+
+C:\Users\koklo\Downloads\ay2627s1-project-git-5-1\public\js\api.js
+   12:16  warning  'getProducts' is defined but never used. Allowed unused vars must match /^_/u            no-unused-vars
+   23:16  warning  'getProductById' is defined but never used. Allowed unused vars must match /^_/u         no-unused-vars
+   34:16  warning  'searchProducts' is defined but never used. Allowed unused vars must match /^_/u         no-unused-vars
+   41:16  warning  'getProductsByCategory' is defined but never used. Allowed unused vars must match /^_/u  no-unused-vars
+   56:16  warning  'getCart' is defined but never used. Allowed unused vars must match /^_/u                no-unused-vars
+   67:16  warning  'addToCart' is defined but never used. Allowed unused vars must match /^_/u              no-unused-vars
+   81:16  warning  'removeFromCart' is defined but never used. Allowed unused vars must match /^_/u         no-unused-vars
+   96:16  warning  'getWishlist' is defined but never used. Allowed unused vars must match /^_/u            no-unused-vars
+  108:16  warning  'toggleWishlist' is defined but never used. Allowed unused vars must match /^_/u         no-unused-vars
+  147:16  warning  'authFetch' is defined but never used. Allowed unused vars must match /^_/u              no-unused-vars
+
+C:\Users\koklo\Downloads\ay2627s1-project-git-5-1\public\js\chats.js
+  24:10  warning  'viewChat' is defined but never used. Allowed unused vars must match /^_/u  no-unused-vars
+
+C:\Users\koklo\Downloads\ay2627s1-project-git-5-1\public\js\queryCmds.js
+  2:10  warning  'fetchMethod' is defined but never used. Allowed unused vars must match /^_/u  no-unused-vars
+
+C:\Users\koklo\Downloads\ay2627s1-project-git-5-1\public\js\reviews.js
+  201:10  warning  'initReviews' is defined but never used. Allowed unused vars must match /^_/u  no-unused-vars
+
+✖ 33 problems (18 errors, 15 warnings)
+
+
+
+   Failed ESLint Rules (1):
+
+   <span style="color:#ef4444;font-weight:bold">[FAIL]</span> no-unused-vars (33 violations)
+          __tests__\integration\order.routes.test.js:63
+          __tests__\integration\order.routes.test.js:73
+          __tests__\integration\order.routes.test.js:82
+          __tests__\integration\order.routes.test.js:91
+          __tests__\integration\order.routes.test.js:100
+          __tests__\integration\order.routes.test.js:109
+          __tests__\integration\order.routes.test.js:118
+          __tests__\integration\order.routes.test.js:127
+          __tests__\integration\user.routes.test.js:34
+          __tests__\integration\user.routes.test.js:39
+          __tests__\unit\order.controller.test.js:44
+          __tests__\unit\order.controller.test.js:53
+          __tests__\unit\order.controller.test.js:61
+          __tests__\unit\order.controller.test.js:69
+          __tests__\unit\order.controller.test.js:77
+          __tests__\unit\order.controller.test.js:85
+          __tests__\unit\order.controller.test.js:93
+          __tests__\unit\order.controller.test.js:101
+          public\js\WS.js:35
+          public\js\WS.js:50
+          public\js\api.js:12
+          public\js\api.js:23
+          public\js\api.js:34
+          public\js\api.js:41
+          public\js\api.js:56
+          public\js\api.js:67
+          public\js\api.js:81
+          public\js\api.js:96
+          public\js\api.js:108
+          public\js\api.js:147
+          public\js\chats.js:24
+          public\js\queryCmds.js:2
+          public\js\reviews.js:201
 
 2. FORMAT CHECK (prettier)
 
@@ -35,6 +122,7 @@ All matched files use Prettier code style!
 
 3. UNIT + INTEGRATION TESTS (jest --coverage)
 
+◇ injected env (0) from .env.test // tip: ⌘ suppress logs { quiet: true }
 Running database reset for integration tests...
 Resetting database schema...
 Schema applied.
@@ -44,20 +132,1394 @@ Inserted 20 persons.
 Inserted 2 somethings.
 Seed data inserted successfully.
 Database reset completed successfully.
-----------------------|---------|----------|---------|---------|-------------------
-File                  | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
-----------------------|---------|----------|---------|---------|-------------------
-All files             |   97.22 |    83.33 |   89.47 |   98.59 |                   
- src                  |   94.73 |       50 |   66.66 |     100 |                   
-  app.js              |   94.73 |       50 |   66.66 |     100 | 37                
- src/models           |   95.45 |      100 |   83.33 |   95.45 |                   
-  Person.model.js     |     100 |      100 |     100 |     100 |                   
-  Something.model.js  |     100 |      100 |     100 |     100 |                   
-  db.js               |      80 |      100 |       0 |      80 | 8                 
- src/routers          |     100 |      100 |     100 |     100 |                   
-  Person.router.js    |     100 |      100 |     100 |     100 |                   
-  Something.router.js |     100 |      100 |     100 |     100 |                   
-----------------------|---------|----------|---------|---------|-------------------
+----------------------------|---------|----------|---------|---------|--------------------------------------------------------------------------------------------------------------------------------------------
+File                        | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                                                                          
+----------------------------|---------|----------|---------|---------|--------------------------------------------------------------------------------------------------------------------------------------------
+All files                   |   57.51 |    38.21 |    50.4 |   58.28 |                                                                                                                                            
+ src                        |   97.36 |       50 |   66.66 |     100 |                                                                                                                                            
+  app.js                    |   97.36 |       50 |   66.66 |     100 | 80                                                                                                                                         
+ src/controllers            |    46.8 |    38.04 |    48.2 |   47.25 |                                                                                                                                            
+  Listing.controller.js     |   39.41 |       31 |   30.55 |   40.85 | 25,34-55,65-70,75-79,84-95,100-106,111-117,121-127,131,140-148,155-156,171-172,177,180,188-196,201-235,240-278,312-314,352-354,360,387-388 
+  Reservation.controller.js |    5.88 |        0 |       0 |    5.88 | 4-10,17-127,132-144,149-161,166-229                                                                                                        
+  Review.controller.js      |      50 |    21.05 |   66.66 |      50 | 9-10,20-44,56-57                                                                                                                           
+  Something.controller.js   |   66.12 |       50 |   81.81 |   66.12 | 6-7,17-30,35,40-41,52,57-58,74-75                                                                                                          
+  User.controller.js        |   66.32 |    62.35 |   76.92 |   66.49 | 24,37-38,58-59,83-84,108-109,130-131,144-145,154-179,187-188,205-206,219-220,237-251,255-265,282-284,293-294,315-316,343-359               
+  Wishlist.controller.js    |   14.81 |        0 |       0 |   14.81 | 5-15,20-33,38-48                                                                                                                           
+  chat.controller.js        |   11.39 |        0 |       0 |   11.53 | 4-30,36-51,55-71,102-112,116-128,132-141,145-169,173-185                                                                                   
+  order.controller.js       |     100 |      100 |     100 |     100 |                                                                                                                                            
+  product.controller.js     |   87.09 |    83.33 |     100 |   87.09 | 14-15,40-41                                                                                                                                
+ src/middleware             |   56.92 |    44.73 |   54.16 |    59.5 |                                                                                                                                            
+  bcryptMiddleware.js       |   43.47 |    33.33 |      50 |   43.47 | 14-15,21-22,29-30,36,48-59,63-71,79-80,87-88                                                                                               
+  jwtMiddleware.js          |   64.28 |    48.27 |   56.25 |   69.33 | 85-108,120-125,131-133                                                                                                                     
+ src/models                 |   62.54 |    17.14 |   48.71 |   63.28 |                                                                                                                                            
+  Listing.model.js          |      50 |        0 |   31.25 |      50 | 4-17,35-47,67-90,94-106,110-119,123-136,196-218,222-230,234-248,252-260,264-279                                                            
+  Person.model.js           |     100 |      100 |     100 |     100 |                                                                                                                                            
+  Reservation.model.js      |   27.58 |      100 |       0 |   27.58 | 4-16,20-38,42-61,65-85,89-117,121-149,153-173                                                                                              
+  Review.model.js           |      80 |      100 |   66.66 |      80 | 4-9                                                                                                                                        
+  Something.model.js        |   85.71 |      100 |      80 |   85.71 | 10-12                                                                                                                                      
+  User.model.js             |   76.81 |      100 |      65 |   76.81 | 73-78,82-83,87-88,92-106,128-129,133-134,149-153                                                                                           
+  Wishlist.model.js         |      40 |      100 |       0 |      40 | 4-10,14-19,23-33                                                                                                                           
+  chats.model.js            |      28 |      100 |       0 |      28 | 4-9,13-18,22-28,32-37,41-47,51-56                                                                                                          
+  db.js                     |      80 |      100 |       0 |      80 | 8                                                                                                                                          
+  orderModel.js             |     100 |      100 |     100 |     100 |                                                                                                                                            
+  product.model.js          |     100 |      100 |     100 |     100 |                                                                                                                                            
+  purchaseState.js          |   47.36 |        0 |   57.14 |      60 | 7-14                                                                                                                                       
+ src/routers                |   98.14 |       50 |     100 |   98.14 |                                                                                                                                            
+  Listing.router.js         |     100 |      100 |     100 |     100 |                                                                                                                                            
+  Person.router.js          |   81.81 |       50 |     100 |   81.81 | 8-9                                                                                                                                        
+  Reservation.router.js     |     100 |      100 |     100 |     100 |                                                                                                                                            
+  Review.router.js          |     100 |      100 |     100 |     100 |                                                                                                                                            
+  Something.router.js       |     100 |      100 |     100 |     100 |                                                                                                                                            
+  User.router.js            |     100 |      100 |     100 |     100 |                                                                                                                                            
+  Wishlist.router.js        |     100 |      100 |     100 |     100 |                                                                                                                                            
+  chats.router.js           |     100 |      100 |     100 |     100 |                                                                                                                                            
+  orderRouter.js            |     100 |      100 |     100 |     100 |                                                                                                                                            
+  product.router.js         |     100 |      100 |     100 |     100 |                                                                                                                                            
+ src/utils                  |   82.35 |    66.66 |     100 |   82.35 |                                                                                                                                            
+  listingLifecycle.js       |   82.35 |    66.66 |     100 |   82.35 | 28,50,60                                                                                                                                   
+----------------------------|---------|----------|---------|---------|--------------------------------------------------------------------------------------------------------------------------------------------
+
+Test Suites: 15 passed, 15 total
+Tests:       569 passed, 569 total
+Snapshots:   0 total
+Time:        1.889 s
+FAIL __tests__/integration/Wishlist.routes.test.js (35.376 s)
+  ● GET /api/wishlist › should return 401 when no auth token is provided
+
+    error: deadlock detected
+
+      39 |   await pool.query('DELETE FROM wishlist WHERE user_id = $1', [testUserId]);
+      40 |   await pool.query('DELETE FROM listings WHERE owner_id = $1', [testUserId]);
+    &gt; 41 |   const listingRes = await pool.query(
+         |                      ^
+      42 |     `INSERT INTO listings (owner_id, price, title, description, category)
+      43 |      VALUES ($1, $2, $3, $4, $5)
+      44 |      RETURNING id`,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/Wishlist.routes.test.js:41:22)
+
+  ● GET /api/wishlist › should return 200 and empty array when wishlist is empty
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 401
+
+      70 |     const res = await request(app).get('/api/wishlist').set('Authorization', `Bearer ${authToken}`);
+      71 |
+    &gt; 72 |     expect(res.status).toBe(200);
+         |                        ^
+      73 |     expect(res.body).toEqual([]);
+      74 |   });
+      75 |
+
+      at Object.toBe (__tests__/integration/Wishlist.routes.test.js:72:24)
+
+  ● GET /api/wishlist › should return 200 and array containing the added item
+
+    error: null value in column "user_id" of relation "wishlist" violates not-null constraint
+
+      76 |   // Valid partition: added item appears in wishlist response
+      77 |   test('should return 200 and array containing the added item', async () =&gt; {
+    &gt; 78 |     await pool.query('INSERT INTO wishlist (user_id, listing_id) VALUES ($1, $2)', [
+         |     ^
+      79 |       testUserId,
+      80 |       testListingId,
+      81 |     ]);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/Wishlist.routes.test.js:78:5)
+
+  ● POST /api/wishlist/:listingId › should return 201 and success message when item is added
+
+    error: deadlock detected
+
+      39 |   await pool.query('DELETE FROM wishlist WHERE user_id = $1', [testUserId]);
+      40 |   await pool.query('DELETE FROM listings WHERE owner_id = $1', [testUserId]);
+    &gt; 41 |   const listingRes = await pool.query(
+         |                      ^
+      42 |     `INSERT INTO listings (owner_id, price, title, description, category)
+      43 |      VALUES ($1, $2, $3, $4, $5)
+      44 |      RETURNING id`,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/Wishlist.routes.test.js:41:22)
+
+  ● POST /api/wishlist/:listingId › should return 201 on duplicate add without error
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      35 | });
+      36 |
+    &gt; 37 | beforeEach(async () =&gt; {
+         | ^
+      38 |   // Clear this user's wishlist, then re-seed a fresh listing each test
+      39 |   await pool.query('DELETE FROM wishlist WHERE user_id = $1', [testUserId]);
+      40 |   await pool.query('DELETE FROM listings WHERE owner_id = $1', [testUserId]);
+
+      at Object.beforeEach (__tests__/integration/Wishlist.routes.test.js:37:1)
+
+  ● POST /api/wishlist/:listingId › added item should appear in GET /api/wishlist
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      35 | });
+      36 |
+    &gt; 37 | beforeEach(async () =&gt; {
+         | ^
+      38 |   // Clear this user's wishlist, then re-seed a fresh listing each test
+      39 |   await pool.query('DELETE FROM wishlist WHERE user_id = $1', [testUserId]);
+      40 |   await pool.query('DELETE FROM listings WHERE owner_id = $1', [testUserId]);
+
+      at Object.beforeEach (__tests__/integration/Wishlist.routes.test.js:37:1)
+
+  ● DELETE /api/wishlist/:listingId › should return 401 when no auth token is provided
+
+    error: deadlock detected
+
+      39 |   await pool.query('DELETE FROM wishlist WHERE user_id = $1', [testUserId]);
+      40 |   await pool.query('DELETE FROM listings WHERE owner_id = $1', [testUserId]);
+    &gt; 41 |   const listingRes = await pool.query(
+         |                      ^
+      42 |     `INSERT INTO listings (owner_id, price, title, description, category)
+      43 |      VALUES ($1, $2, $3, $4, $5)
+      44 |      RETURNING id`,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/Wishlist.routes.test.js:41:22)
+
+  ● DELETE /api/wishlist/:listingId › should return 404 when item is not in wishlist
+
+    error: deadlock detected
+
+      39 |   await pool.query('DELETE FROM wishlist WHERE user_id = $1', [testUserId]);
+      40 |   await pool.query('DELETE FROM listings WHERE owner_id = $1', [testUserId]);
+    &gt; 41 |   const listingRes = await pool.query(
+         |                      ^
+      42 |     `INSERT INTO listings (owner_id, price, title, description, category)
+      43 |      VALUES ($1, $2, $3, $4, $5)
+      44 |      RETURNING id`,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/Wishlist.routes.test.js:41:22)
+
+  ● DELETE /api/wishlist/:listingId › should return 200 and success message when item is removed
+
+    error: deadlock detected
+
+      38 |   // Clear this user's wishlist, then re-seed a fresh listing each test
+      39 |   await pool.query('DELETE FROM wishlist WHERE user_id = $1', [testUserId]);
+    &gt; 40 |   await pool.query('DELETE FROM listings WHERE owner_id = $1', [testUserId]);
+         |   ^
+      41 |   const listingRes = await pool.query(
+      42 |     `INSERT INTO listings (owner_id, price, title, description, category)
+      43 |      VALUES ($1, $2, $3, $4, $5)
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/Wishlist.routes.test.js:40:3)
+
+  ● DELETE /api/wishlist/:listingId › removed item should not appear in GET /api/wishlist
+
+    error: null value in column "user_id" of relation "wishlist" violates not-null constraint
+
+      179 |   // Valid partition: removed item no longer appears in GET /api/wishlist
+      180 |   test('removed item should not appear in GET /api/wishlist', async () =&gt; {
+    &gt; 181 |     await pool.query('INSERT INTO wishlist (user_id, listing_id) VALUES ($1, $2)', [
+          |     ^
+      182 |       testUserId,
+      183 |       testListingId,
+      184 |     ]);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/Wishlist.routes.test.js:181:5)
+
+FAIL __tests__/integration/reservation.routes.test.js (44.462 s)
+  ● Reservation request API › POST /api/listings/:listingId/reservations › returns 401 when no access token is provided
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+  ● Reservation request API › POST /api/listings/:listingId/reservations › returns 400 when the listing ID is invalid
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+  ● Reservation request API › POST /api/listings/:listingId/reservations › returns 400 when the message is not text
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+  ● Reservation request API › POST /api/listings/:listingId/reservations › returns 400 when the message exceeds 500 characters
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+  ● Reservation request API › POST /api/listings/:listingId/reservations › returns 404 when the listing does not exist
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+  ● Reservation request API › POST /api/listings/:listingId/reservations › rejects a reservation for an ownerless listing
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      155 | }
+      156 |
+    &gt; 157 | beforeEach(async () =&gt; {
+          | ^
+      158 |   /*
+      159 |    * Truncating users with CASCADE also clears listings,
+      160 |    * reservation requests, wishlist records, view history,
+
+      at Object.beforeEach (__tests__/integration/reservation.routes.test.js:157:1)
+
+  ● Reservation request API › POST /api/listings/:listingId/reservations › does not allow a user to reserve their own listing
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+  ● Reservation request API › POST /api/listings/:listingId/reservations › rejects a reservation when the listing is not available
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+  ● Reservation request API › POST /api/listings/:listingId/reservations › creates a pending reservation request
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+  ● Reservation request API › POST /api/listings/:listingId/reservations › rejects a duplicate pending reservation request
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+  ● Reservation request API › GET /api/reservations/sent › returns only requests submitted by the logged-in user
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+  ● Reservation request API › GET /api/reservations/received › returns only requests for listings owned by the logged-in user
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+  ● Reservation request API › PATCH /api/reservations/:id/cancel › returns 400 when the reservation ID is invalid
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+  ● Reservation request API › PATCH /api/reservations/:id/cancel › returns 404 when the reservation does not exist
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+  ● Reservation request API › PATCH /api/reservations/:id/cancel › does not allow another user to cancel the request
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      155 | }
+      156 |
+    &gt; 157 | beforeEach(async () =&gt; {
+          | ^
+      158 |   /*
+      159 |    * Truncating users with CASCADE also clears listings,
+      160 |    * reservation requests, wishlist records, view history,
+
+      at Object.beforeEach (__tests__/integration/reservation.routes.test.js:157:1)
+
+  ● Reservation request API › PATCH /api/reservations/:id/cancel › rejects cancellation when the request is no longer pending
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+  ● Reservation request API › PATCH /api/reservations/:id/cancel › allows the requester to cancel a pending request
+
+    error: deadlock detected
+
+      161 |    * tokens, chats and other dependent test records.
+      162 |    */
+    &gt; 163 |   await pool.query(`
+          |   ^
+      164 |     TRUNCATE TABLE users
+      165 |     RESTART IDENTITY CASCADE
+      166 |   `);
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/reservation.routes.test.js:163:3)
+
+FAIL __tests__/integration/Review.routes.test.js (47.948 s)
+  ● GET /api/listings/:id/reviews › should include reviewer_name in response
+
+    error: insert or update on table "listings" violates foreign key constraint "listings_owner_id_fkey"
+
+      28 |
+      29 | async function insertListing(ownerId) {
+    &gt; 30 |   const result = await pool.query(
+         |                  ^
+      31 |     `INSERT INTO listings (owner_id, price, title, description, category)
+      32 |      VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      33 |     [ownerId, 150, 'Review Test Listing', 'A listing for review testing', 'Others'],
+
+      at node_modules/pg-pool/index.js:45:11
+      at insertListing (__tests__/integration/Review.routes.test.js:30:18)
+      at Object.&lt;anonymous&gt; (__tests__/integration/Review.routes.test.js:54:15)
+
+  ● GET /api/listings/:id/reviews › should return 200 and empty array for a listing with no reviews
+
+    error: deadlock detected
+
+      28 |
+      29 | async function insertListing(ownerId) {
+    &gt; 30 |   const result = await pool.query(
+         |                  ^
+      31 |     `INSERT INTO listings (owner_id, price, title, description, category)
+      32 |      VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      33 |     [ownerId, 150, 'Review Test Listing', 'A listing for review testing', 'Others'],
+
+      at node_modules/pg-pool/index.js:45:11
+      at insertListing (__tests__/integration/Review.routes.test.js:30:18)
+      at Object.&lt;anonymous&gt; (__tests__/integration/Review.routes.test.js:54:15)
+
+  ● POST /api/listings/:id/reviews › should return 401 when no auth token is provided
+
+    error: deadlock detected
+
+      37 |
+      38 | beforeEach(async () =&gt; {
+    &gt; 39 |   await pool.query(`
+         |   ^
+      40 |     TRUNCATE TABLE
+      41 |       listing_reviews,
+      42 |       chatcontent,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/Review.routes.test.js:39:3)
+
+  ● POST /api/listings/:id/reviews › should return 400 when rating is missing
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      36 | }
+      37 |
+    &gt; 38 | beforeEach(async () =&gt; {
+         | ^
+      39 |   await pool.query(`
+      40 |     TRUNCATE TABLE
+      41 |       listing_reviews,
+
+      at Object.beforeEach (__tests__/integration/Review.routes.test.js:38:1)
+
+  ● POST /api/listings/:id/reviews › should return 400 when rating is below 1
+
+    error: deadlock detected
+
+      37 |
+      38 | beforeEach(async () =&gt; {
+    &gt; 39 |   await pool.query(`
+         |   ^
+      40 |     TRUNCATE TABLE
+      41 |       listing_reviews,
+      42 |       chatcontent,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/Review.routes.test.js:39:3)
+
+  ● POST /api/listings/:id/reviews › should return 400 when rating is above 5
+
+    error: deadlock detected
+
+      37 |
+      38 | beforeEach(async () =&gt; {
+    &gt; 39 |   await pool.query(`
+         |   ^
+      40 |     TRUNCATE TABLE
+      41 |       listing_reviews,
+      42 |       chatcontent,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/Review.routes.test.js:39:3)
+
+  ● POST /api/listings/:id/reviews › should return 201 and created review on success
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      36 | }
+      37 |
+    &gt; 38 | beforeEach(async () =&gt; {
+         | ^
+      39 |   await pool.query(`
+      40 |     TRUNCATE TABLE
+      41 |       listing_reviews,
+
+      at Object.beforeEach (__tests__/integration/Review.routes.test.js:38:1)
+
+  ● POST /api/listings/:id/reviews › should return 201 when comment is omitted
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      36 | }
+      37 |
+    &gt; 38 | beforeEach(async () =&gt; {
+         | ^
+      39 |   await pool.query(`
+      40 |     TRUNCATE TABLE
+      41 |       listing_reviews,
+
+      at Object.beforeEach (__tests__/integration/Review.routes.test.js:38:1)
+
+  ● POST /api/listings/:id/reviews › should return 201 for boundary rating of 1
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      36 | }
+      37 |
+    &gt; 38 | beforeEach(async () =&gt; {
+         | ^
+      39 |   await pool.query(`
+      40 |     TRUNCATE TABLE
+      41 |       listing_reviews,
+
+      at Object.beforeEach (__tests__/integration/Review.routes.test.js:38:1)
+
+  ● POST /api/listings/:id/reviews › should return 201 for boundary rating of 5
+
+    error: deadlock detected
+
+      37 |
+      38 | beforeEach(async () =&gt; {
+    &gt; 39 |   await pool.query(`
+         |   ^
+      40 |     TRUNCATE TABLE
+      41 |       listing_reviews,
+      42 |       chatcontent,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/Review.routes.test.js:39:3)
+
+  ● POST /api/listings/:id/reviews › should return 409 when user submits a second review for the same listing
+
+    error: deadlock detected
+
+      37 |
+      38 | beforeEach(async () =&gt; {
+    &gt; 39 |   await pool.query(`
+         |   ^
+      40 |     TRUNCATE TABLE
+      41 |       listing_reviews,
+      42 |       chatcontent,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/Review.routes.test.js:39:3)
+
+  ● POST /api/listings/:id/reviews › posted review should appear in GET /api/listings/:id/reviews
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      36 | }
+      37 |
+    &gt; 38 | beforeEach(async () =&gt; {
+         | ^
+      39 |   await pool.query(`
+      40 |     TRUNCATE TABLE
+      41 |       listing_reviews,
+
+      at Object.beforeEach (__tests__/integration/Review.routes.test.js:38:1)
+
+  ● DELETE /api/listings/:id/reviews/:reviewId › should return 401 when no auth token is provided
+
+    error: deadlock detected
+
+      37 |
+      38 | beforeEach(async () =&gt; {
+    &gt; 39 |   await pool.query(`
+         |   ^
+      40 |     TRUNCATE TABLE
+      41 |       listing_reviews,
+      42 |       chatcontent,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/Review.routes.test.js:39:3)
+
+  ● DELETE /api/listings/:id/reviews/:reviewId › should return 404 when review does not exist
+
+    error: deadlock detected
+
+      37 |
+      38 | beforeEach(async () =&gt; {
+    &gt; 39 |   await pool.query(`
+         |   ^
+      40 |     TRUNCATE TABLE
+      41 |       listing_reviews,
+      42 |       chatcontent,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/Review.routes.test.js:39:3)
+
+FAIL __tests__/integration/listing-management.routes.test.js (48.716 s)
+  ● Listing API baseline › GET /api/listings › returns 200 and an empty array when no listings exist
+
+    error: duplicate key value violates unique constraint "users_username_key"
+
+      34 |  */
+      35 | async function insertUser(username, email) {
+    &gt; 36 |   const result = await pool.query(
+         |                  ^
+      37 |     `
+      38 |       INSERT INTO users (username, email, password)
+      39 |       VALUES ($1, $2, $3)
+
+      at node_modules/pg-pool/index.js:45:11
+      at insertUser (__tests__/integration/listing-management.routes.test.js:36:18)
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing-management.routes.test.js:108:11)
+
+  ● Listing API baseline › GET /api/listings › returns all listings to a public user
+
+    error: duplicate key value violates unique constraint "users_username_key"
+
+      34 |  */
+      35 | async function insertUser(username, email) {
+    &gt; 36 |   const result = await pool.query(
+         |                  ^
+      37 |     `
+      38 |       INSERT INTO users (username, email, password)
+      39 |       VALUES ($1, $2, $3)
+
+      at node_modules/pg-pool/index.js:45:11
+      at insertUser (__tests__/integration/listing-management.routes.test.js:36:18)
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing-management.routes.test.js:108:11)
+
+  ● Listing API baseline › GET /api/listings/:id › returns 404 when the listing does not exist
+
+    error: deadlock detected
+
+      94 |  */
+      95 | beforeEach(async () =&gt; {
+    &gt; 96 |   await pool.query(`
+         |   ^
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+      99 |       offers,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing-management.routes.test.js:96:3)
+
+  ● Listing API baseline › POST /api/listings › returns 400 when a required field is missing
+
+    error: deadlock detected
+
+      94 |  */
+      95 | beforeEach(async () =&gt; {
+    &gt; 96 |   await pool.query(`
+         |   ^
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+      99 |       offers,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing-management.routes.test.js:96:3)
+
+  ● Listing API baseline › POST /api/listings › returns 400 when the price is zero
+
+    error: deadlock detected
+
+      94 |  */
+      95 | beforeEach(async () =&gt; {
+    &gt; 96 |   await pool.query(`
+         |   ^
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+      99 |       offers,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing-management.routes.test.js:96:3)
+
+  ● Listing API baseline › POST /api/listings › allows an authenticated owner to create a listing
+
+    error: deadlock detected
+
+      94 |  */
+      95 | beforeEach(async () =&gt; {
+    &gt; 96 |   await pool.query(`
+         |   ^
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+      99 |       offers,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing-management.routes.test.js:96:3)
+
+  ● Listing API baseline › PATCH /api/listings/:id › allows the owner to update their listing
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      93 |  * are not affected by this cleanup.
+      94 |  */
+    &gt; 95 | beforeEach(async () =&gt; {
+         | ^
+      96 |   await pool.query(`
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+
+      at Object.beforeEach (__tests__/integration/listing-management.routes.test.js:95:1)
+
+  ● Listing API baseline › PATCH /api/listings/:id › does not allow another user to update the listing
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      93 |  * are not affected by this cleanup.
+      94 |  */
+    &gt; 95 | beforeEach(async () =&gt; {
+         | ^
+      96 |   await pool.query(`
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+
+      at Object.beforeEach (__tests__/integration/listing-management.routes.test.js:95:1)
+
+  ● Listing API baseline › Listing lifecycle database foundation › uses AVAILABLE as the default status for a new listing
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      93 |  * are not affected by this cleanup.
+      94 |  */
+    &gt; 95 | beforeEach(async () =&gt; {
+         | ^
+      96 |   await pool.query(`
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+
+      at Object.beforeEach (__tests__/integration/listing-management.routes.test.js:95:1)
+
+  ● Listing API baseline › Listing lifecycle database foundation › rejects a status outside the supported lifecycle values
+
+    error: deadlock detected
+
+      94 |  */
+      95 | beforeEach(async () =&gt; {
+    &gt; 96 |   await pool.query(`
+         |   ^
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+      99 |       offers,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing-management.routes.test.js:96:3)
+
+  ● Listing API baseline › Listing lifecycle database foundation › rejects a status and legacy flags that do not match
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      93 |  * are not affected by this cleanup.
+      94 |  */
+    &gt; 95 | beforeEach(async () =&gt; {
+         | ^
+      96 |   await pool.query(`
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+
+      at Object.beforeEach (__tests__/integration/listing-management.routes.test.js:95:1)
+
+  ● Listing API baseline › PATCH /api/listings/:id/status › returns 401 when no access token is provided
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      93 |  * are not affected by this cleanup.
+      94 |  */
+    &gt; 95 | beforeEach(async () =&gt; {
+         | ^
+      96 |   await pool.query(`
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+
+      at Object.beforeEach (__tests__/integration/listing-management.routes.test.js:95:1)
+
+  ● Listing API baseline › PATCH /api/listings/:id/status › returns 400 when status is unsupported
+
+    error: duplicate key value violates unique constraint "users_username_key"
+
+      34 |  */
+      35 | async function insertUser(username, email) {
+    &gt; 36 |   const result = await pool.query(
+         |                  ^
+      37 |     `
+      38 |       INSERT INTO users (username, email, password)
+      39 |       VALUES ($1, $2, $3)
+
+      at node_modules/pg-pool/index.js:45:11
+      at insertUser (__tests__/integration/listing-management.routes.test.js:36:18)
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing-management.routes.test.js:110:15)
+
+  ● Listing API baseline › PATCH /api/listings/:id/status › allows the owner to reserve an available listing
+
+    error: duplicate key value violates unique constraint "users_username_key"
+
+      34 |  */
+      35 | async function insertUser(username, email) {
+    &gt; 36 |   const result = await pool.query(
+         |                  ^
+      37 |     `
+      38 |       INSERT INTO users (username, email, password)
+      39 |       VALUES ($1, $2, $3)
+
+      at node_modules/pg-pool/index.js:45:11
+      at insertUser (__tests__/integration/listing-management.routes.test.js:36:18)
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing-management.routes.test.js:108:11)
+
+FAIL __tests__/integration/user.routes.test.js (49.96 s)
+  ● GET /api/users/:userId/public › returned profile has created_on field
+
+    expect(received).toHaveProperty(path)
+
+    Expected path: "created_on"
+    Received path: []
+
+    Received value: {"message": "User not found."}
+
+      68 |     const user = await insertUser('it_pub_carol', 'it_pub_carol@example.com');
+      69 |     const res = await request(app).get(`/api/users/${user.id}/public`);
+    &gt; 70 |     expect(res.body).toHaveProperty('created_on');
+         |                      ^
+      71 |   });
+      72 |
+      73 |   test('listing_count is 0 when user has no listings', async () =&gt; {
+
+      at Object.toHaveProperty (__tests__/integration/user.routes.test.js:70:22)
+
+  ● GET /api/users/:userId/public › listing_count is 0 when user has no listings
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: NaN
+
+      74 |     const user = await insertUser('it_pub_dave', 'it_pub_dave@example.com');
+      75 |     const res = await request(app).get(`/api/users/${user.id}/public`);
+    &gt; 76 |     expect(Number(res.body.listing_count)).toBe(0);
+         |                                            ^
+      77 |   });
+      78 |
+      79 |   test('profile_image is null when user has no icon', async () =&gt; {
+
+      at Object.toBe (__tests__/integration/user.routes.test.js:76:44)
+
+  ● GET /api/users/:userId/public › does not require Authorization header
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 404
+
+      93 |     const user = await insertUser('it_pub_grace', 'it_pub_grace@example.com');
+      94 |     const res = await request(app).get(`/api/users/${user.id}/public`);
+    &gt; 95 |     expect(res.status).toBe(200);
+         |                        ^
+      96 |   });
+      97 |
+      98 |   test('listing_count increases when user has AVAILABLE listing', async () =&gt; {
+
+      at Object.toBe (__tests__/integration/user.routes.test.js:95:24)
+
+  ● GET /api/users/:userId/public › listing_count increases when user has AVAILABLE listing
+
+    error: insert or update on table "listings" violates foreign key constraint "listings_owner_id_fkey"
+
+       98 |   test('listing_count increases when user has AVAILABLE listing', async () =&gt; {
+       99 |     const user = await insertUser('it_pub_henry', 'it_pub_henry@example.com');
+    &gt; 100 |     await pool.query(
+          |     ^
+      101 |       `INSERT INTO listings (owner_id, title, description, price, category, status)
+      102 |        VALUES ($1, 'Test Listing', 'desc', 50, 'Electronics', 'AVAILABLE')`,
+      103 |       [user.id],
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/user.routes.test.js:100:5)
+
+  ● GET /api/users/:userId/public › listing_count excludes ARCHIVED listings
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: NaN
+
+      115 |     );
+      116 |     const res = await request(app).get(`/api/users/${user.id}/public`);
+    &gt; 117 |     expect(Number(res.body.listing_count)).toBe(0);
+          |                                            ^
+      118 |   });
+      119 | });
+      120 |
+
+      at Object.toBe (__tests__/integration/user.routes.test.js:117:44)
+
+  ● GET /api/users/:userId/reviews › returns 200 with array for existing user
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      125 |     const user = await insertUser('it_rev_alice', 'it_rev_alice@example.com');
+      126 |     const res = await request(app).get(`/api/users/${user.id}/reviews`);
+    &gt; 127 |     expect(res.status).toBe(200);
+          |                        ^
+      128 |     expect(Array.isArray(res.body)).toBe(true);
+      129 |   });
+      130 |
+
+      at Object.toBe (__tests__/integration/user.routes.test.js:127:24)
+
+  ● GET /api/users/:userId/reviews › returns empty array when user has no reviews
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      129 |   });
+      130 |
+    &gt; 131 |   test('returns empty array when user has no reviews', async () =&gt; {
+          |   ^
+      132 |     const user = await insertUser('it_rev_bob', 'it_rev_bob@example.com');
+      133 |     const res = await request(app).get(`/api/users/${user.id}/reviews`);
+      134 |     expect(res.status).toBe(200);
+
+      at test (__tests__/integration/user.routes.test.js:131:3)
+      at Object.describe (__tests__/integration/user.routes.test.js:123:1)
+
+  ● GET /api/users/:userId/reviews › returns 200 even for non-existent user (empty array)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      138 |   test('returns 200 even for non-existent user (empty array)', async () =&gt; {
+      139 |     const res = await request(app).get('/api/users/9999999/reviews');
+    &gt; 140 |     expect(res.status).toBe(200);
+          |                        ^
+      141 |     expect(Array.isArray(res.body)).toBe(true);
+      142 |   });
+      143 |
+
+      at Object.toBe (__tests__/integration/user.routes.test.js:140:24)
+
+  ● GET /api/users/:userId/reviews › does not require Authorization header
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      145 |     const user = await insertUser('it_rev_carol', 'it_rev_carol@example.com');
+      146 |     const res = await request(app).get(`/api/users/${user.id}/reviews`);
+    &gt; 147 |     expect(res.status).toBe(200);
+          |                        ^
+      148 |   });
+      149 | });
+      150 |
+
+      at Object.toBe (__tests__/integration/user.routes.test.js:147:24)
+
+  ● GET /api/me/settings › returns 404 for non-existent user token
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      214 |   });
+      215 |
+    &gt; 216 |   test('returns 404 for non-existent user token', async () =&gt; {
+          |   ^
+      217 |     const fakeToken = createToken(99999999);
+      218 |     const res = await request(app)
+      219 |       .get('/api/me/settings')
+
+      at test (__tests__/integration/user.routes.test.js:216:3)
+      at Object.describe (__tests__/integration/user.routes.test.js:196:1)
+
+  ● PUT /api/me/settings › updated settings are returned in response
+
+    expect(received).toHaveProperty(path, value)
+
+    Expected path: "currency"
+    Received path: []
+
+    Expected value: "EUR"
+    Received value: ""
+
+      248 |       .set('Authorization', `Bearer ${token}`)
+      249 |       .send({ currency: 'EUR' });
+    &gt; 250 |     expect(res.body).toHaveProperty('currency', 'EUR');
+          |                      ^
+      251 |   });
+      252 |
+      253 |   test('returns 200 when sending empty body (defaults apply)', async () =&gt; {
+
+      at Object.toHaveProperty (__tests__/integration/user.routes.test.js:250:22)
+
+  ● POST /api/register › returns 409 when username is already taken
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 409
+    Received: 201
+
+      436 |       password: 'secret123',
+      437 |     });
+    &gt; 438 |     expect(res.status).toBe(409);
+          |                        ^
+      439 |     expect(res.body.message).toContain('Username');
+      440 |   });
+      441 |
+
+      at Object.toBe (__tests__/integration/user.routes.test.js:438:24)
+
+  ● POST /api/login › returns 401 for wrong password
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 401
+    Received: 404
+
+      516 |       .post('/api/login')
+      517 |       .send({ username: 'it_login_wrong', password: 'wrongpassword' });
+    &gt; 518 |     expect(res.status).toBe(401);
+          |                        ^
+      519 |   });
+      520 |
+      521 |   test('token is a non-empty string', async () =&gt; {
+
+      at Object.toBe (__tests__/integration/user.routes.test.js:518:24)
+
+  ● POST /api/login › token is a non-empty string
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "string"
+    Received: "undefined"
+
+      528 |       .post('/api/login')
+      529 |       .send({ username: 'it_login_tok', password: 'pass123' });
+    &gt; 530 |     expect(typeof res.body.token).toBe('string');
+          |                                   ^
+      531 |     expect(res.body.token.length).toBeGreaterThan(0);
+      532 |   });
+      533 | });
+
+      at Object.toBe (__tests__/integration/user.routes.test.js:530:35)
+
+FAIL __tests__/integration/listing.routes.test.js (50.099 s)
+  ● Listing API baseline › GET /api/listings › returns 200 and an empty array when no listings exist
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  -  1
+    + Received  + 16
+
+    - Array []
+    + Array [
+    +   Object {
+    +     "avg_rating": null,
+    +     "category": "Others",
+    +     "created_on": "2026-07-27T16:00:00.000Z",
+    +     "description": "A listing for review testing",
+    +     "id": 1,
+    +     "image_url": null,
+    +     "isClosed": false,
+    +     "isSold": false,
+    +     "owner_id": 1,
+    +     "price": "150.00",
+    +     "review_count": "0",
+    +     "title": "Review Test Listing",
+    +   },
+    + ]
+
+      127 |
+      128 |       expect(response.status).toBe(200);
+    &gt; 129 |       expect(response.body).toEqual([]);
+          |                             ^
+      130 |     });
+      131 |
+      132 |     test('returns all listings to a public user', async () =&gt; {
+
+      at Object.toEqual (__tests__/integration/listing.routes.test.js:129:29)
+
+  ● Listing API baseline › GET /api/listings › returns all listings to a public user
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 1
+    Received length: 3
+    Received array:  [{"avg_rating": null, "category": "Electronics", "created_on": "2026-07-27T16:00:00.000Z", "description": "A listing created for integration testing.", "id": 3, "image_url": null, "isClosed": false, "isSold": false, "owner_id": 1, "price": "500.00", "review_count": "0", "title": "Baseline Camera"}, {"avg_rating": null, "category": "Others", "created_on": "2026-07-27T16:00:00.000Z", "description": "For wishlist testing", "id": 2, "image_url": null, "isClosed": false, "isSold": false, "owner_id": null, "price": "50.00", "review_count": "0", "title": "Wishlist Test Item"}, {"avg_rating": "4.0", "category": "Others", "created_on": "2026-07-27T16:00:00.000Z", "description": "A listing for review testing", "id": 1, "image_url": null, "isClosed": false, "isSold": false, "owner_id": 1, "price": "150.00", "review_count": "1", "title": "Review Test Listing"}]
+
+      138 |
+      139 |       expect(response.status).toBe(200);
+    &gt; 140 |       expect(response.body).toHaveLength(1);
+          |                             ^
+      141 |
+      142 |       expect(response.body[0]).toMatchObject({
+      143 |         id: listing.id,
+
+      at Object.toHaveLength (__tests__/integration/listing.routes.test.js:140:29)
+
+  ● Listing API baseline › GET /api/listings/:id › returns 404 when the listing does not exist
+
+    error: deadlock detected
+
+      94 |  */
+      95 | beforeEach(async () =&gt; {
+    &gt; 96 |   await pool.query(`
+         |   ^
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+      99 |       offers,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing.routes.test.js:96:3)
+
+  ● Listing API baseline › GET /api/listings/:id › returns lifecycle fields to a public user
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 404
+
+      173 |       const response = await request(app).get(`/api/listings/${listing.id}`);
+      174 |
+    &gt; 175 |       expect(response.status).toBe(200);
+          |                               ^
+      176 |
+      177 |       expect(response.body).toMatchObject({
+      178 |         id: listing.id,
+
+      at Object.toBe (__tests__/integration/listing.routes.test.js:175:31)
+
+  ● Listing API baseline › GET /api/listings/:id › returns lifecycle fields to an authenticated user
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      93 |  * are not affected by this cleanup.
+      94 |  */
+    &gt; 95 | beforeEach(async () =&gt; {
+         | ^
+      96 |   await pool.query(`
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+
+      at Object.beforeEach (__tests__/integration/listing.routes.test.js:95:1)
+
+  ● Listing API baseline › Listing lifecycle data for listing cards › returns lifecycle fields from the search endpoint
+
+    error: deadlock detected
+
+      94 |  */
+      95 | beforeEach(async () =&gt; {
+    &gt; 96 |   await pool.query(`
+         |   ^
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+      99 |       offers,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing.routes.test.js:96:3)
+
+  ● Listing API baseline › Listing lifecycle data for listing cards › returns lifecycle fields from the most-viewed endpoint
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      93 |  * are not affected by this cleanup.
+      94 |  */
+    &gt; 95 | beforeEach(async () =&gt; {
+         | ^
+      96 |   await pool.query(`
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+
+      at Object.beforeEach (__tests__/integration/listing.routes.test.js:95:1)
+
+  ● Listing API baseline › POST /api/listings › returns 401 when no access token is provided
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      93 |  * are not affected by this cleanup.
+      94 |  */
+    &gt; 95 | beforeEach(async () =&gt; {
+         | ^
+      96 |   await pool.query(`
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+
+      at Object.beforeEach (__tests__/integration/listing.routes.test.js:95:1)
+
+  ● Listing API baseline › POST /api/listings › returns 400 when a required field is missing
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      93 |  * are not affected by this cleanup.
+      94 |  */
+    &gt; 95 | beforeEach(async () =&gt; {
+         | ^
+      96 |   await pool.query(`
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+
+      at Object.beforeEach (__tests__/integration/listing.routes.test.js:95:1)
+
+  ● Listing API baseline › POST /api/listings › returns 400 when the price is zero
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      93 |  * are not affected by this cleanup.
+      94 |  */
+    &gt; 95 | beforeEach(async () =&gt; {
+         | ^
+      96 |   await pool.query(`
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+
+      at Object.beforeEach (__tests__/integration/listing.routes.test.js:95:1)
+
+  ● Listing API baseline › POST /api/listings › allows an authenticated owner to create a listing
+
+    error: deadlock detected
+
+      94 |  */
+      95 | beforeEach(async () =&gt; {
+    &gt; 96 |   await pool.query(`
+         |   ^
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+      99 |       offers,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing.routes.test.js:96:3)
+
+  ● Listing API baseline › PATCH /api/listings/:id › allows the owner to update their listing
+
+    error: deadlock detected
+
+      94 |  */
+      95 | beforeEach(async () =&gt; {
+    &gt; 96 |   await pool.query(`
+         |   ^
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+      99 |       offers,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing.routes.test.js:96:3)
+
+  ● Listing API baseline › PATCH /api/listings/:id › does not allow another user to update the listing
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      93 |  * are not affected by this cleanup.
+      94 |  */
+    &gt; 95 | beforeEach(async () =&gt; {
+         | ^
+      96 |   await pool.query(`
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+
+      at Object.beforeEach (__tests__/integration/listing.routes.test.js:95:1)
+
+  ● Listing API baseline › Listing lifecycle database foundation › uses AVAILABLE as the default status for a new listing
+
+    error: deadlock detected
+
+      94 |  */
+      95 | beforeEach(async () =&gt; {
+    &gt; 96 |   await pool.query(`
+         |   ^
+      97 |     TRUNCATE TABLE
+      98 |       chatcontent,
+      99 |       offers,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing.routes.test.js:96:3)
+
+  ● Listing API baseline › PATCH /api/listings/:id/status › allows the owner to reserve an available listing
+
+    error: duplicate key value violates unique constraint "users_username_key"
+
+      34 |  */
+      35 | async function insertUser(username, email) {
+    &gt; 36 |   const result = await pool.query(
+         |                  ^
+      37 |     `
+      38 |       INSERT INTO users (username, email, password)
+      39 |       VALUES ($1, $2, $3)
+
+      at node_modules/pg-pool/index.js:45:11
+      at insertUser (__tests__/integration/listing.routes.test.js:36:18)
+      at Object.&lt;anonymous&gt; (__tests__/integration/listing.routes.test.js:108:11)
+
+Jest: "global" coverage threshold for statements (80%) not met: 57.51%
+Jest: "global" coverage threshold for branches (80%) not met: 38.21%
+Jest: "global" coverage threshold for lines (80%) not met: 58.28%
+Jest: "global" coverage threshold for functions (80%) not met: 50.4%
+Test Suites: 6 failed, 3 passed, 9 total
+Tests:       84 failed, 171 passed, 255 total
+Snapshots:   0 total
+Time:        51.185 s
 
 
 4. E2E TESTS (playwright)
@@ -77,32 +1539,102 @@ Inserted 2 somethings.
 Seed data inserted successfully.
 Database reset completed successfully.
 
-Running 13 tests using 1 worker
+Running 42 tests using 4 workers
 
-  ✓   1 [chromium] › e2e-tests\something-management.spec.js:24:3 › Page load › should display the page heading (162ms)
-  ✓   2 [chromium] › e2e-tests\something-management.spec.js:29:3 › Page load › should display the form with a Name label and Enter button (103ms)
-  ✓   3 [chromium] › e2e-tests\something-management.spec.js:35:3 › Page load › should display the table headers (Id, Name, Action) (110ms)
-  ✓   4 [chromium] › e2e-tests\something-management.spec.js:46:3 › Load Somethings › should show seeded rows in the table on page load (111ms)
-  ✓   5 [chromium] › e2e-tests\something-management.spec.js:54:3 › Load Somethings › each row should have an Id, Name, and Delete button (140ms)
-  ✓   6 [chromium] › e2e-tests\something-management.spec.js:66:3 › New Something › should allow me to add a something (291ms)
-  ✓   7 [chromium] › e2e-tests\something-management.spec.js:71:3 › New Something › should allow me to add multiple somethings (346ms)
-  ✓   8 [chromium] › e2e-tests\something-management.spec.js:81:3 › New Something › should clear the input field after adding (274ms)
-  ✓   9 [chromium] › e2e-tests\something-management.spec.js:87:3 › New Something › should not submit when name is empty (HTML5 required validation) (170ms)
-  ✓  10 [chromium] › e2e-tests\something-management.spec.js:101:3 › New Something › should handle special characters in the name (XSS boundary) (278ms)
-  ✓  11 [chromium] › e2e-tests\something-management.spec.js:114:3 › Delete Something › should allow me to remove a something (405ms)
-  ✓  12 [chromium] › e2e-tests\something-management.spec.js:130:3 › Delete Something › other rows should remain after deleting one (601ms)
-  ✓  13 [chromium] › e2e-tests\something-management.spec.js:148:3 › Delete Something › table should be empty after deleting all items (boundary – zero rows) (1.2s)
+  ok  3 [chromium] › e2e-tests\something-management.spec.js:24:3 › Page load › should display the page heading (171ms)
+  ok  5 [chromium] › e2e-tests\something-management.spec.js:29:3 › Page load › should display the form with a Name label and Enter button (113ms)
+  ok  6 [chromium] › e2e-tests\something-management.spec.js:35:3 › Page load › should display the table headers (Id, Name, Action) (196ms)
+  ok  7 [chromium] › e2e-tests\something-management.spec.js:46:3 › Load Somethings › should show seeded rows in the table on page load (191ms)
+  ok  8 [chromium] › e2e-tests\something-management.spec.js:54:3 › Load Somethings › each row should have an Id, Name, and Delete button (115ms)
+  ok  9 [chromium] › e2e-tests\something-management.spec.js:66:3 › New Something › should allow me to add a something (265ms)
+  ok 10 [chromium] › e2e-tests\something-management.spec.js:71:3 › New Something › should allow me to add multiple somethings (412ms)
+  ok 11 [chromium] › e2e-tests\something-management.spec.js:81:3 › New Something › should clear the input field after adding (260ms)
+  ok 12 [chromium] › e2e-tests\something-management.spec.js:87:3 › New Something › should not submit when name is empty (HTML5 required validation) (143ms)
+  ok 13 [chromium] › e2e-tests\something-management.spec.js:101:3 › New Something › should handle special characters in the name (XSS boundary) (272ms)
+  ok 14 [chromium] › e2e-tests\something-management.spec.js:114:3 › Delete Something › should allow me to remove a something (365ms)
+  ok 15 [chromium] › e2e-tests\something-management.spec.js:130:3 › Delete Something › other rows should remain after deleting one (545ms)
+  ok 16 [chromium] › e2e-tests\something-management.spec.js:148:3 › Delete Something › table should be empty after deleting all items (boundary – zero rows) (1.2s)
+  ok  2 [chromium] › e2e-tests\gitmart.spec.js:60:3 › Listings Browse › listings page loads and displays listing cards (7.6s)
+  ok  1 [chromium] › e2e-tests\reviews.spec.js:59:3 › Reviews – Page load › reviews section is visible on the listing detail page (7.6s)
+  ok 18 [chromium] › e2e-tests\reviews.spec.js:66:3 › Reviews – Page load › API returns an empty reviews array for a new listing (13ms)
+  ok  4 [chromium] › e2e-tests\seller-profile.spec.js:55:3 › Seller Profile – Page load › seller profile page shows the seller username (7.7s)
+  ok 20 [chromium] › e2e-tests\seller-profile.spec.js:62:3 › Seller Profile – Page load › public profile API returns username and listing count (15ms)
+  ok 17 [chromium] › e2e-tests\gitmart.spec.js:67:3 › Listings Browse › search input is visible and accepts text (268ms)
+  ok 21 [chromium] › e2e-tests\seller-profile.spec.js:71:3 › Seller Profile – Page load › Sold by link on listing detail navigates to seller profile (330ms)
+  ok 19 [chromium] › e2e-tests\reviews.spec.js:78:3 › Reviews – Create › logged-in buyer can submit a star rating and review (574ms)
+  ok 24 [chromium] › e2e-tests\reviews.spec.js:100:3 › Reviews – Create › submitted review is returned by the reviews API (12ms)
+  ok 22 [chromium] › e2e-tests\gitmart.spec.js:76:3 › Listings Browse › clicking a listing card navigates to the detail page (376ms)
+  ok 23 [chromium] › e2e-tests\seller-profile.spec.js:82:3 › Seller Profile – Listings › seller's active listing is shown on their profile (301ms)
+  ok 26 [chromium] › e2e-tests\gitmart.spec.js:88:3 › Listing Detail › detail page loads and shows the listing title (265ms)
+  ok 27 [chromium] › e2e-tests\seller-profile.spec.js:92:3 › Seller Profile – Reviews › reviews received on seller's listings appear on the profile (236ms)
+  ok 29 [chromium] › e2e-tests\seller-profile.spec.js:101:3 › Seller Profile – Reviews › seller reviews API returns reviews joined with listing title (9ms)
+  ok 25 [chromium] › e2e-tests\reviews.spec.js:113:3 › Reviews – Delete › reviewer can delete their own review (441ms)
+  ok 28 [chromium] › e2e-tests\gitmart.spec.js:95:3 › Listing Detail › detail page shows the listing price (227ms)
+  ok 30 [chromium] › e2e-tests\gitmart.spec.js:102:3 › Listing Detail › breadcrumb back link navigates to listings page (318ms)
+  ok 31 [chromium] › e2e-tests\gitmart.spec.js:114:3 › Authentication › login page shows username, password fields and submit button (225ms)
+  ok 32 [chromium] › e2e-tests\gitmart.spec.js:122:3 › Authentication › wrong credentials show an error message (412ms)
+  ok 33 [chromium] › e2e-tests\gitmart.spec.js:131:3 › Authentication › valid login stores token in localStorage (473ms)
+  ok 34 [chromium] › e2e-tests\gitmart.spec.js:147:3 › Wishlist › wishlist nav button is visible in the navigation (204ms)
+  ok 35 [chromium] › e2e-tests\gitmart.spec.js:153:3 › Wishlist › wishlist page renders the wishlist section (263ms)
+  ok 36 [chromium] › e2e-tests\gitmart.spec.js:161:3 › Wishlist › heart button is visible for a non-owner on listing detail (391ms)
+  ok 37 [chromium] › e2e-tests\gitmart.spec.js:170:3 › Wishlist › wishlist empty state shows a link to browse listings (266ms)
+  ok 38 [chromium] › e2e-tests\gitmart.spec.js:185:3 › Wishlist › clicking heart button on listing detail adds listing to wishlist (461ms)
+  ok 39 [chromium] › e2e-tests\gitmart.spec.js:207:3 › Wishlist › wishlist page shows listing card after adding via heart (225ms)
+  ok 40 [chromium] › e2e-tests\gitmart.spec.js:224:3 › Recently Viewed › recently-viewed section is hidden when user has no history (220ms)
+  ok 41 [chromium] › e2e-tests\gitmart.spec.js:232:3 › Recently Viewed › viewing a listing while logged in returns a successful response (10ms)
+  x  42 [chromium] › e2e-tests\gitmart.spec.js:242:3 › Recently Viewed › recently-viewed section appears after viewing a listing while logged in (8.3s)
 
-  13 passed (7.3s)
+
+  1) [chromium] › e2e-tests\gitmart.spec.js:242:3 › Recently Viewed › recently-viewed section appears after viewing a listing while logged in 
+
+    TimeoutError: page.waitForSelector: Timeout 8000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('.product-name') to be visible[22m
+    [2m    - waiting for" http://localhost:3001/html/login.html" navigation to finish...[22m
+    [2m    - navigated to "http://localhost:3001/html/login.html"[22m
+
+
+      249 |     // Visit the listing detail — this triggers view recording
+      250 |     await page.goto(`${BASE}/html/listing.html?id=${testListingId}`);
+    &gt; 251 |     await page.waitForSelector('.product-name', { timeout: 8000 });
+          |                ^
+      252 |
+      253 |     // Return to listings — recently-viewed section should now be visible
+      254 |     await page.goto(`${BASE}/html/listings.html`);
+        at C:\Users\koklo\Downloads\ay2627s1-project-git-5-1\e2e-tests\gitmart.spec.js:251:16
+
+    Error Context: test-results\gitmart-Recently-Viewed-re-f2331-g-a-listing-while-logged-in-chromium\error-context.md
+
+  1 failed
+    [chromium] › e2e-tests\gitmart.spec.js:242:3 › Recently Viewed › recently-viewed section appears after viewing a listing while logged in 
+  41 passed (25.1s)
+[2m[WebServer] [22m(node:33560) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+(node:40564) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:31092) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:40168) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:49896) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:40168) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:40564) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:49896) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:31092) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
 
 
 ============================================================
   QA SUMMARY
 ============================================================
-   <span style="color:#22c55e;font-weight:bold">[PASS]</span> 1. LINT (eslint)
+   <span style="color:#ef4444;font-weight:bold">[FAIL]</span> 1. LINT (eslint)
    <span style="color:#22c55e;font-weight:bold">[PASS]</span> 2. FORMAT CHECK (prettier)
-   <span style="color:#22c55e;font-weight:bold">[PASS]</span> 3. UNIT + INTEGRATION TESTS (jest --coverage)
-   <span style="color:#22c55e;font-weight:bold">[PASS]</span> 4. E2E TESTS (playwright)
+   <span style="color:#ef4444;font-weight:bold">[FAIL]</span> 3. UNIT + INTEGRATION TESTS (jest --coverage)
+   <span style="color:#ef4444;font-weight:bold">[FAIL]</span> 4. E2E TESTS (playwright)
 
 ============================================================
   REPORTS
@@ -114,7 +1646,7 @@ Running 13 tests using 1 worker
    reports/qa-report.html          (this combined report)
 ============================================================
 
-   All automated QA checks passed.
+   3 pipeline step(s) FAILED.
 </pre>
 </body>
 </html>

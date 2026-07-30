@@ -22,7 +22,11 @@ router.get(
   listingController.sendDashboard,
 );
 router.get('/listings/most-viewed', listingController.getMostViewed);
-router.get('/listings/recently-viewed', jwtMiddleware.verifyToken, listingController.getRecentlyViewed);
+router.get(
+  '/listings/recently-viewed',
+  jwtMiddleware.verifyToken,
+  listingController.getRecentlyViewed,
+);
 router.get('/listings/search', listingController.searchListings);
 
 router.get('/listings/:id', jwtMiddleware.optionalAuth, listingController.getListingById);
@@ -32,6 +36,8 @@ router.post('/listings', jwtMiddleware.verifyToken, listingController.createList
 router.patch(
   '/listings/:id/status',
   jwtMiddleware.verifyToken,
+  listingController.validateListingStatusInput,
+  listingController.loadListingForStatusUpdate,
   listingController.updateListingStatus,
 );
 router.patch('/listings/:id', jwtMiddleware.verifyToken, listingController.updateListing);

@@ -1,15 +1,15 @@
-//direct copy from BED 
-function fetchMethod(url, callback, method = "GET", data = null, token = null) {
-  console.log("fetchMethod: ", url, method, data, token);
+//direct copy from BED
+function fetchMethod(url, callback, method = 'GET', data = null, token = null) {
+  console.log('fetchMethod: ', url, method, data, token);
 
   const headers = {};
 
   if (data) {
-    headers["Content-Type"] = "application/json";
+    headers['Content-Type'] = 'application/json';
   }
 
   if (token) {
-    headers["Authorization"] = "Bearer " + token;
+    headers['Authorization'] = 'Bearer ' + token;
   }
 
   let options = {
@@ -17,7 +17,7 @@ function fetchMethod(url, callback, method = "GET", data = null, token = null) {
     headers: headers,
   };
 
-  if (method.toUpperCase() !== "GET" && data !== null) {
+  if (method.toUpperCase() !== 'GET' && data !== null) {
     options.body = JSON.stringify(data);
   }
 

@@ -108,7 +108,15 @@ export default [
   // Allow _-prefixed parameters to be unused (common Express/pg callback pattern)
   {
     rules: {
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
     },
   },
 
@@ -121,6 +129,8 @@ export default [
     files: ['public/**/*.js'],
     languageOptions: {
       globals: {
+        gsap: 'readonly',
+        ScrollTrigger: 'readonly',
         authFetch: 'writable',
         fetchMethod: 'writable',
         formatPrice: 'writable',

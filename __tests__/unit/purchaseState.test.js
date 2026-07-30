@@ -7,7 +7,7 @@ describe('isListingSold', () => {
   let ps;
   beforeEach(() => {
     jest.resetModules();
-    ps = require('../../src/models/purchaseState');
+    ps = require('../../src/utils/purchaseState');
   });
 
   it('returns false for any id before any marking', () => {
@@ -41,7 +41,7 @@ describe('isProductSold', () => {
   let ps;
   beforeEach(() => {
     jest.resetModules();
-    ps = require('../../src/models/purchaseState');
+    ps = require('../../src/utils/purchaseState');
   });
 
   it('returns false for any id before any marking', () => {
@@ -75,7 +75,7 @@ describe('markPurchasedItemsSold', () => {
   let ps;
   beforeEach(() => {
     jest.resetModules();
-    ps = require('../../src/models/purchaseState');
+    ps = require('../../src/utils/purchaseState');
   });
 
   it('does nothing when passed an empty array', () => {
@@ -137,11 +137,7 @@ describe('markPurchasedItemsSold', () => {
   });
 
   it('marks all items when multiple items are passed', () => {
-    ps.markPurchasedItemsSold([
-      { listingId: 100 },
-      { productId: 101 },
-      { listingId: 102 },
-    ]);
+    ps.markPurchasedItemsSold([{ listingId: 100 }, { productId: 101 }, { listingId: 102 }]);
     expect(ps.isListingSold(100)).toBe(true);
     expect(ps.isProductSold(101)).toBe(true);
     expect(ps.isListingSold(102)).toBe(true);

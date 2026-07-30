@@ -1,15 +1,16 @@
 const express = require('express');
-
-const reservationController = require('../controllers/Reservation.controller');
-
-const jwtMiddleware = require('../middleware/jwtMiddleware');
-
 const router = express.Router();
 
-// Create a reservation request for an available listing.
+const reservationController = require('../controllers/Reservation.controller');
+const jwtMiddleware = require('../middleware/jwtMiddleware');
+
+// Create a reservation request — validated and checked across three steps.
 router.post(
   '/listings/:listingId/reservations',
   jwtMiddleware.verifyToken,
+  reservationController.validateReservationInput,
+  reservationController.loadListingForReservation,
+  reservationController.checkNoPendingRequest,
   reservationController.createReservationRequest,
 );
 
@@ -27,14 +28,27 @@ router.get(
   reservationController.getReceivedReservations,
 );
 
-// Cancel a pending reservation request.
+// Cancel a pending reservation — validated then cancelled in two steps.
 router.patch(
   '/reservations/:id/cancel',
   jwtMiddleware.verifyToken,
+  reservationController.loadReservationForCancel,
   reservationController.cancelReservationRequest,
 );
 
-router.patch('/reservations/:id/accept', jwtMiddleware.verifyToken, reservationController.acceptReservationRequest);
-router.patch('/reservations/:id/reject', jwtMiddleware.verifyToken, reservationController.rejectReservationRequest);
+// Reject a pending reservation — validated then rejected in two steps.
+router.patch(
+  '/reservations/:id/reject',
+  jwtMiddleware.verifyToken,
+  reservationController.loadReservationForReject,
+  reservationController.rejectReservationRequest,
+);
+
+// Accept a pending reservation (single step — runs an atomic SQL transaction).
+router.patch(
+  '/reservations/:id/accept',
+  jwtMiddleware.verifyToken,
+  reservationController.acceptReservationRequest,
+);
 
 module.exports = router;

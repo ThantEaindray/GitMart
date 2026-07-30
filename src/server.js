@@ -16,21 +16,20 @@ app.listen(PORT, () => {
   console.log(`Loaded environment file: ${envFile}`);
 });
 
-
-const { WebSocketServer } = require('ws')
+const { WebSocketServer } = require('ws');
 const WS_PORT = process.env.WS_PORT || 443;
-const webS = new WebSocketServer({ port: WS_PORT })
+const webS = new WebSocketServer({ port: WS_PORT });
 
 //now we tell it what to do upon a new connection
-webS.on('connection', ws => {
-  console.log('new client connected')
-  ws.on('close', () => console.log('client disconnected'))
-  ws.on('message', data => {
-    webS.clients.forEach(client => {
-      client.send(JSON.stringify(data))
-    })
-  })
+webS.on('connection', (ws) => {
+  console.log('new client connected');
+  ws.on('close', () => console.log('client disconnected'));
+  ws.on('message', (data) => {
+    webS.clients.forEach((client) => {
+      client.send(JSON.stringify(data));
+    });
+  });
   ws.onerror = function () {
-    console.log("ws error")
-  }
-})
+    console.log('ws error');
+  };
+});
