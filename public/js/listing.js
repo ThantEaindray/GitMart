@@ -212,23 +212,39 @@ function getBuyerActions(listing, status) {
         </button>
       `;
 
-  return `
-  <div class="product-actions">
-    ${contactButton}
-    ${cartButton}
+  const reservationButton =
+    listing.owner_id && status === 'AVAILABLE'
+      ? `
+        <button
+          class="btn-outline"
+          id="btn-request-reservation"
+          type="button"
+          onclick="requestReservation()"
+        >
+          <i class="bi bi-calendar-check"></i>
+          Request Reservation
+        </button>
+      `
+      : '';
 
-    <button
-      class="btn-wishlist-heart"
-      id="btn-detail-heart"
-      type="button"
-      onclick="toggleDetailWishlist()"
-      title="Add to wishlist"
-      aria-label="Add to wishlist"
-    >
-      <i class="bi bi-heart"></i>
-    </button>
-  </div>
-`;
+  return `
+    <div class="product-actions">
+      ${contactButton}
+      ${cartButton}
+      ${reservationButton}
+
+      <button
+        class="btn-wishlist-heart"
+        id="btn-detail-heart"
+        type="button"
+        onclick="toggleDetailWishlist()"
+        title="Add to wishlist"
+        aria-label="Add to wishlist"
+      >
+        <i class="bi bi-heart"></i>
+      </button>
+    </div>
+  `;
 }
 
 // ── LISTING DETAIL ────────────────────────────────────────────────────────
@@ -264,6 +280,64 @@ function addToCart() {
   });
   localStorage.setItem('cart', JSON.stringify(cart));
   showToast('Added to cart.');
+}
+
+function resetReservationButton() {
+  const button = document.getElementById('btn-request-reservation');
+
+  if (!button) return;
+
+  button.disabled = false;
+  button.innerHTML = `
+    <i class="bi bi-calendar-check"></i>
+    Request Reservation
+  `;
+}
+
+function requestReservation() {
+  if (!currentListing) return;
+
+  if (!localStorage.getItem('token')) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  if (getListingStatus(currentListing) !== 'AVAILABLE') {
+    showToast('Only available listings can be reserved.');
+    return;
+  }
+
+  const button = document.getElementById('btn-request-reservation');
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Sending Request...';
+  }
+
+  authFetch(`/api/listings/${currentListing.id}/reservations`, {
+    method: 'POST',
+  })
+    .then(parseResponse)
+    .then(function (result) {
+      if (result.status !== 201) {
+        showToast(result.data.message || 'Failed to submit reservation request.');
+
+        resetReservationButton();
+        return;
+      }
+
+      showToast(result.data.message || 'Reservation request submitted.');
+
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Request Sent';
+      }
+    })
+    .catch(function () {
+      showToast('Something went wrong while submitting the reservation request.');
+
+      resetReservationButton();
+    });
 }
 
 function setLifecycleButtonsDisabled(disabled) {
@@ -424,7 +498,9 @@ function renderListing(listing) {
 
 function loadSellerInfo(ownerId) {
   fetch('/api/users/' + ownerId + '/public')
-    .then(function (r) { return r.json(); })
+    .then(function (r) {
+      return r.json();
+    })
     .then(function (data) {
       var link = document.getElementById('seller-name-link');
       if (link && data.username) link.textContent = data.username;
@@ -634,6 +710,7 @@ window.addToCart = addToCart;
 window.createChat = createChat;
 window.updateListingStatus = updateListingStatus;
 window.toggleDetailWishlist = toggleDetailWishlist;
+window.requestReservation = requestReservation;
 
 document.addEventListener('DOMContentLoaded', function () {
   loadListing();
