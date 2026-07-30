@@ -1,9 +1,9 @@
 const controller = require('../../src/controllers/Listing.controller');
 const model = require('../../src/models/Listing.model');
-const _purchaseState = require('../../src/models/purchaseState');
+const _purchaseState = require('../../src/utils/purchaseState');
 
 jest.mock('../../src/models/Listing.model');
-jest.mock('../../src/models/purchaseState', () => ({
+jest.mock('../../src/utils/purchaseState', () => ({
   isListingSold: jest.fn().mockReturnValue(false),
 }));
 jest.mock('@google/generative-ai');
@@ -421,45 +421,51 @@ describe('updateListingStatus', () => {
     isClosed: false,
   };
 
+  function runUpdateChain(req, res) {
+    const next2 = jest.fn(() => controller.updateListingStatus(req, res));
+    const next1 = jest.fn(() => controller.loadListingForStatusUpdate(req, res, next2));
+    controller.validateListingStatusInput(req, res, next1);
+  }
+
   it('returns 400 when listing id is not a valid integer', () => {
     const req = { params: { id: 'abc' }, body: { status: 'RESERVED' } };
     const res = makeRes({ userId: 42 });
-    controller.updateListingStatus(req, res);
+    runUpdateChain(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
   it('returns 400 when listing id is zero', () => {
     const req = { params: { id: '0' }, body: { status: 'RESERVED' } };
     const res = makeRes({ userId: 42 });
-    controller.updateListingStatus(req, res);
+    runUpdateChain(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
   it('returns 400 when listing id is negative', () => {
     const req = { params: { id: '-1' }, body: { status: 'RESERVED' } };
     const res = makeRes({ userId: 42 });
-    controller.updateListingStatus(req, res);
+    runUpdateChain(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
   it('returns 400 when status is missing from body', () => {
     const req = { params: { id: '1' }, body: {} };
     const res = makeRes({ userId: 42 });
-    controller.updateListingStatus(req, res);
+    runUpdateChain(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
   it('returns 400 when status is only whitespace', () => {
     const req = { params: { id: '1' }, body: { status: '   ' } };
     const res = makeRes({ userId: 42 });
-    controller.updateListingStatus(req, res);
+    runUpdateChain(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
   it('returns 400 when status is an unrecognised value', () => {
     const req = { params: { id: '1' }, body: { status: 'DELETED' } };
     const res = makeRes({ userId: 42 });
-    controller.updateListingStatus(req, res);
+    runUpdateChain(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
@@ -467,7 +473,7 @@ describe('updateListingStatus', () => {
     const req = { params: { id: '1' }, body: { status: 'RESERVED' } };
     const res = makeRes({ userId: 42 });
     mockFn(model.getListingLifecycleById, new Error('DB error'));
-    controller.updateListingStatus(req, res);
+    runUpdateChain(req, res);
     expect(res.status).toHaveBeenCalledWith(500);
   });
 
@@ -475,7 +481,7 @@ describe('updateListingStatus', () => {
     const req = { params: { id: '999' }, body: { status: 'RESERVED' } };
     const res = makeRes({ userId: 42 });
     mockFn(model.getListingLifecycleById, null, []);
-    controller.updateListingStatus(req, res);
+    runUpdateChain(req, res);
     expect(res.status).toHaveBeenCalledWith(404);
   });
 
@@ -483,7 +489,7 @@ describe('updateListingStatus', () => {
     const req = { params: { id: '1' }, body: { status: 'RESERVED' } };
     const res = makeRes({ userId: 99 });
     mockFn(model.getListingLifecycleById, null, [fakeLifecycleListing]);
-    controller.updateListingStatus(req, res);
+    runUpdateChain(req, res);
     expect(res.status).toHaveBeenCalledWith(403);
   });
 
@@ -493,7 +499,7 @@ describe('updateListingStatus', () => {
     mockFn(model.getListingLifecycleById, null, [
       { ...fakeLifecycleListing, status: 'SOLD', isSold: true },
     ]);
-    controller.updateListingStatus(req, res);
+    runUpdateChain(req, res);
     expect(res.status).toHaveBeenCalledWith(409);
   });
 
@@ -504,7 +510,7 @@ describe('updateListingStatus', () => {
       cb(null, { rows: [fakeLifecycleListing] }),
     );
     mockFn(model.updateListingStatus, new Error('DB error'));
-    controller.updateListingStatus(req, res);
+    runUpdateChain(req, res);
     expect(res.status).toHaveBeenCalledWith(500);
   });
 
@@ -515,7 +521,7 @@ describe('updateListingStatus', () => {
       cb(null, { rows: [fakeLifecycleListing] }),
     );
     mockFn(model.updateListingStatus, null, []);
-    controller.updateListingStatus(req, res);
+    runUpdateChain(req, res);
     expect(res.status).toHaveBeenCalledWith(409);
   });
 
@@ -528,7 +534,7 @@ describe('updateListingStatus', () => {
     mockFn(model.updateListingStatus, null, [
       { id: 1, status: 'RESERVED', isSold: false, isClosed: false },
     ]);
-    controller.updateListingStatus(req, res);
+    runUpdateChain(req, res);
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
@@ -541,7 +547,7 @@ describe('updateListingStatus', () => {
     mockFn(model.updateListingStatus, null, [
       { id: 1, status: 'SOLD', isSold: true, isClosed: false },
     ]);
-    controller.updateListingStatus(req, res);
+    runUpdateChain(req, res);
     expect(res.status).toHaveBeenCalledWith(200);
   });
 });

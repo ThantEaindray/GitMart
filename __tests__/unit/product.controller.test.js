@@ -2,11 +2,11 @@ const controller = require('../../src/controllers/product.controller');
 const model = require('../../src/models/product.model');
 
 jest.mock('../../src/models/product.model');
-jest.mock('../../src/models/purchaseState', () => ({
+jest.mock('../../src/utils/purchaseState', () => ({
   isProductSold: jest.fn().mockReturnValue(false),
 }));
 
-const { isProductSold } = require('../../src/models/purchaseState');
+const { isProductSold } = require('../../src/utils/purchaseState');
 
 afterEach(() => jest.clearAllMocks());
 afterAll(() => jest.restoreAllMocks());

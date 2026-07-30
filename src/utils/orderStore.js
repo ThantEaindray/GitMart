@@ -5,7 +5,7 @@ const { markPurchasedItemsSold } = require('./purchaseState');
 
 const orders = [];
 
-module.exports.createOrder = (data, callback) => {
+module.exports.createOrder = async (data) => {
   const newOrder = {
     id: orders.length + 1,
     ...data,
@@ -13,20 +13,19 @@ module.exports.createOrder = (data, callback) => {
     createdAt: new Date().toISOString(),
   };
   orders.push(newOrder);
-  markPurchasedItemsSold({ items: data.items });
-  callback(null, newOrder);
+  markPurchasedItemsSold(data.items);
+  return newOrder;
 };
 
-module.exports.getAllOrders = (data, callback) => {
-  const userOrders = orders.filter((order) => String(order.userId) === String(data.userId));
-  callback(null, userOrders);
+module.exports.getAllOrders = async (userId) => {
+  return orders.filter((order) => String(order.userId) === String(userId));
 };
 
-module.exports.updateOrderStatus = (data, callback) => {
+module.exports.updateOrderStatus = async (id, status, userId) => {
   const order = orders.find(
-    (item) => item.id === Number(data.id) && String(item.userId) === String(data.userId),
+    (item) => item.id === Number(id) && String(item.userId) === String(userId),
   );
-  if (!order) return callback(null, null);
-  order.status = data.status;
-  callback(null, order);
+  if (!order) return null;
+  order.status = status;
+  return order;
 };

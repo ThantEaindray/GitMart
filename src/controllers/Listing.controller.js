@@ -11,7 +11,7 @@ const { isListingSold } = require('../utils/purchaseState');
 function applyRuntimeSoldState(listing) {
   return {
     ...listing,
-    isSold: Boolean(listing.isSold || isListingSold({ id: listing.id })),
+    isSold: Boolean(listing.isSold || isListingSold(listing.id)),
   };
 }
 

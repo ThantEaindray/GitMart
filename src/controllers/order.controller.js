@@ -27,7 +27,7 @@ function pushOrderNotification(userId, type, title, message) {
 
 // ── POST /api/orders ──────────────────────────────────────────────────────
 
-module.exports.createOrder = (req, res, next) => {
+module.exports.createOrder = async (req, res, next) => {
   const data = { ...req.body, userId: res.locals.userId };
 
   if (
@@ -56,8 +56,8 @@ module.exports.createOrder = (req, res, next) => {
     return res.status(400).json({ message: 'Use this unit number format: #12-345.' });
   }
 
-  const callback = (error, order) => {
-    if (error) return next(error);
+  try {
+    const order = await model.createOrder(data);
     pushOrderNotification(
       data.userId,
       'order',
@@ -67,29 +67,27 @@ module.exports.createOrder = (req, res, next) => {
     res.locals.statusCode = 201;
     res.locals.results = order;
     next();
-  };
-
-  model.createOrder(data, callback);
+  } catch (error) {
+    next(error);
+  }
 };
 
 // ── GET /api/orders ───────────────────────────────────────────────────────
 
-module.exports.getAllOrders = (req, res, next) => {
-  const data = { userId: res.locals.userId };
-
-  const callback = (error, orders) => {
-    if (error) return next(error);
+module.exports.getAllOrders = async (req, res, next) => {
+  try {
+    const orders = await model.getAllOrders(res.locals.userId);
     res.locals.statusCode = 200;
     res.locals.results = orders;
     next();
-  };
-
-  model.getAllOrders(data, callback);
+  } catch (error) {
+    next(error);
+  }
 };
 
 // ── PUT /api/orders/:id ───────────────────────────────────────────────────
 
-module.exports.updateOrderStatus = (req, res, next) => {
+module.exports.updateOrderStatus = async (req, res, next) => {
   const { status } = req.body;
 
   if (!status) {
@@ -99,10 +97,8 @@ module.exports.updateOrderStatus = (req, res, next) => {
     return res.status(400).json({ message: 'Invalid order status.' });
   }
 
-  const data = { id: req.params.id, status, userId: res.locals.userId };
-
-  const callback = (error, order) => {
-    if (error) return next(error);
+  try {
+    const order = await model.updateOrderStatus(req.params.id, status, res.locals.userId);
     if (!order) return res.status(404).json({ message: 'Order not found.' });
 
     pushOrderNotification(
@@ -115,9 +111,9 @@ module.exports.updateOrderStatus = (req, res, next) => {
     res.locals.statusCode = 200;
     res.locals.results = order;
     next();
-  };
-
-  model.updateOrderStatus(data, callback);
+  } catch (error) {
+    next(error);
+  }
 };
 
 // ── Send response (final middleware in order routes) ──────────────────────

@@ -4,7 +4,7 @@ const { isProductSold } = require('../utils/purchaseState');
 function applyRuntimeSoldState(product) {
   return {
     ...product,
-    isSold: isProductSold({ id: product.id }),
+    isSold: isProductSold(product.id),
   };
 }
 

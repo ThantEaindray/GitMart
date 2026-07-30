@@ -23,23 +23,12 @@ function getPurchasedIds(items) {
 
 // ── Exports ───────────────────────────────────────────────────────────────
 
-module.exports.markPurchasedItemsSold = (data, callback) => {
-  const { productIds, listingIds } = getPurchasedIds(data.items);
+module.exports.markPurchasedItemsSold = (items = []) => {
+  const { productIds, listingIds } = getPurchasedIds(items);
   productIds.forEach((id) => soldProductIds.add(id));
   listingIds.forEach((id) => soldListingIds.add(id));
-  if (callback) callback(null);
 };
 
-// These two are called synchronously inside .map() in the controllers, so they
-// also return their result directly in addition to the standard callback form.
-module.exports.isProductSold = (data, callback) => {
-  const result = soldProductIds.has(String(data.id));
-  if (callback) callback(null, result);
-  return result;
-};
+module.exports.isProductSold = (id) => soldProductIds.has(String(id));
 
-module.exports.isListingSold = (data, callback) => {
-  const result = soldListingIds.has(String(data.id));
-  if (callback) callback(null, result);
-  return result;
-};
+module.exports.isListingSold = (id) => soldListingIds.has(String(id));

@@ -1,8 +1,8 @@
 const controller = require('../../src/controllers/order.controller');
-const model = require('../../src/models/orderModel');
+const model = require('../../src/utils/orderStore');
 
-jest.mock('../../src/models/orderModel');
-jest.mock('../../src/models/purchaseState', () => ({
+jest.mock('../../src/utils/orderStore');
+jest.mock('../../src/utils/purchaseState', () => ({
   markPurchasedItemsSold: jest.fn(),
 }));
 

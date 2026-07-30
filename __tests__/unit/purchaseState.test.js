@@ -7,7 +7,7 @@ describe('isListingSold', () => {
   let ps;
   beforeEach(() => {
     jest.resetModules();
-    ps = require('../../src/models/purchaseState');
+    ps = require('../../src/utils/purchaseState');
   });
 
   it('returns false for any id before any marking', () => {
@@ -41,7 +41,7 @@ describe('isProductSold', () => {
   let ps;
   beforeEach(() => {
     jest.resetModules();
-    ps = require('../../src/models/purchaseState');
+    ps = require('../../src/utils/purchaseState');
   });
 
   it('returns false for any id before any marking', () => {
@@ -75,7 +75,7 @@ describe('markPurchasedItemsSold', () => {
   let ps;
   beforeEach(() => {
     jest.resetModules();
-    ps = require('../../src/models/purchaseState');
+    ps = require('../../src/utils/purchaseState');
   });
 
   it('does nothing when passed an empty array', () => {
