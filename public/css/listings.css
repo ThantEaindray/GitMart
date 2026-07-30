@@ -405,20 +405,6 @@
   color: var(--muted);
 }
 
-/* ── LISTING LIFECYCLE RESPONSIVE STYLES ────────────── */
-
-@media (max-width: 640px) {
-  .owner-lifecycle-controls .product-actions {
-    flex-direction: column;
-  }
-
-  .owner-lifecycle-controls .btn-primary,
-  .owner-lifecycle-controls .btn-outline {
-    width: 100%;
-    flex-basis: auto;
-  }
-}
-
 /* ── WISHLIST HEART BUTTON ───────────────────────────── */
 
 .btn-wishlist-heart {
@@ -488,4 +474,167 @@
   text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
+}
+
+/* ── OWNER RESERVATION REQUESTS ─────────────────────── */
+
+.owner-reservation-panel {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.owner-reservation-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.owner-reservation-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.owner-reservation-help {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.owner-reservation-refresh {
+  flex: 0 0 auto;
+  min-height: 40px;
+  margin-left: 0;
+  padding: 0 18px;
+}
+
+.owner-reservation-list {
+  display: grid;
+  gap: 12px;
+}
+
+.owner-reservation-list .status-text {
+  margin: 0;
+  padding: 12px 0;
+  line-height: 1.5;
+}
+
+.owner-reservation-card {
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.owner-reservation-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.owner-reservation-card-header > div {
+  min-width: 0;
+}
+
+.owner-reservation-requester {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.owner-reservation-date {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.owner-reservation-status {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid currentColor;
+  font-size: 0.64rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.owner-reservation-status-pending {
+  color: var(--accent2);
+}
+
+.owner-reservation-status-accepted {
+  color: var(--accent);
+}
+
+.owner-reservation-status-rejected {
+  color: #d06b6b;
+}
+
+.owner-reservation-status-cancelled {
+  color: var(--muted);
+}
+
+.owner-reservation-message {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.owner-reservation-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.owner-reservation-actions .btn-primary,
+.owner-reservation-actions .btn-outline {
+  flex: 1 1 140px;
+  min-height: 42px;
+  margin-left: 0;
+}
+
+.owner-reservation-actions button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+/* ── OWNER RESERVATION RESPONSIVE STYLES ────────────── */
+
+@media (max-width: 640px) {
+  .owner-reservation-header {
+    flex-direction: column;
+  }
+
+  .owner-reservation-refresh {
+    width: 100%;
+  }
+
+  .owner-reservation-card-header {
+    flex-direction: column;
+  }
+
+  .owner-reservation-actions {
+    flex-direction: column;
+  }
+
+  .owner-reservation-actions .btn-primary,
+  .owner-reservation-actions .btn-outline {
+    width: 100%;
+    flex-basis: auto;
+  }
 }
