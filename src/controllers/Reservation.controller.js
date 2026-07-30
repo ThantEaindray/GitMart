@@ -226,3 +226,109 @@ module.exports.cancelReservationRequest = (req, res) => {
 
   model.cancelPendingReservation(data, callback);
 };
+
+// ── Reject reservation — step 1: fetch and validate ownership/status ──────
+
+module.exports.loadReservationForReject = (req, res, next) => {
+  const reservationId = Number(req.params.id);
+  const ownerId = Number(res.locals.userId);
+
+  if (!isPositiveInteger(reservationId)) {
+    return sendError(res, 400, 'Reservation ID must be a positive integer.');
+  }
+
+  const data = { id: reservationId };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.error(error);
+      return sendError(res, 500, 'Internal server error.');
+    }
+    if (result.rows.length === 0) {
+      return sendError(res, 404, 'Reservation request not found.');
+    }
+
+    const reservation = result.rows[0];
+
+    if (Number(reservation.owner_id) !== ownerId) {
+      return sendError(res, 403, 'Only the listing owner can reject reservation requests.');
+    }
+    if (reservation.status !== 'PENDING') {
+      return sendError(res, 409, 'Only pending reservation requests can be rejected.');
+    }
+
+    res.locals.reservationToReject = reservation;
+    next();
+  };
+
+  model.getReservationById(data, callback);
+};
+
+// ── Reject reservation — step 2: apply rejection and respond ──────────────
+
+// PATCH /api/reservations/:id/reject
+module.exports.rejectReservationRequest = (req, res) => {
+  const reservation = res.locals.reservationToReject;
+  const data = { id: reservation.id, owner_id: Number(res.locals.userId) };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.error(error);
+      return sendError(res, 500, 'Internal server error.');
+    }
+    if (result.rows.length === 0) {
+      return sendError(res, 409, 'The reservation request is no longer pending.');
+    }
+    return res.status(200).json({
+      message: 'Reservation request rejected successfully.',
+      reservation: result.rows[0],
+    });
+  };
+
+  model.rejectReservationRequest(data, callback);
+};
+
+// ── Accept reservation ────────────────────────────────────────────────────
+// Uses the async model (transaction) — kept as a single flat async handler.
+
+// PATCH /api/reservations/:id/accept
+module.exports.acceptReservationRequest = async (req, res) => {
+  const reservationId = Number(req.params.id);
+
+  if (!isPositiveInteger(reservationId)) {
+    return sendError(res, 400, 'Reservation ID must be a positive integer.');
+  }
+
+  const data = { id: reservationId, owner_id: Number(res.locals.userId) };
+
+  let result;
+  try {
+    result = await model.acceptReservationRequest(data);
+  } catch (error) {
+    console.error(error);
+    return sendError(res, 500, 'Internal server error.');
+  }
+
+  if (result.notFound) return sendError(res, 404, 'Reservation request not found.');
+  if (result.forbidden)
+    return sendError(res, 403, 'Only the listing owner can accept reservation requests.');
+  if (result.invalidState) {
+    return sendError(
+      res,
+      409,
+      `Only pending reservation requests can be accepted. Current status: ${result.currentStatus}.`,
+    );
+  }
+  if (result.listingUnavailable) {
+    return sendError(
+      res,
+      409,
+      `Only listings with AVAILABLE status can be reserved. Current status: ${result.listingStatus}.`,
+    );
+  }
+
+  return res.status(200).json({
+    message: 'Reservation request accepted successfully.',
+    reservation: result.reservation,
+  });
+};

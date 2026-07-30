@@ -36,4 +36,19 @@ router.patch(
   reservationController.cancelReservationRequest,
 );
 
+// Reject a pending reservation — validated then rejected in two steps.
+router.patch(
+  '/reservations/:id/reject',
+  jwtMiddleware.verifyToken,
+  reservationController.loadReservationForReject,
+  reservationController.rejectReservationRequest,
+);
+
+// Accept a pending reservation (single step — runs an atomic SQL transaction).
+router.patch(
+  '/reservations/:id/accept',
+  jwtMiddleware.verifyToken,
+  reservationController.acceptReservationRequest,
+);
+
 module.exports = router;
