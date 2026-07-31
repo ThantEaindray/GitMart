@@ -24,7 +24,7 @@ const listingRouter = require('./routers/Listing.router');
 const wishlistRouter = require('./routers/Wishlist.router');
 
 const chatrouter = require('./routers/chats.router')
-
+const imagerouter= require('./routers/image.router')
 const app = express();
 
 // Parse incoming JSON request bodies.

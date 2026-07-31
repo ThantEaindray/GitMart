@@ -40,44 +40,48 @@ webSocket.onmessage = (event) => {
         //ok so we need to do the setup for the unread flag here
         if (data.to == uId && data.chat !== openChat) {
           //unread chat fn goes here
-          }
+        }
         //the part which is gonna call the image functions 
         if (data.cont_type === "img") {
           
         }
       }
-  if (data.type == "info") {
-    //so we need to get the info here which is just the connections so we just have to get it to like innerhtml and stuff 
-    if (data.inftype == "Conns") {
+      if (data.type == "info") {
+        //so we need to get the info here which is just the connections so we just have to get it to like innerhtml and stuff 
+        if (data.inftype == "Conns") {
       
+        }
+      }
     }
-  }
-}
-//so what do we need to do when the user wants to send a message (lets just get text working first and then we can sort out the images later)
-// this is gonna be horribly painful to do isnt it
+    //so what do we need to do when the user wants to send a message (lets just get text working first and then we can sort out the images later)
+    // this is gonna be horribly painful to do isnt it
 
-function sendTxt(content, toId) { 
-  let cont = {
-    type:"message",
-    chat: openChat,
-    from: uId,
-    to: toId, 
-    cont_type: "txt",
-    cont: content
-  } 
-  document.getElementById('message').value = ''
-  //just a barebones bit of verification to make sure things dont break down
-  if (content == undefined) {
-    return
-  }
-  //we need to write it into the message log
-  fetchMethod("/api/chats/send", (stat, data) => {
-    if (stat == 201) {
-      //and we need to send it to the websocket only if it sucessfully stores the data in the db
-      webSocket.send(JSON.stringify(cont))
-    } else {
-      //if its not a 201, its gotta be an error so we just hit it whith the classic standard browser alert box :P
-      alert("error sending message, please try again later.")
+    function sendTxt(content, toId) {
+      let cont = {
+        type: "message",
+        chat: openChat,
+        from: uId,
+        to: toId,
+        cont_type: "txt",
+        cont: content
+      }
+      localStorage.setItem('toId', toId)
+      //this will help us later snater
+      document.getElementById('message').value = ''
+      //just a barebones bit of verification to make sure things dont break down
+      if (content == undefined) {
+        return
+      }
+      //we need to write it into the message log
+      fetchMethod("/api/chats/send", (stat, data) => {
+        if (stat == 201) {
+          //and we need to send it to the websocket only if it sucessfully stores the data in the db
+          webSocket.send(JSON.stringify(cont))
+        } else {
+          //if its not a 201, its gotta be an error so we just hit it whith the classic standard browser alert box :P
+          alert("error sending message, please try again later.")
+        }
+      }, "POST", cont, token)
     }
-  }, "POST", cont, token)
+  }
 }
