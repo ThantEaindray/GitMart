@@ -518,15 +518,14 @@ function createOwnerReservationCard(reservation) {
             ${escapeReservationText(requesterName)}
           </p>
 
-          ${
-            submittedDate
-              ? `
+          ${submittedDate
+      ? `
                 <p class="owner-reservation-date">
                   Submitted ${submittedDate}
                 </p>
               `
-              : ''
-          }
+      : ''
+    }
         </div>
 
         <span
@@ -621,6 +620,11 @@ function loadOwnerReservationRequests() {
 }
 
 function loadBuyerReservationState() {
+  const button = document.getElementById('btn-request-reservation');
+
+  if (button) {
+    button.disabled = true;
+  }
   authFetch('/api/reservations/sent')
     .then(parseResponse)
     .then(function (result) {
@@ -639,6 +643,7 @@ function loadBuyerReservationState() {
       if (reservation) {
         currentBuyerReservation = reservation;
         showPendingReservationButton(reservation);
+        resetReservationButton();
       } else {
         resetReservationButton();
       }
@@ -788,10 +793,10 @@ function renderListing(listing) {
 
   const statusUpdatedDate = listing.status_updated_on
     ? new Date(listing.status_updated_on).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
     : null;
 
   const listingImage = listing.image_url
@@ -826,11 +831,10 @@ function renderListing(listing) {
 
         ${statusUpdatedDate ? `&nbsp;·&nbsp; Status updated ${statusUpdatedDate}` : ''}
 
-        ${
-          listing.view_count > 0
-            ? `&nbsp;·&nbsp; <i class="bi bi-eye"></i> ${listing.view_count} views`
-            : ''
-        }
+        ${listing.view_count > 0
+      ? `&nbsp;·&nbsp; <i class="bi bi-eye"></i> ${listing.view_count} views`
+      : ''
+    }
       </div>
 
       <h1 class="product-name">
@@ -873,7 +877,7 @@ function loadSellerInfo(ownerId) {
       var link = document.getElementById('seller-name-link');
       if (link && data.username) link.textContent = data.username;
     })
-    .catch(function () {});
+    .catch(function () { });
 }
 
 // ── RELATED LISTINGS ─────────────────────────────────────────────────────
