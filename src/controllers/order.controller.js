@@ -1,5 +1,6 @@
 // order.controller.js
 const model = require('../utils/orderStore');
+const reservationModel = require('../models/Reservation.model');
 const notifModel = require('../utils/notificationStore');
 const sseManager = require('../utils/sseManager');
 
@@ -25,7 +26,46 @@ function pushOrderNotification(userId, type, title, message) {
   sseManager.send(userId, 'badge', { unreadCount: count });
 }
 
-// ── POST /api/orders ──────────────────────────────────────────────────────
+// ── POST /api/orders — step 1: verify reservations on one-off listings ────
+// One-off listings can only be bought by the user whose reservation the owner
+// accepted. Plain catalogue products carry no listingId and are skipped.
+
+module.exports.verifyListingReservations = (req, res, next) => {
+  const items = Array.isArray(req.body?.items) ? req.body.items : [];
+
+  const listingIds = items
+    .filter((item) => item && item.listingId !== undefined && item.listingId !== null)
+    .map((item) => Number(item.listingId))
+    .filter((id) => Number.isInteger(id) && id > 0);
+
+  if (listingIds.length === 0) return next();
+
+  const data = { requester_id: Number(res.locals.userId), listing_ids: listingIds };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+
+    const allowed = new Set(result.rows.map((row) => Number(row.listing_id)));
+    const blocked = listingIds.filter((id) => !allowed.has(id));
+
+    if (blocked.length > 0) {
+      return res.status(403).json({
+        message:
+          'You can only buy a listing after its owner accepts your reservation request. ' +
+          `Blocked listing IDs: ${blocked.join(', ')}.`,
+      });
+    }
+
+    next();
+  };
+
+  reservationModel.getAcceptedListingIdsForUser(data, callback);
+};
+
+// ── POST /api/orders — step 2: validate details and create ────────────────
 
 module.exports.createOrder = async (req, res, next) => {
   const data = { ...req.body, userId: res.locals.userId };

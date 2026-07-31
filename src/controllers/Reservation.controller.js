@@ -3,6 +3,8 @@
 // so no single function ever nests one model call inside another's callback.
 
 const model = require('../models/Reservation.model');
+const notifModel = require('../utils/notificationStore');
+const sseManager = require('../utils/sseManager');
 
 function isPositiveInteger(value) {
   return Number.isInteger(value) && value > 0;
@@ -10,6 +12,19 @@ function isPositiveInteger(value) {
 
 function sendError(res, status, message) {
   return res.status(status).json({ message });
+}
+
+// ── Notification helper ───────────────────────────────────────────────────
+// notifModel callbacks are synchronous (in-memory), so no nesting is needed.
+// The notification is always persisted; the SSE push is best-effort and simply
+// no-ops when the recipient has no open stream.
+
+function pushReservationNotification(userId, type, title, message) {
+  if (!userId) return;
+  const n = notifModel.create({ userId, type, title, message });
+  const count = notifModel.getUnreadCount({ userId });
+  sseManager.send(userId, 'notification', n);
+  sseManager.send(userId, 'badge', { unreadCount: count });
 }
 
 // ── Create reservation — step 1: validate input ───────────────────────────
@@ -123,13 +138,48 @@ module.exports.createReservationRequest = (req, res) => {
       console.error(error);
       return sendError(res, 500, 'Internal server error.');
     }
+    const reservation = result.rows[0];
+    const listing = res.locals.reservationListing;
+    const requesterName = reservation.requester_username || 'A buyer';
+
+    pushReservationNotification(
+      listing.owner_id,
+      'reservation',
+      'New reservation request',
+      `${requesterName} requested to reserve "${listing.title}".`,
+    );
+
     return res.status(201).json({
       message: 'Reservation request created successfully.',
-      reservation: result.rows[0],
+      reservation,
     });
   };
 
   model.createReservationRequest(data, callback);
+};
+
+// ── Read the logged-in user's own reservation for one listing ─────────────
+
+// GET /api/listings/:listingId/reservations/mine
+module.exports.getMyReservationForListing = (req, res) => {
+  const listingId = Number(req.params.listingId);
+
+  if (!isPositiveInteger(listingId)) {
+    return sendError(res, 400, 'Listing ID must be a positive integer.');
+  }
+
+  const data = { listing_id: listingId, requester_id: Number(res.locals.userId) };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.error(error);
+      return sendError(res, 500, 'Internal server error.');
+    }
+    // No reservation is a normal state, not an error — return null.
+    return res.status(200).json({ reservation: result.rows[0] || null });
+  };
+
+  model.getMyReservationForListing(data, callback);
 };
 
 // ── Read sent reservations ────────────────────────────────────────────────
@@ -279,6 +329,14 @@ module.exports.rejectReservationRequest = (req, res) => {
     if (result.rows.length === 0) {
       return sendError(res, 409, 'The reservation request is no longer pending.');
     }
+
+    pushReservationNotification(
+      reservation.requester_id,
+      'reservation_status',
+      'Reservation request declined',
+      `Your reservation request for "${reservation.title}" was declined.`,
+    );
+
     return res.status(200).json({
       message: 'Reservation request rejected successfully.',
       reservation: result.rows[0],
@@ -326,6 +384,13 @@ module.exports.acceptReservationRequest = async (req, res) => {
       `Only listings with AVAILABLE status can be reserved. Current status: ${result.listingStatus}.`,
     );
   }
+
+  pushReservationNotification(
+    result.reservation.requester_id,
+    'reservation_status',
+    'Reservation request accepted',
+    `Your reservation request for "${result.listingTitle}" was accepted. You can now add it to your cart.`,
+  );
 
   return res.status(200).json({
     message: 'Reservation request accepted successfully.',
