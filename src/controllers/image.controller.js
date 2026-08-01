@@ -1,6 +1,7 @@
 const model = require("../models/image.model.js")
 const dotenv = require("dotenv")
-const {client} = require('node-scp')
+const { client } = require('node-scp')
+const fs = require ('fs')
 const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env.dev';
 
 dotenv.config({
@@ -21,7 +22,7 @@ module.exports.uploadImg = (req, res, next) => {
     client.uploadFile(
       //so we need to get the file which we want to upload over here and then we send that onwards to the server oooooo the magic of the cloud
       req.body.cont,
-      `${process.env.SCP_DIR}${x}`
+      `${process.env.SCP_DIR}${}`
     )
       .then(response => {
         client.close()

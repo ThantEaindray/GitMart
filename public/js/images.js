@@ -5,15 +5,16 @@ const uId = localStorage.getItem('loggedInUserId')
 let openChat = localStorage.getItem('openChat')
 const webSocket = localStorage.getItem('webSocket');
 const toId = localStorage.getItem('toId')
-const reader = new FileReader()
 document.getElementById("imageuploads").document.addEventListener("submit", (event) => {
   event.preventDefault()
-  //so now we wanna do the part where it takes the image and sends it to the temp folder
-  //so here there would be the testing and frontend validation and stuff
-  
+    //so now we wanna do the part where it takes the image and sends it to the temp folder
+    //so here there would be the testing and frontend validation and stuff
+    let fromForm = document.querySelector('#fileinput')
   // just imagine that there is validation
   // check security using virustotal?
-  let img=document.getElementById("imageuploads").files[0]
+  let img = new FormData()
+  img.append('file', fromForm.files[0])
+  //in theory we now have formdata which is just the image and that can be sent to the backend to work its magic :3c
   upImg(img)
   
  
@@ -34,7 +35,7 @@ function upImg(toUp) {
     from: uId,
     to: toId,
     cont_type: "img",
-    cont:toUp
+    cont: toUp
     }
   //in theory this should allow me to send the image data back to the server, then we figure out how to upload it over scp probably
   fetchMethod("/api/images/send", (stat, data) => {
@@ -47,4 +48,4 @@ function upImg(toUp) {
       return (console.log("UNEXPECTED result", stat, data))
     }
   }, "POST", cont, token)
-}
+} 
