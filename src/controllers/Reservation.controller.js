@@ -3,8 +3,7 @@
 // so no single function ever nests one model call inside another's callback.
 
 const model = require('../models/Reservation.model');
-const notifModel = require('../utils/notificationStore');
-const sseManager = require('../utils/sseManager');
+const { notify } = require('../utils/notifier');
 
 function isPositiveInteger(value) {
   return Number.isInteger(value) && value > 0;
@@ -12,19 +11,6 @@ function isPositiveInteger(value) {
 
 function sendError(res, status, message) {
   return res.status(status).json({ message });
-}
-
-// ── Notification helper ───────────────────────────────────────────────────
-// notifModel callbacks are synchronous (in-memory), so no nesting is needed.
-// The notification is always persisted; the SSE push is best-effort and simply
-// no-ops when the recipient has no open stream.
-
-function pushReservationNotification(userId, type, title, message) {
-  if (!userId) return;
-  const n = notifModel.create({ userId, type, title, message });
-  const count = notifModel.getUnreadCount({ userId });
-  sseManager.send(userId, 'notification', n);
-  sseManager.send(userId, 'badge', { unreadCount: count });
 }
 
 // ── Create reservation — step 1: validate input ───────────────────────────
@@ -142,7 +128,7 @@ module.exports.createReservationRequest = (req, res) => {
     const listing = res.locals.reservationListing;
     const requesterName = reservation.requester_username || 'A buyer';
 
-    pushReservationNotification(
+    notify(
       listing.owner_id,
       'reservation',
       'New reservation request',
@@ -330,7 +316,7 @@ module.exports.rejectReservationRequest = (req, res) => {
       return sendError(res, 409, 'The reservation request is no longer pending.');
     }
 
-    pushReservationNotification(
+    notify(
       reservation.requester_id,
       'reservation_status',
       'Reservation request declined',
@@ -385,7 +371,7 @@ module.exports.acceptReservationRequest = async (req, res) => {
     );
   }
 
-  pushReservationNotification(
+  notify(
     result.reservation.requester_id,
     'reservation_status',
     'Reservation request accepted',

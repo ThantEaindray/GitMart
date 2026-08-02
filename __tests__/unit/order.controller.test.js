@@ -3,6 +3,12 @@ const model = require('../../src/utils/orderStore');
 const reservationModel = require('../../src/models/Reservation.model');
 
 jest.mock('../../src/utils/orderStore');
+
+// Must be mocked: notifier reaches the database through Notification.model, so
+// leaving it real would have these unit tests opening a Postgres connection.
+jest.mock('../../src/utils/notifier', () => ({
+  notify: jest.fn(),
+}));
 jest.mock('../../src/utils/purchaseState', () => ({
   markPurchasedItemsSold: jest.fn(),
 }));

@@ -196,6 +196,8 @@ module.exports.updateNotifications = (req, res) => {
     id: res.locals.userId,
     notifyOrders: req.body.notifyOrders !== false,
     notifyPromotions: req.body.notifyPromotions === true,
+    // Defaults on, matching notifyOrders — opting out is the deliberate action.
+    notifyEmail: req.body.notifyEmail !== false,
   };
 
   const callback = (error) => {

@@ -3,6 +3,7 @@ process.env.JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || 'integration-test-acc
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const app = require('../../src/app');
+const pool = require('../../src/models/db');
 
 const JWT_ALGORITHM = process.env.JWT_ALGORITHM || 'HS256';
 
@@ -30,6 +31,30 @@ const USER_B = 1002;
 
 const tokenA = createToken(USER_A);
 const tokenB = createToken(USER_B);
+
+// These ids used to be pure fiction: orders live in an in-memory store, so no
+// matching user row was ever needed. Notifications are now a real table with a
+// foreign key to users, so placing an order requires the buyer to actually
+// exist. Explicit ids are used so the signed tokens above stay valid.
+beforeAll(async () => {
+  await pool.query(
+    `
+      INSERT INTO users (id, username, email, password)
+      VALUES
+        ($1, 'order_test_user_a', 'order_test_a@example.com', 'not-used-by-these-tests'),
+        ($2, 'order_test_user_b', 'order_test_b@example.com', 'not-used-by-these-tests')
+      ON CONFLICT (id) DO NOTHING
+    `,
+    [USER_A, USER_B],
+  );
+});
+
+// Only removes the two rows this suite created, so it cannot disturb other
+// integration suites running against the same database.
+afterAll(async () => {
+  await pool.query('DELETE FROM users WHERE id = ANY($1::integer[])', [[USER_A, USER_B]]);
+  await pool.end();
+});
 
 // ── POST /api/orders — authentication ─────────────────────────────────────────
 
