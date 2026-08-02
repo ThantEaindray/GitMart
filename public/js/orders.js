@@ -289,6 +289,18 @@ function updateFilterCounts() {
   });
 }
 
+function getEmptyOrdersMessage(filter) {
+  const messages = {
+    all: 'No orders have been placed yet.',
+    pending: 'No pending orders right now.',
+    processing: 'No processing orders at the moment.',
+    delivered: 'No delivered orders yet.',
+    cancelled: 'No cancelled orders right now.',
+  };
+
+  return messages[filter] || 'No orders match this view.';
+}
+
 // Render the order list using the active filter.
 function renderOrders() {
   updateSummary();
@@ -301,7 +313,7 @@ function renderOrders() {
   ordersList.innerHTML = '';
 
   if (filtered.length === 0) {
-    ordersList.innerHTML = '<p class="orders-status">No orders match this view.</p>';
+    ordersList.innerHTML = `<p class="orders-status">${getEmptyOrdersMessage(activeFilter)}</p>`;
     return;
   }
 
