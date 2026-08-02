@@ -58,7 +58,8 @@ app.use('/api/orders', orderRouter);
 app.use('/api', userRouter);
 app.use('/api', listingRouter);
 app.use('/api', wishlistRouter);
-app.use('/api/chats',chatrouter)
+app.use('/api/chats', chatrouter);
+app.use('/api/images', imagerouter)
 // 404 handler — if no route above matched the request,
 // create a 404 error and pass it to the error handler below.
 app.use((req, res, next) => {

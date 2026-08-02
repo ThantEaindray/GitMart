@@ -1,57 +1,8 @@
 const model = require("../models/image.model.js")
 const dotenv = require("dotenv")
 const { client } = require('node-scp')
-const multer=require('multer')
 const fs = require('fs')
 const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env.dev';
-
-module.exports.saveTmp = (req, res, next) => {
-  try {
-              let storage = multer.diskStorage({
-                  destination: function (req, file, cb) {
-                      let id = req.headers.room_id;
-                      let path = `tmp/daily_gasoline_report/${id}`;
-                      fsextra.mkdirsSync(path);
-                      cb(null, path);
-                  },
-                  filename: function (req, file, cb) {
-                    let uniquename = file.fieldname + '-' + Date.now() + "." + 
-                    res.locals.uniquename = uniquename
-                      cb(null, uniquename);
-                  }
-              })
-              var upload = multer({ storage: storage }).array('images', 100);
-              upload(req, res, function (err) {
-                  if (err) {
-                      console.log(err);
-                      return res.end("Error uploading file.");
-                  } else {
-                      res.end("File has been uploaded");
-                  }
-              });
-              let result = error.OK
-              logger.info(result);
-              return res.status(200).send(result)
-  
-          } catch (err) {
-              logger.warn(err);
-              console.log(err);
-              return res.status(500).send(error.SERVER_ERROR)
-          }
-      }
-}
-
-
-
-
-
-
-
-
-
-
-
-
 
 //set up options for the scp process
 var options = {
@@ -71,12 +22,59 @@ module.exports.uploadImg = (req, res, next) => {
   client(options).then(client => {
     client.uploadFile(
       //so we need to get the file which we want to upload over here and then we send that onwards to the server oooooo the magic of the cloud
-      req.body.cont,
-      `${process.env.SCP_DIR}${}`
+      `../tmp/${req.file}`,
+      `${process.env.SCP_DIR}/${req.file}`
     )
       .then(response => {
         client.close()
+        next()
       })
-      .catch(error => { })
-  }).catch(e => console.log(e))
+      .catch(error => {
+        return res.status(500).json(error)
+      })
+  })
 }
+
+
+//ok so theoretically we do have the thing working now so what needs to be done is just the rest of the flow which is at least easier to do
+
+module.exports.writeDB = (req, res, next) => {
+  //nice and easy this time we just have to get the info we need about the message and write it into the db
+
+  let path = `http://${process.env.SCP_IP}/${req.file}`
+
+  const data = {
+    chat_id: req.body.chat,
+    sender_id: req.body.from,
+    cont_type: req.body.cont_type,
+    cont: path
+  }
+
+  const callback = (err, results, fields) => {
+    if (err) {
+      console.log(err)
+      return res.status(500).json(err)
+    } else {
+      next()
+    }
+  }
+  model.writeDB(data,callback)
+}
+
+
+module.exports.cleanup = (req, res, next) => {
+  //this really the only thing it does is delete the file from the tmp folder
+  //i mean also it should return a lovely 201
+  try {
+    fs.unlink(`../tmp/${req.file}`)
+  } catch (err) {
+    res.status(500).json(err)
+  } 
+    
+    
+}
+
+//this is the hard part how do we get all the way to the ws when were so deep in here right
+// ig we call some sort of a function on the app.js and then we next when its done
+module.exports.sendWS
+//lowk we can do this one later (tmr) im too tired now 

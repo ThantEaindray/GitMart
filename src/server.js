@@ -18,7 +18,7 @@ app.listen(PORT, () => {
 
 
 const { WebSocketServer } = require('ws')
-const WS_PORT = process.env.WS_PORT || 3000;
+const WS_PORT = process.env.WS_PORT || 3001;
 const ws = new WebSocketServer({ port: WS_PORT })
 let connections = new Array
 //array which holds the list of connections to the socket so we know which one is which to send messages to them
