@@ -254,6 +254,45 @@ function getReservationButton(listing, status) {
   `;
 }
 
+function getOwnerReservationPanel() {
+  return `
+    <section
+      class="owner-reservation-panel"
+      id="owner-reservation-panel"
+    >
+      <div class="owner-reservation-header">
+        <div>
+          <p class="owner-reservation-title">
+            Reservation requests
+          </p>
+
+          <p class="owner-reservation-help">
+            Review requests submitted for this listing.
+          </p>
+        </div>
+
+        <button
+          class="btn-outline owner-reservation-refresh"
+          type="button"
+          onclick="loadOwnerReservationRequests()"
+        >
+          Refresh
+        </button>
+      </div>
+
+      <div
+        class="owner-reservation-list"
+        id="owner-reservation-list"
+        aria-live="polite"
+      >
+        <p class="status-text">
+          Loading reservation requests...
+        </p>
+      </div>
+    </section>
+  `;
+}
+
 function getBuyerActions(listing, status) {
   const contactButton = listing.owner_id
     ? `
@@ -393,6 +432,238 @@ function requestReservation() {
     });
 }
 
+function escapeReservationText(value) {
+  const element = document.createElement('div');
+
+  element.textContent = value === null || value === undefined ? '' : String(value);
+
+  return element.innerHTML;
+}
+
+function formatReservationDate(value) {
+  if (!value) return '';
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return date.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function createOwnerReservationCard(reservation) {
+  const status = String(reservation.status || 'PENDING').toUpperCase();
+
+  const statusClass = status.toLowerCase().replace(/[^a-z0-9-]/g, '');
+
+  const requesterName = reservation.requester_username || `User #${reservation.requester_id}`;
+
+  const message = reservation.message
+    ? escapeReservationText(reservation.message)
+    : 'No message was provided.';
+
+  const submittedDate = formatReservationDate(reservation.created_on);
+
+  const decisionActions =
+    status === 'PENDING'
+      ? `
+        <div class="owner-reservation-actions">
+          <button
+            class="btn-primary"
+            type="button"
+            data-reservation-action
+            data-reservation-id="${reservation.id}"
+            onclick="decideReservation(${reservation.id}, 'accept')"
+          >
+            Accept
+          </button>
+
+          <button
+            class="btn-outline"
+            type="button"
+            data-reservation-action
+            data-reservation-id="${reservation.id}"
+            onclick="decideReservation(${reservation.id}, 'reject')"
+          >
+            Reject
+          </button>
+        </div>
+      `
+      : '';
+
+  return `
+    <article
+      class="owner-reservation-card"
+      data-reservation-card="${reservation.id}"
+    >
+      <div class="owner-reservation-card-header">
+        <div>
+          <p class="owner-reservation-requester">
+            ${escapeReservationText(requesterName)}
+          </p>
+
+          ${
+            submittedDate
+              ? `
+                <p class="owner-reservation-date">
+                  Submitted ${submittedDate}
+                </p>
+              `
+              : ''
+          }
+        </div>
+
+        <span
+          class="owner-reservation-status owner-reservation-status-${statusClass}"
+        >
+          ${escapeReservationText(status)}
+        </span>
+      </div>
+
+      <p class="owner-reservation-message">
+        ${message}
+      </p>
+
+      ${decisionActions}
+    </article>
+  `;
+}
+
+function renderOwnerReservationRequests(result) {
+  const list = document.getElementById('owner-reservation-list');
+
+  if (!list || !currentListing) return;
+
+  if (result.status !== 200) {
+    const errorMessage = result.data.message || 'Failed to load reservation requests.';
+
+    list.innerHTML = `
+      <p class="status-text">
+        ${escapeReservationText(errorMessage)}
+      </p>
+    `;
+
+    return;
+  }
+
+  const receivedRequests = Array.isArray(result.data) ? result.data : [];
+
+  const listingRequests = receivedRequests
+    .filter(function (reservation) {
+      return Number(reservation.listing_id) === Number(currentListing.id);
+    })
+    .sort(function (first, second) {
+      const firstDate = new Date(first.created_on || 0).getTime();
+
+      const secondDate = new Date(second.created_on || 0).getTime();
+
+      return secondDate - firstDate;
+    });
+
+  if (listingRequests.length === 0) {
+    list.innerHTML = `
+      <p class="status-text">
+        No reservation requests have been submitted
+        for this listing.
+      </p>
+    `;
+
+    return;
+  }
+
+  list.innerHTML = listingRequests.map(createOwnerReservationCard).join('');
+}
+
+function loadOwnerReservationRequests() {
+  if (!currentListing || !isListingOwner(currentListing)) {
+    return;
+  }
+
+  const list = document.getElementById('owner-reservation-list');
+
+  if (list) {
+    list.innerHTML = `
+      <p class="status-text">
+        Loading reservation requests...
+      </p>
+    `;
+  }
+
+  authFetch('/api/reservations/received')
+    .then(parseResponse)
+    .then(renderOwnerReservationRequests)
+    .catch(function () {
+      if (!list) return;
+
+      list.innerHTML = `
+        <p class="status-text">
+          Something went wrong while loading
+          reservation requests.
+        </p>
+      `;
+    });
+}
+
+function setReservationDecisionDisabled(reservationId, disabled) {
+  document
+    .querySelectorAll(`[data-reservation-action][data-reservation-id="${reservationId}"]`)
+    .forEach(function (button) {
+      button.disabled = disabled;
+    });
+}
+
+function decideReservation(reservationId, decision) {
+  const id = Number(reservationId);
+
+  const action = decision === 'accept' || decision === 'reject' ? decision : null;
+
+  if (!Number.isInteger(id) || id <= 0 || !action) {
+    return;
+  }
+
+  setReservationDecisionDisabled(id, true);
+
+  authFetch(`/api/reservations/${id}/${action}`, {
+    method: 'PATCH',
+  })
+    .then(parseResponse)
+    .then(function (result) {
+      if (result.status !== 200) {
+        showToast(result.data.message || `Failed to ${action} the reservation request.`);
+
+        setReservationDecisionDisabled(id, false);
+
+        return;
+      }
+
+      showToast(result.data.message || `Reservation request ${action}ed successfully.`);
+
+      if (action === 'accept') {
+        /*
+         * Accepting a request also changes the listing
+         * lifecycle status to RESERVED, so reload the
+         * listing details and lifecycle controls.
+         */
+        loadListing();
+        return;
+      }
+
+      loadOwnerReservationRequests();
+    })
+    .catch(function () {
+      showToast(`Something went wrong while trying to ${action} the reservation request.`);
+
+      setReservationDecisionDisabled(id, false);
+    });
+}
+
 function setLifecycleButtonsDisabled(disabled) {
   document.querySelectorAll('[data-listing-status-action]').forEach(function (button) {
     button.disabled = disabled;
@@ -500,6 +771,8 @@ function renderListing(listing) {
     ? getOwnerLifecycleActions(lifecycleStatus)
     : getBuyerActions(listing, lifecycleStatus);
 
+  const ownerReservationPanel = owner ? getOwnerReservationPanel() : '';
+
   section.innerHTML = `
     <div class="product-img">
       ${listingImage}
@@ -543,8 +816,13 @@ function renderListing(listing) {
       ${listing.owner_id ? `<div class="product-seller-bar">Sold by <a href="seller.html?id=${listing.owner_id}" id="seller-name-link" class="seller-name-link">…</a></div>` : ''}
 
       ${actions}
+      ${ownerReservationPanel}
     </div>
   `;
+
+  if (owner) {
+    loadOwnerReservationRequests();
+  }
 }
 
 // ── SELLER INFO ───────────────────────────────────────────────────────────
@@ -790,6 +1068,8 @@ window.createChat = createChat;
 window.updateListingStatus = updateListingStatus;
 window.toggleDetailWishlist = toggleDetailWishlist;
 window.requestReservation = requestReservation;
+window.loadOwnerReservationRequests = loadOwnerReservationRequests;
+window.decideReservation = decideReservation;
 
 document.addEventListener('DOMContentLoaded', function () {
   loadListing();
