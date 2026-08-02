@@ -1,6 +1,7 @@
 // ── TOAST ─────────────────────────────────────────────────────────────────
 
 var currentListing = null;
+var currentBuyerReservation = null;
 var _isWishlisted = false;
 var _currentListingId = null;
 
@@ -324,13 +325,67 @@ function addToCart() {
 function resetReservationButton() {
   const button = document.getElementById('btn-request-reservation');
 
+  currentBuyerReservation = null;
+
   if (!button) return;
 
   button.disabled = false;
+  button.onclick = requestReservation;
   button.innerHTML = `
     <i class="bi bi-calendar-check"></i>
     Request Reservation
   `;
+}
+
+function showPendingReservationButton(reservation) {
+  const button = document.getElementById('btn-request-reservation');
+
+  if (!button || !reservation || !reservation.id) {
+    return;
+  }
+
+  currentBuyerReservation = reservation;
+
+  button.disabled = false;
+  button.onclick = cancelBuyerReservation;
+
+  button.innerHTML = `
+    <i class="bi bi-x-circle"></i>
+    Cancel Reservation Request
+  `;
+}
+
+function cancelBuyerReservation() {
+  if (!currentBuyerReservation || !currentBuyerReservation.id) {
+    showToast('No pending reservation request found.');
+    return;
+  }
+
+  const button = document.getElementById('btn-request-reservation');
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Cancelling...';
+  }
+
+  authFetch(`/api/reservations/${currentBuyerReservation.id}/cancel`, {
+    method: 'PATCH',
+  })
+    .then(parseResponse)
+    .then(function (result) {
+      if (result.status !== 200) {
+        showToast(result.data.message || 'Failed to cancel reservation request.');
+        showPendingReservationButton(currentBuyerReservation);
+        return;
+      }
+
+      showToast(result.data.message || 'Reservation request cancelled.');
+      resetReservationButton();
+    })
+    .catch(function () {
+      showToast('Something went wrong while cancelling the reservation request.');
+      showPendingReservationButton(currentBuyerReservation);
+    });
 }
 
 function requestReservation() {
@@ -366,6 +421,13 @@ function requestReservation() {
       }
 
       showToast(result.data.message || 'Reservation request submitted.');
+
+      const reservation = result.data.reservation;
+
+      if (reservation && reservation.id) {
+        showPendingReservationButton(reservation);
+        return;
+      }
 
       if (button) {
         button.disabled = true;
@@ -456,15 +518,14 @@ function createOwnerReservationCard(reservation) {
             ${escapeReservationText(requesterName)}
           </p>
 
-          ${
-            submittedDate
-              ? `
+          ${submittedDate
+      ? `
                 <p class="owner-reservation-date">
                   Submitted ${submittedDate}
                 </p>
               `
-              : ''
-          }
+      : ''
+    }
         </div>
 
         <span
@@ -555,6 +616,40 @@ function loadOwnerReservationRequests() {
           reservation requests.
         </p>
       `;
+    });
+}
+
+function loadBuyerReservationState() {
+  const button = document.getElementById('btn-request-reservation');
+
+  if (button) {
+    button.disabled = true;
+  }
+  authFetch('/api/reservations/sent')
+    .then(parseResponse)
+    .then(function (result) {
+      if (result.status !== 200) {
+        resetReservationButton();
+        return;
+      }
+
+      const reservation = (Array.isArray(result.data) ? result.data : []).find(function (item) {
+        return (
+          Number(item.listing_id) === Number(currentListing.id) &&
+          String(item.status).toUpperCase() === 'PENDING'
+        );
+      });
+
+      if (reservation) {
+        currentBuyerReservation = reservation;
+        showPendingReservationButton(reservation);
+        resetReservationButton();
+      } else {
+        resetReservationButton();
+      }
+    })
+    .catch(function () {
+      resetReservationButton();
     });
 }
 
@@ -698,10 +793,10 @@ function renderListing(listing) {
 
   const statusUpdatedDate = listing.status_updated_on
     ? new Date(listing.status_updated_on).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
     : null;
 
   const listingImage = listing.image_url
@@ -736,11 +831,10 @@ function renderListing(listing) {
 
         ${statusUpdatedDate ? `&nbsp;·&nbsp; Status updated ${statusUpdatedDate}` : ''}
 
-        ${
-          listing.view_count > 0
-            ? `&nbsp;·&nbsp; <i class="bi bi-eye"></i> ${listing.view_count} views`
-            : ''
-        }
+        ${listing.view_count > 0
+      ? `&nbsp;·&nbsp; <i class="bi bi-eye"></i> ${listing.view_count} views`
+      : ''
+    }
       </div>
 
       <h1 class="product-name">
@@ -783,7 +877,7 @@ function loadSellerInfo(ownerId) {
       var link = document.getElementById('seller-name-link');
       if (link && data.username) link.textContent = data.username;
     })
-    .catch(function () {});
+    .catch(function () { });
 }
 
 // ── RELATED LISTINGS ─────────────────────────────────────────────────────
@@ -917,6 +1011,9 @@ function onListingLoaded(result) {
   }
 
   renderListing(result.data);
+  if (!isListingOwner(result.data)) {
+    loadBuyerReservationState();
+  }
   loadDetailWishlistState();
   loadRelatedListings(result.data.category);
   if (result.data.owner_id) loadSellerInfo(result.data.owner_id);
