@@ -232,8 +232,19 @@ function getReservationButton(listing, status) {
     return disabledButton('btn-request-reservation', 'Reservations unavailable');
   }
 
+  // A pending request can still be withdrawn, so this one stays actionable.
   if (currentUserReservation && currentUserReservation.status === 'PENDING') {
-    return disabledButton('btn-request-reservation', 'Request Sent');
+    return `
+      <button
+        class="btn-outline"
+        id="btn-request-reservation"
+        type="button"
+        onclick="cancelBuyerReservation()"
+      >
+        <i class="bi bi-x-circle"></i>
+        Cancel Reservation Request
+      </button>
+    `;
   }
   if (currentUserReservation && currentUserReservation.status === 'ACCEPTED') {
     return disabledButton('btn-request-reservation', 'Reservation Accepted');
@@ -371,16 +382,46 @@ function addToCart() {
   showToast('Added to cart.');
 }
 
-function resetReservationButton() {
+// Every reservation button state is derived from currentUserReservation at
+// render time, so re-rendering is the only thing needed to reflect a change.
+// This replaces the previous pattern of mutating the button's label and onclick
+// by hand, where a stray reset could silently undo a state that had just been set.
+function refreshReservationUi() {
+  if (currentListing) renderListing(currentListing);
+}
+
+function cancelBuyerReservation() {
+  if (!currentUserReservation || !currentUserReservation.id) {
+    showToast('No pending reservation request found.');
+    return;
+  }
+
   const button = document.getElementById('btn-request-reservation');
 
-  if (!button) return;
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Cancelling...';
+  }
 
-  button.disabled = false;
-  button.innerHTML = `
-    <i class="bi bi-calendar-check"></i>
-    Request Reservation
-  `;
+  authFetch(`/api/reservations/${currentUserReservation.id}/cancel`, {
+    method: 'PATCH',
+  })
+    .then(parseResponse)
+    .then(function (result) {
+      if (result.status !== 200) {
+        showToast(result.data.message || 'Failed to cancel reservation request.');
+        refreshReservationUi();
+        return;
+      }
+
+      showToast(result.data.message || 'Reservation request cancelled.');
+      currentUserReservation = null;
+      refreshReservationUi();
+    })
+    .catch(function () {
+      showToast('Something went wrong while cancelling the reservation request.');
+      refreshReservationUi();
+    });
 }
 
 function requestReservation() {
@@ -411,24 +452,21 @@ function requestReservation() {
       if (result.status !== 201) {
         showToast(result.data.message || 'Failed to submit reservation request.');
 
-        resetReservationButton();
+        refreshReservationUi();
         return;
       }
 
       showToast(result.data.message || 'Reservation request submitted.');
 
-      // Keep local state in sync so a re-render keeps showing "Request Sent".
+      // Re-render off the new state so the button becomes "Cancel Reservation
+      // Request" through the same path that runs on a fresh page load.
       currentUserReservation = result.data.reservation || null;
-
-      if (button) {
-        button.disabled = true;
-        button.textContent = 'Request Sent';
-      }
+      renderListing(currentListing);
     })
     .catch(function () {
       showToast('Something went wrong while submitting the reservation request.');
 
-      resetReservationButton();
+      refreshReservationUi();
     });
 }
 
@@ -990,9 +1028,9 @@ function onListingLoaded(result) {
     return;
   }
 
-  // Reservation state decides whether the cart button unlocks, so it must be
-  // resolved before the first render. Failure here is non-fatal — the buttons
-  // just stay in their locked state.
+  // Reservation state decides whether the cart button unlocks and whether the
+  // reservation button offers "cancel", so it must be resolved before the first
+  // render. Failure here is non-fatal — the buttons stay in their locked state.
   authFetch('/api/listings/' + listing.id + '/reservations/mine')
     .then(parseResponse)
     .then(applyMyReservation)
@@ -1068,6 +1106,7 @@ window.createChat = createChat;
 window.updateListingStatus = updateListingStatus;
 window.toggleDetailWishlist = toggleDetailWishlist;
 window.requestReservation = requestReservation;
+window.cancelBuyerReservation = cancelBuyerReservation;
 window.loadOwnerReservationRequests = loadOwnerReservationRequests;
 window.decideReservation = decideReservation;
 
