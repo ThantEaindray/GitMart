@@ -40,7 +40,9 @@
     "lint:report": "eslint -c configs/eslint.config.mjs . --format html --output-file reports/eslint-report.html || true",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "report": "node scripts/qa-report.js"
+    "report": "node scripts/qa-report.js",
+    "migrate": "dotenv -e .env.dev -- node scripts/migrate.js",
+    "migrate:prod": "node scripts/migrate.js"
   },
   "jest": {
     "testMatch": [

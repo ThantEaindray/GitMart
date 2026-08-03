@@ -221,9 +221,15 @@
   border: 1px solid var(--border);
 }
 
-.compare-grid.cols-1 { grid-template-columns: 200px 1fr; }
-.compare-grid.cols-2 { grid-template-columns: 200px 1fr 1fr; }
-.compare-grid.cols-3 { grid-template-columns: 200px 1fr 1fr 1fr; }
+.compare-grid.cols-1 {
+  grid-template-columns: 200px 1fr;
+}
+.compare-grid.cols-2 {
+  grid-template-columns: 200px 1fr 1fr;
+}
+.compare-grid.cols-3 {
+  grid-template-columns: 200px 1fr 1fr 1fr;
+}
 
 .compare-row {
   display: contents;
@@ -299,9 +305,15 @@
   font-size: 0.85rem;
 }
 
-.compare-status-available { color: #6bcf7f; }
-.compare-status-sold { color: var(--muted); }
-.compare-status-closed { color: var(--muted); }
+.compare-status-available {
+  color: #6bcf7f;
+}
+.compare-status-sold {
+  color: var(--muted);
+}
+.compare-status-closed {
+  color: var(--muted);
+}
 
 .compare-desc {
   color: var(--muted);
@@ -329,7 +341,9 @@
   text-align: center;
   padding: 20px;
   text-decoration: none;
-  transition: border-color 0.18s, color 0.18s;
+  transition:
+    border-color 0.18s,
+    color 0.18s;
 }
 
 .compare-add-slot:hover {

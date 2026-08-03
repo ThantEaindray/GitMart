@@ -6,10 +6,14 @@ on:
       - 'v*'
 
 jobs:
-  release:
+  # ── Gate ────────────────────────────────────────────────────────────────
+  # Nothing is released or deployed until the full suite passes against the
+  # tagged commit. Split into its own job so the deploy cannot start unless
+  # this succeeds, and so a deploy failure is distinguishable from a test
+  # failure at a glance.
+  verify:
+    name: Verify
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     services:
       postgres:
@@ -27,7 +31,7 @@ jobs:
           --health-retries 5
 
     steps:
-      - name: Checkout code
+      - name: Checkout the tagged commit
         uses: actions/checkout@v4
 
       - name: Set up Node.js
@@ -56,8 +60,57 @@ jobs:
       - name: Integration tests
         run: npm run test:integration
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  # ── Release ─────────────────────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout the tagged commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build the changelog from commits since the previous tag
+        id: changelog
+        run: |
+          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 "${CURRENT_TAG}^" 2>/dev/null || echo "")
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            RANGE="$CURRENT_TAG"
+          else
+            RANGE="$PREVIOUS_TAG..$CURRENT_TAG"
+          fi
+
+          {
+            echo 'notes<<CHANGELOG_EOF'
+            git log --no-merges --pretty=format:'- %s (%h)' "$RANGE"
+            echo ''
+            echo 'CHANGELOG_EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         uses: actions/github-script@v7
+        env:
+          RELEASE_NOTES: ${{ steps.changelog.outputs.notes }}
         with:
           script: |
             const tag = context.ref.replace('refs/tags/', '');
@@ -66,25 +119,72 @@ jobs:
               repo: context.repo.repo,
               tag_name: tag,
               name: `GitMart ${tag}`,
-              body: [
-                '## Changes in this release',
-                '',
-                'See the [commit history](https://github.com/' +
-                  context.repo.owner + '/' + context.repo.repo +
-                  '/commits/' + tag + ') for a full list of changes.',
-              ].join('\n'),
+              body: ['## Changes in this release', '', process.env.RELEASE_NOTES].join('\n'),
               draft: false,
               prerelease: tag.includes('-'),
             });
 
-      - name: Deploy to AWS EC2
+  # ── Deploy ──────────────────────────────────────────────────────────────
+  # Skipped when the EC2 secrets are absent, so the workflow stays green on a
+  # fork or before a host has been provisioned, rather than failing on a step
+  # nobody can act on.
+  deploy:
+    name: Deploy to EC2
+    needs: release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check the deploy secrets are present
+        id: guard
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          if [ -z "$EC2_HOST" ]; then
+            echo "EC2_HOST is not set — skipping deploy."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy the tagged release
+        if: steps.guard.outputs.ready == 'true'
         uses: appleboy/ssh-action@v1
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          envs: RELEASE_TAG
           script: |
+            set -euo pipefail
             cd ~/gitmart
-            git pull origin main
+
+            # Record what is running so the deploy can be undone.
+            PREVIOUS=$(git rev-parse HEAD)
+            echo "Currently deployed: $PREVIOUS"
+
+            # Check out the exact tag being released. The previous version
+            # pulled main, which is not necessarily the tagged commit.
+            git fetch --all --tags --prune
+            git checkout --force "$RELEASE_TAG"
+
             npm ci --omit=dev
+
+            # Additive migrations only — migration:reset DROPs every table and
+            # would destroy production data.
+            npm run migrate:prod
+
             pm2 restart gitmart --update-env
+
+            # Confirm the process is actually serving before calling it done.
+            sleep 5
+            if ! curl --fail --silent --max-time 10 http://localhost:3000/api/health > /dev/null; then
+              echo "Health check FAILED — rolling back to $PREVIOUS"
+              git checkout --force "$PREVIOUS"
+              npm ci --omit=dev
+              pm2 restart gitmart --update-env
+              exit 1
+            fi
+
+            echo "Deployed $RELEASE_TAG successfully."

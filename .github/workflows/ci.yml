@@ -49,8 +49,36 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Prettier was never enforced, so formatting drifted whenever someone's
+      # editor used different settings — see a4e6eca, which reindented two
+      # blocks and passed CI regardless.
+      - name: Format check
+        run: npm run format:check
+
       - name: Unit tests
         run: npm run test:unit
 
       - name: Integration tests
         run: npm run test:integration
+
+      # E2E was previously absent from CI, so browser-level regressions — a CSS
+      # rule hiding the wrong element, a broken redirect — reached main unseen.
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+      # Verifies the additive migrations apply cleanly on top of the schema, so
+      # a migration that only works on the author's machine cannot reach a
+      # release. Run last because it mutates the CI database.
+      - name: Migrations apply cleanly
+        run: npx dotenv -e .env.test -- node scripts/migrate.js

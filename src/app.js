@@ -2,6 +2,7 @@ const express = require('express');
 const createError = require('http-errors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+const pool = require('./models/db');
 
 // Import route handlers
 const somethingRouter = require('./routers/Something.router');
@@ -42,6 +43,19 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Browsers automatically request /favicon.ico — return 204 (no content) to avoid 404 noise.
 app.get('/favicon.ico', (req, res) => res.status(204).end());
+
+// Health check for the deploy pipeline. Queries the database rather than just
+// returning 200, because a process that is up but cannot reach Postgres is not
+// actually serving — and that is exactly the state a rollback needs to catch.
+app.get('/api/health', (req, res) => {
+  pool.query('SELECT 1', (error) => {
+    if (error) {
+      console.error('Health check failed:', error.message);
+      return res.status(503).json({ status: 'unhealthy', database: 'unreachable' });
+    }
+    return res.status(200).json({ status: 'ok', database: 'reachable' });
+  });
+});
 
 // Existing backend routes
 app.use('/somethings', somethingRouter);
