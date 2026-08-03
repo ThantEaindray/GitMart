@@ -14,6 +14,13 @@ router.post(
   reservationController.createReservationRequest,
 );
 
+// View the logged-in user's own reservation for one listing (drives cart gating).
+router.get(
+  '/listings/:listingId/reservations/mine',
+  jwtMiddleware.verifyToken,
+  reservationController.getMyReservationForListing,
+);
+
 // View reservation requests submitted by the logged-in user.
 router.get(
   '/reservations/sent',

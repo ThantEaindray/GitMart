@@ -9,6 +9,8 @@ let nextId = 1;
 const TYPE_ICONS = {
   order: 'bi-bag-check',
   order_status: 'bi-arrow-repeat',
+  reservation: 'bi-calendar-check',
+  reservation_status: 'bi-calendar2-check',
   wishlist: 'bi-heart',
   message: 'bi-chat-left-dots',
   system: 'bi-info-circle',
