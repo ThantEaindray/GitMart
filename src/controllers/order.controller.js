@@ -1,8 +1,7 @@
 // order.controller.js
 const model = require('../utils/orderStore');
 const reservationModel = require('../models/Reservation.model');
-const notifModel = require('../utils/notificationStore');
-const sseManager = require('../utils/sseManager');
+const { notify } = require('../utils/notifier');
 
 // Valid status values for order updates.
 const ALLOWED_STATUSES = ['Pending', 'Processing', 'Delivered', 'Cancelled'];
@@ -14,17 +13,6 @@ const CHECKOUT_PATTERNS = {
   postalCode: /^[0-9]{6}$/,
   unitNumber: /^#\d{2}-\d{2,4}$/,
 };
-
-// ── Notification helper ───────────────────────────────────────────────────
-// Called after order mutations to push a real-time badge update via SSE.
-// notifModel callbacks are synchronous (in-memory), so no nesting is needed.
-
-function pushOrderNotification(userId, type, title, message) {
-  const n = notifModel.create({ userId, type, title, message });
-  const count = notifModel.getUnreadCount({ userId });
-  sseManager.send(userId, 'notification', n);
-  sseManager.send(userId, 'badge', { unreadCount: count });
-}
 
 // ── POST /api/orders — step 1: verify reservations on one-off listings ────
 // One-off listings can only be bought by the user whose reservation the owner
@@ -98,7 +86,7 @@ module.exports.createOrder = async (req, res, next) => {
 
   try {
     const order = await model.createOrder(data);
-    pushOrderNotification(
+    notify(
       data.userId,
       'order',
       'Order placed',
@@ -141,7 +129,7 @@ module.exports.updateOrderStatus = async (req, res, next) => {
     const order = await model.updateOrderStatus(req.params.id, status, res.locals.userId);
     if (!order) return res.status(404).json({ message: 'Order not found.' });
 
-    pushOrderNotification(
+    notify(
       res.locals.userId,
       'order_status',
       'Order ' + status.toLowerCase(),

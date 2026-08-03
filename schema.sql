@@ -9,6 +9,7 @@
 -- ─────────────────────────────────────────────────────────
 
 -- Drop existing tables (children before parents to avoid FK errors)
+DROP TABLE IF EXISTS notifications   CASCADE;
 DROP TABLE IF EXISTS chatcontent     CASCADE;
 DROP TABLE IF EXISTS reservation_requests CASCADE;
 DROP TABLE IF EXISTS offers          CASCADE;
@@ -55,7 +56,8 @@ CREATE TABLE users (
   font_size          TEXT    DEFAULT NULL,
   display_name       TEXT    DEFAULT NULL,
   notify_orders      BOOLEAN NOT NULL DEFAULT true,
-  notify_promotions  BOOLEAN NOT NULL DEFAULT false
+  notify_promotions  BOOLEAN NOT NULL DEFAULT false,
+  notify_email       BOOLEAN NOT NULL DEFAULT true
 );
 
 -- ── Refresh Tokens ────────────────────────────────────────
@@ -233,6 +235,47 @@ CREATE TABLE offers (
   price        NUMERIC(10,2)  NOT NULL CHECK (price > 0),
   "isAccepted" BOOLEAN        DEFAULT false
 );
+
+-- ── Notifications ─────────────────────────────────────────
+--  Replaces the previous in-memory store, which lost every
+--  notification on server restart. The icon is NOT stored:
+--  it is presentation, derived from `type` in the controller,
+--  so restyling never needs a data migration.
+CREATE TABLE notifications (
+  id         SERIAL    PRIMARY KEY,
+
+  user_id    INTEGER   NOT NULL
+    REFERENCES users(id) ON DELETE CASCADE,
+
+  type       TEXT      NOT NULL,
+  title      TEXT      NOT NULL,
+  message    TEXT      NOT NULL,
+  is_read    BOOLEAN   NOT NULL DEFAULT false,
+  created_on TIMESTAMP NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT notifications_type_check
+    CHECK (
+      type IN (
+        'order',
+        'order_status',
+        'reservation',
+        'reservation_status',
+        'wishlist',
+        'message',
+        'system'
+      )
+    )
+);
+
+-- Serves the notifications page: one user's rows, newest first.
+CREATE INDEX notifications_user_created_idx
+  ON notifications (user_id, created_on DESC, id DESC);
+
+-- Partial index for the unread badge count. Only unread rows are
+-- indexed, so it stays small even as read history grows.
+CREATE INDEX notifications_user_unread_idx
+  ON notifications (user_id)
+  WHERE is_read = false;
 
 -- ── Seed Data ─────────────────────────────────────────────
 INSERT INTO products (name, category, description, price, rating, review_count, icon, image_url) VALUES

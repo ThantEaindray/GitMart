@@ -1,9 +1,17 @@
 // Notification.controller.js
-const model = require('../utils/notificationStore');
+const model = require('../models/Notification.model');
 const sseManager = require('../utils/sseManager');
+const { toClientShape } = require('../utils/notifier');
+
+// COUNT(*) is a bigint, and node-postgres returns bigint as a STRING to avoid
+// precision loss. Number() here stops '3' reaching the client where `count > 0`
+// and arithmetic would misbehave.
+function readCount(result) {
+  return Number(result.rows[0].count);
+}
 
 // ── GET /api/notifications/stream ────────────────────────────────────────
-// Keeps the HTTP connection open and pushes named events via Server-Sent Events.
+// Holds the HTTP connection open and pushes named events via Server-Sent Events.
 
 module.exports.stream = (req, res) => {
   const userId = res.locals.userId;
@@ -15,11 +23,6 @@ module.exports.stream = (req, res) => {
   res.flushHeaders();
 
   sseManager.register(userId, res);
-
-  // Send the current unread count immediately so the badge is correct on connect.
-  // model.getUnreadCount is synchronous (in-memory), so the return value is used directly.
-  const unreadCount = model.getUnreadCount({ userId });
-  res.write('event: init\ndata: ' + JSON.stringify({ unreadCount }) + '\n\n');
 
   // Keep-alive comment line every 20 s so proxies don't close the idle connection.
   const keepAlive = setInterval(() => {
@@ -34,6 +37,24 @@ module.exports.stream = (req, res) => {
     clearInterval(keepAlive);
     sseManager.unregister(userId);
   });
+
+  // Send the current unread count so the badge is correct on connect. This is
+  // now a database read, so it resolves after the stream is already open.
+  const callback = (error, result) => {
+    if (error) {
+      console.error(error);
+      return;
+    }
+    try {
+      res.write(
+        'event: init\ndata: ' + JSON.stringify({ unreadCount: readCount(result) }) + '\n\n',
+      );
+    } catch (_e) {
+      /* client disconnected before the count came back */
+    }
+  };
+
+  model.getUnreadCount({ userId }, callback);
 };
 
 // ── GET /api/notifications ────────────────────────────────────────────────
@@ -41,9 +62,12 @@ module.exports.stream = (req, res) => {
 module.exports.getAll = (req, res) => {
   const data = { userId: res.locals.userId };
 
-  const callback = (error, items) => {
-    if (error) return res.status(500).json({ message: 'Internal server error' });
-    res.json(items);
+  const callback = (error, result) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    return res.status(200).json(result.rows.map(toClientShape));
   };
 
   model.getByUser(data, callback);
@@ -54,9 +78,12 @@ module.exports.getAll = (req, res) => {
 module.exports.getUnreadCount = (req, res) => {
   const data = { userId: res.locals.userId };
 
-  const callback = (error, count) => {
-    if (error) return res.status(500).json({ message: 'Internal server error' });
-    res.json({ count });
+  const callback = (error, result) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    return res.status(200).json({ count: readCount(result) });
   };
 
   model.getUnreadCount(data, callback);
@@ -65,12 +92,25 @@ module.exports.getUnreadCount = (req, res) => {
 // ── PATCH /api/notifications/:id/read ────────────────────────────────────
 
 module.exports.markRead = (req, res) => {
-  const data = { id: req.params.id, userId: res.locals.userId };
+  const notificationId = Number(req.params.id);
 
-  const callback = (error, n) => {
-    if (error) return res.status(500).json({ message: 'Internal server error' });
-    if (!n) return res.status(404).json({ message: 'Notification not found.' });
-    res.json(n);
+  if (!Number.isInteger(notificationId) || notificationId <= 0) {
+    return res.status(400).json({ message: 'Notification ID must be a positive integer.' });
+  }
+
+  const data = { id: notificationId, userId: res.locals.userId };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    // Zero rows means it does not exist OR belongs to someone else. Both answer
+    // 404 so this cannot be used to probe which notification ids exist.
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Notification not found.' });
+    }
+    return res.status(200).json(toClientShape(result.rows[0]));
   };
 
   model.markRead(data, callback);
@@ -82,10 +122,13 @@ module.exports.markAllRead = (req, res) => {
   const data = { userId: res.locals.userId };
 
   const callback = (error) => {
-    if (error) return res.status(500).json({ message: 'Internal server error' });
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
     // Push a badge update so any open SSE clients clear their count immediately.
     sseManager.send(res.locals.userId, 'badge', { unreadCount: 0 });
-    res.json({ message: 'All notifications marked as read.' });
+    return res.status(200).json({ message: 'All notifications marked as read.' });
   };
 
   model.markAllRead(data, callback);

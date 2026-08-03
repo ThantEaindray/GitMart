@@ -12,18 +12,15 @@ jest.mock('../../src/models/Reservation.model', () => ({
   rejectReservationRequest: jest.fn(),
 }));
 
-jest.mock('../../src/utils/notificationStore', () => ({
-  create: jest.fn(() => ({ id: 1, title: 'stub' })),
-  getUnreadCount: jest.fn(() => 1),
-}));
-
-jest.mock('../../src/utils/sseManager', () => ({
-  send: jest.fn(),
+// The controller now delegates to notifier.notify(), which owns persistence,
+// the SSE push and the email. Mocking that one seam keeps these tests about
+// reservation logic rather than notification plumbing.
+jest.mock('../../src/utils/notifier', () => ({
+  notify: jest.fn(),
 }));
 
 const model = require('../../src/models/Reservation.model');
-const notifModel = require('../../src/utils/notificationStore');
-const sseManager = require('../../src/utils/sseManager');
+const { notify } = require('../../src/utils/notifier');
 const controller = require('../../src/controllers/Reservation.controller');
 
 function createRequest({ params = {}, body = {} } = {}) {
@@ -59,9 +56,7 @@ beforeEach(() => {
     mockFunction.mockReset();
   });
 
-  notifModel.create.mockReset().mockReturnValue({ id: 1, title: 'stub' });
-  notifModel.getUnreadCount.mockReset().mockReturnValue(1);
-  sseManager.send.mockReset();
+  notify.mockReset();
 
   consoleErrorSpy.mockClear();
 });
@@ -1508,25 +1503,23 @@ describe('Reservation.controller', () => {
 
       runCreateChain(req, res);
 
-      expect(notifModel.create).toHaveBeenCalledWith({
-        userId: 10,
-        type: 'reservation',
-        title: 'New reservation request',
-        message: 'buyer_bob requested to reserve "Vintage Watch".',
-      });
+      expect(notify).toHaveBeenCalledWith(
+        10,
+        'reservation',
+        'New reservation request',
+        'buyer_bob requested to reserve "Vintage Watch".',
+      );
     });
 
-    test('pushes the notification and the badge count over SSE', () => {
+    test('raises exactly one notification per reservation request', () => {
       stubCreateFlow({ id: 101, requester_id: 20, requester_username: 'buyer_bob' });
-      notifModel.getUnreadCount.mockReturnValue(4);
 
       const req = createRequest({ params: { listingId: '5' } });
       const res = createResponse('20');
 
       runCreateChain(req, res);
 
-      expect(sseManager.send).toHaveBeenCalledWith(10, 'notification', { id: 1, title: 'stub' });
-      expect(sseManager.send).toHaveBeenCalledWith(10, 'badge', { unreadCount: 4 });
+      expect(notify).toHaveBeenCalledTimes(1);
     });
 
     test('falls back to a generic name when the username is missing', () => {
@@ -1537,10 +1530,11 @@ describe('Reservation.controller', () => {
 
       runCreateChain(req, res);
 
-      expect(notifModel.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'A buyer requested to reserve "Vintage Watch".',
-        }),
+      expect(notify).toHaveBeenCalledWith(
+        10,
+        'reservation',
+        'New reservation request',
+        'A buyer requested to reserve "Vintage Watch".',
       );
     });
 
@@ -1563,8 +1557,7 @@ describe('Reservation.controller', () => {
       runCreateChain(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(notifModel.create).not.toHaveBeenCalled();
-      expect(sseManager.send).not.toHaveBeenCalled();
+      expect(notify).not.toHaveBeenCalled();
     });
 
     test('notifies the requester when the owner accepts', async () => {
@@ -1579,13 +1572,12 @@ describe('Reservation.controller', () => {
 
       await controller.acceptReservationRequest(req, res);
 
-      expect(notifModel.create).toHaveBeenCalledWith({
-        userId: 20,
-        type: 'reservation_status',
-        title: 'Reservation request accepted',
-        message:
-          'Your reservation request for "Vintage Watch" was accepted. You can now add it to your cart.',
-      });
+      expect(notify).toHaveBeenCalledWith(
+        20,
+        'reservation_status',
+        'Reservation request accepted',
+        'Your reservation request for "Vintage Watch" was accepted. You can now add it to your cart.',
+      );
     });
 
     test('does not notify when accepting is rejected by the model', async () => {
@@ -1597,7 +1589,7 @@ describe('Reservation.controller', () => {
       await controller.acceptReservationRequest(req, res);
 
       expect(res.status).toHaveBeenCalledWith(403);
-      expect(notifModel.create).not.toHaveBeenCalled();
+      expect(notify).not.toHaveBeenCalled();
     });
 
     test('notifies the requester when the owner rejects', () => {
@@ -1626,12 +1618,12 @@ describe('Reservation.controller', () => {
       const next = jest.fn(() => controller.rejectReservationRequest(req, res));
       controller.loadReservationForReject(req, res, next);
 
-      expect(notifModel.create).toHaveBeenCalledWith({
-        userId: 20,
-        type: 'reservation_status',
-        title: 'Reservation request declined',
-        message: 'Your reservation request for "Vintage Watch" was declined.',
-      });
+      expect(notify).toHaveBeenCalledWith(
+        20,
+        'reservation_status',
+        'Reservation request declined',
+        'Your reservation request for "Vintage Watch" was declined.',
+      );
     });
 
     test('skips the notification when the owner id is missing', () => {
@@ -1648,7 +1640,7 @@ describe('Reservation.controller', () => {
 
       // owner_id 0 is falsy, so the listing is treated as ownerless and the
       // request is refused before any notification is built.
-      expect(notifModel.create).not.toHaveBeenCalled();
+      expect(notify).not.toHaveBeenCalled();
     });
   });
 });
