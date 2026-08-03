@@ -95,11 +95,22 @@ function getStatusControlHelp(currentStatus) {
   return 'Select the next valid fulfilment status.';
 }
 
+function getFallbackStatusHistory(order) {
+  return [
+    {
+      status: order.status || 'Pending',
+      note: 'Tracking started from the current order status.',
+      createdAt: order.createdAt,
+    },
+  ];
+}
+
 // Render timestamped fulfilment updates for buyer tracking.
-function renderStatusTimeline(statusHistory = []) {
-  if (!Array.isArray(statusHistory) || statusHistory.length === 0) {
-    return '<p class="orders-status timeline-empty">No tracking updates are available yet.</p>';
-  }
+function renderStatusTimeline(order) {
+  const statusHistory =
+    Array.isArray(order.statusHistory) && order.statusHistory.length > 0
+      ? order.statusHistory
+      : getFallbackStatusHistory(order);
 
   return `
     <div class="order-timeline" aria-label="Order tracking timeline">
@@ -171,7 +182,7 @@ function renderOrder(order) {
 
         <section class="order-tracking-panel" aria-label="Order tracking updates">
           <p class="order-detail-title">Tracking Timeline</p>
-          ${renderStatusTimeline(order.statusHistory)}
+          ${renderStatusTimeline(order)}
         </section>
 
         <div class="order-actions">
