@@ -186,10 +186,14 @@ module.exports.updateListingStatus = (data, callback) => {
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
+// Whitelist, not string interpolation of user input — the chosen value is
+// spliced straight into ORDER BY, so anything outside this map must fall back
+// to the default rather than reach the query.
 const SORT_MAP = {
   newest: 'created_on DESC, id DESC',
   cheapest: 'price ASC, id DESC',
   expensive: 'price DESC, id DESC',
+  most_viewed: 'view_count DESC NULLS LAST, id DESC',
 };
 
 module.exports.searchListings = (data, callback) => {
