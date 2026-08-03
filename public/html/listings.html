@@ -95,11 +95,23 @@
           placeholder="Max $"
           min="0"
         />
-        <select class="search-filter-select" id="sort-select">
+        <select class="search-filter-select" id="category-select" aria-label="Filter by category">
+          <option value="">All categories</option>
+          <option value="Collectibles">Collectibles</option>
+          <option value="Fashion">Fashion</option>
+          <option value="Books">Books</option>
+          <option value="Others">Others</option>
+        </select>
+        <select class="search-filter-select" id="sort-select" aria-label="Sort listings">
           <option value="newest">Newest</option>
           <option value="cheapest">Cheapest</option>
           <option value="expensive">Most Expensive</option>
+          <option value="most_viewed">Most Viewed</option>
         </select>
+        <button class="search-filter-clear" type="button" id="clear-filters">
+          Clear
+          <span class="filter-count" id="filter-count" hidden>0</span>
+        </button>
       </div>
 
       <div id="warningCard" class="auth-alert d-none">

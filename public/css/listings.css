@@ -244,6 +244,14 @@
   margin-bottom: 24px;
 }
 
+/* .d-none lives in base.css with the same (0,1,0) specificity as the rule
+   above, and this file loads later — so display:flex would win and the delete
+   confirmation would show the edit form. Same compound-selector fix already
+   used for .listing-modal.d-none. */
+.listing-modal-fields.d-none {
+  display: none;
+}
+
 .listing-modal-fields input {
   width: 100%;
   border: 1px solid var(--border);

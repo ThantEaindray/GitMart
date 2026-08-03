@@ -888,4 +888,40 @@ describe('Listing.model - searchListings sort options', () => {
       done();
     });
   });
+
+  test('should use view_count ordering for most_viewed sort', (done) => {
+    mockQuery(null, []);
+
+    searchListings({ ...baseData, sort: 'most_viewed' }, (err) => {
+      expect(err).toBeNull();
+      const [sql] = pool.query.mock.calls[0];
+      expect(sql).toContain('view_count DESC');
+      done();
+    });
+  });
+
+  test('should place listings with no views last rather than first', (done) => {
+    // view_count is nullable, and in Postgres DESC puts NULLs first by default,
+    // which would show never-viewed listings at the top of "Most Viewed".
+    mockQuery(null, []);
+
+    searchListings({ ...baseData, sort: 'most_viewed' }, () => {
+      const [sql] = pool.query.mock.calls[0];
+      expect(sql).toContain('NULLS LAST');
+      done();
+    });
+  });
+
+  test('should never splice an unrecognised sort value into the SQL', (done) => {
+    // The sort value is interpolated into ORDER BY, so the whitelist is the
+    // only thing preventing injection through that parameter.
+    mockQuery(null, []);
+
+    searchListings({ ...baseData, sort: 'price; DROP TABLE listings;--' }, () => {
+      const [sql] = pool.query.mock.calls[0];
+      expect(sql).not.toContain('DROP TABLE');
+      expect(sql).toContain('created_on DESC');
+      done();
+    });
+  });
 });
