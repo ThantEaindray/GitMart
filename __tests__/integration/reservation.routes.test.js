@@ -46,6 +46,11 @@ async function insertUser(username, email) {
   return result.rows[0];
 }
 
+// Tracks every listing this suite creates, including ownerless ones, so
+// cleanupSuiteData can remove them by id rather than only by owner. Reset once
+// cleanup has consumed it.
+let createdListingIds = [];
+
 /**
  * Inserts a listing directly into the test database.
  */
@@ -121,6 +126,8 @@ async function insertListing({
     ],
   );
 
+  createdListingIds.push(result.rows[0].id);
+
   return result.rows[0];
 }
 
@@ -160,6 +167,11 @@ const SUITE_USERNAMES = ['reservation_owner', 'reservation_requester', 'reservat
  * Order matters. offers.product_id has no ON DELETE clause so those rows must
  * go first; listings.owner_id likewise has none, so listings must go before
  * users. Everything else referencing listings or users cascades.
+ *
+ * Matching only by owner misses listings created with ownerId: null — an
+ * ownerless listing's owner_id is NULL, and `NULL IN (...)` is never true in
+ * SQL, so the owner-based query silently skips it every run. createdListingIds
+ * closes that gap by matching on id directly, regardless of ownership.
  */
 async function cleanupSuiteData() {
   await pool.query(
@@ -169,19 +181,23 @@ async function cleanupSuiteData() {
         SELECT id FROM listings
         WHERE owner_id IN (SELECT id FROM users WHERE username = ANY($1::text[]))
       )
+      OR product_id = ANY($2::integer[])
     `,
-    [SUITE_USERNAMES],
+    [SUITE_USERNAMES, createdListingIds],
   );
 
   await pool.query(
     `
       DELETE FROM listings
       WHERE owner_id IN (SELECT id FROM users WHERE username = ANY($1::text[]))
+      OR id = ANY($2::integer[])
     `,
-    [SUITE_USERNAMES],
+    [SUITE_USERNAMES, createdListingIds],
   );
 
   await pool.query('DELETE FROM users WHERE username = ANY($1::text[])', [SUITE_USERNAMES]);
+
+  createdListingIds = [];
 }
 
 beforeEach(async () => {
