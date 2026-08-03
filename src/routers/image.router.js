@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require ("../middleware/jwtMiddleware.js")
 const chatController = require("../controllers/chat.controller.js")
 const imgController = require('../controllers/image.controller.js')
+const path=require('node:path')
 const multer = require ("multer")
 const router = express.Router();
 
@@ -15,4 +16,5 @@ const storage = multer.diskStorage({
 const upload = multer({storage:storage})
 //generate a unique name for each image and also get multer ready to do its thing
 
-router.post('/send', jwt.verifyToken, upload.single("cont") ,imgController.uploadImg, imgController.writeDB, imgController.sendWS, imageController.cleanup)
+router.post('/send', jwt.verifyToken, upload.single("cont"), imgController.uploadImg, imgController.writeDB, imgController.sendWS)
+module.exports=router

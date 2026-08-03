@@ -85,7 +85,7 @@ ws.on('close', (cli) => {
 //so we also need a module that will handle sending the image data which has to be here since it just does 
 
 module.exports.sendImg = (data) => {
-  console.log("sending image"+ data)
+  console.log(data)
   ws.clients.forEach((cli) => {
     cli.send(JSON.stringify(data))
   })
