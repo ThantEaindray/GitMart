@@ -1,9 +1,19 @@
 const controller = require('../../src/controllers/order.controller');
 const model = require('../../src/utils/orderStore');
+const reservationModel = require('../../src/models/Reservation.model');
 
 jest.mock('../../src/utils/orderStore');
+
+// Must be mocked: notifier reaches the database through Notification.model, so
+// leaving it real would have these unit tests opening a Postgres connection.
+jest.mock('../../src/utils/notifier', () => ({
+  notify: jest.fn(),
+}));
 jest.mock('../../src/utils/purchaseState', () => ({
   markPurchasedItemsSold: jest.fn(),
+}));
+jest.mock('../../src/models/Reservation.model', () => ({
+  getAcceptedListingIdsForUser: jest.fn(),
 }));
 
 afterEach(() => jest.clearAllMocks());
@@ -695,5 +705,138 @@ describe('sendResponse', () => {
     const res = makeRes({ statusCode: 200, results: [] });
     controller.sendResponse({}, res);
     expect(res.json).toHaveBeenCalledWith([]);
+  });
+});
+
+// ── verifyListingReservations ────────────────────────────────────────────────
+
+describe('verifyListingReservations', () => {
+  let consoleErrorSpy;
+
+  beforeAll(() => {
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterAll(() => consoleErrorSpy.mockRestore());
+
+  // Resolves the guard with the listing ids the buyer is allowed to purchase.
+  function allowListings(ids) {
+    reservationModel.getAcceptedListingIdsForUser.mockImplementation((_data, callback) => {
+      callback(null, { rows: ids.map((id) => ({ listing_id: id })) });
+    });
+  }
+
+  it('skips the lookup entirely for a catalogue-only cart', () => {
+    const req = { body: { items: [{ id: 1, productId: 1, listingId: null }] } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+
+    controller.verifyListingReservations(req, res, next);
+
+    expect(reservationModel.getAcceptedListingIdsForUser).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('skips the lookup when the cart has no items', () => {
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+
+    controller.verifyListingReservations({ body: {} }, res, next);
+
+    expect(reservationModel.getAcceptedListingIdsForUser).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('queries with the buyer id and the listing ids from the cart', () => {
+    allowListings([4, 9]);
+    const req = { body: { items: [{ listingId: 4 }, { listingId: '9' }] } };
+    const next = jest.fn();
+
+    controller.verifyListingReservations(req, makeRes({ userId: 7 }), next);
+
+    expect(reservationModel.getAcceptedListingIdsForUser).toHaveBeenCalledWith(
+      { requester_id: 7, listing_ids: [4, 9] },
+      expect.any(Function),
+    );
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('blocks checkout with 403 when a listing has no accepted reservation', () => {
+    allowListings([4]);
+    const req = { body: { items: [{ listingId: 4 }, { listingId: 5 }] } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+
+    controller.verifyListingReservations(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({
+      message: expect.stringContaining('Blocked listing IDs: 5.'),
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('blocks every unreserved listing, not just the first', () => {
+    allowListings([]);
+    const req = { body: { items: [{ listingId: 5 }, { listingId: 6 }] } };
+    const res = makeRes({ userId: 7 });
+
+    controller.verifyListingReservations(req, res, jest.fn());
+
+    expect(res.json).toHaveBeenCalledWith({
+      message: expect.stringContaining('Blocked listing IDs: 5, 6.'),
+    });
+  });
+
+  it('lets a mixed cart through when every listing is reserved by the buyer', () => {
+    allowListings([4]);
+    const req = { body: { items: [{ productId: 2, listingId: null }, { listingId: 4 }] } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+
+    controller.verifyListingReservations(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it('ignores malformed listing ids rather than querying for them', () => {
+    const req = { body: { items: [{ listingId: 'abc' }, { listingId: -1 }, { listingId: 0 }] } };
+    const next = jest.fn();
+
+    controller.verifyListingReservations(req, makeRes({ userId: 7 }), next);
+
+    expect(reservationModel.getAcceptedListingIdsForUser).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('returns 500 and does not continue when the lookup fails', () => {
+    reservationModel.getAcceptedListingIdsForUser.mockImplementation((_data, callback) => {
+      callback(new Error('db down'));
+    });
+
+    const req = { body: { items: [{ listingId: 4 }] } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+
+    controller.verifyListingReservations(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('compares ids numerically so string ids from the cart still match', () => {
+    reservationModel.getAcceptedListingIdsForUser.mockImplementation((_data, callback) => {
+      callback(null, { rows: [{ listing_id: '4' }] });
+    });
+
+    const req = { body: { items: [{ listingId: '4' }] } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+
+    controller.verifyListingReservations(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
   });
 });

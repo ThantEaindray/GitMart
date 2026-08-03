@@ -1,7 +1,7 @@
 // order.controller.js
 const model = require('../utils/orderStore');
-const notifModel = require('../utils/notificationStore');
-const sseManager = require('../utils/sseManager');
+const reservationModel = require('../models/Reservation.model');
+const { notify } = require('../utils/notifier');
 
 // Valid status values for order updates.
 const ALLOWED_STATUSES = ['Pending', 'Processing', 'Delivered', 'Cancelled'];
@@ -14,18 +14,46 @@ const CHECKOUT_PATTERNS = {
   unitNumber: /^#\d{2}-\d{2,4}$/,
 };
 
-// ── Notification helper ───────────────────────────────────────────────────
-// Called after order mutations to push a real-time badge update via SSE.
-// notifModel callbacks are synchronous (in-memory), so no nesting is needed.
+// ── POST /api/orders — step 1: verify reservations on one-off listings ────
+// One-off listings can only be bought by the user whose reservation the owner
+// accepted. Plain catalogue products carry no listingId and are skipped.
 
-function pushOrderNotification(userId, type, title, message) {
-  const n = notifModel.create({ userId, type, title, message });
-  const count = notifModel.getUnreadCount({ userId });
-  sseManager.send(userId, 'notification', n);
-  sseManager.send(userId, 'badge', { unreadCount: count });
-}
+module.exports.verifyListingReservations = (req, res, next) => {
+  const items = Array.isArray(req.body?.items) ? req.body.items : [];
 
-// ── POST /api/orders ──────────────────────────────────────────────────────
+  const listingIds = items
+    .filter((item) => item && item.listingId !== undefined && item.listingId !== null)
+    .map((item) => Number(item.listingId))
+    .filter((id) => Number.isInteger(id) && id > 0);
+
+  if (listingIds.length === 0) return next();
+
+  const data = { requester_id: Number(res.locals.userId), listing_ids: listingIds };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+
+    const allowed = new Set(result.rows.map((row) => Number(row.listing_id)));
+    const blocked = listingIds.filter((id) => !allowed.has(id));
+
+    if (blocked.length > 0) {
+      return res.status(403).json({
+        message:
+          'You can only buy a listing after its owner accepts your reservation request. ' +
+          `Blocked listing IDs: ${blocked.join(', ')}.`,
+      });
+    }
+
+    next();
+  };
+
+  reservationModel.getAcceptedListingIdsForUser(data, callback);
+};
+
+// ── POST /api/orders — step 2: validate details and create ────────────────
 
 module.exports.createOrder = async (req, res, next) => {
   const data = { ...req.body, userId: res.locals.userId };
@@ -58,7 +86,7 @@ module.exports.createOrder = async (req, res, next) => {
 
   try {
     const order = await model.createOrder(data);
-    pushOrderNotification(
+    notify(
       data.userId,
       'order',
       'Order placed',
@@ -101,7 +129,7 @@ module.exports.updateOrderStatus = async (req, res, next) => {
     const order = await model.updateOrderStatus(req.params.id, status, res.locals.userId);
     if (!order) return res.status(404).json({ message: 'Order not found.' });
 
-    pushOrderNotification(
+    notify(
       res.locals.userId,
       'order_status',
       'Order ' + status.toLowerCase(),

@@ -1,9 +1,10 @@
 // ── TOAST ─────────────────────────────────────────────────────────────────
 
 var currentListing = null;
-var currentBuyerReservation = null;
 var _isWishlisted = false;
 var _currentListingId = null;
+// The logged-in user's own reservation on this listing (null when none exists).
+var currentUserReservation = null;
 
 function showToast(message) {
   const toast = document.getElementById('toast');
@@ -175,6 +176,95 @@ function getOwnerLifecycleActions(status) {
   `;
 }
 
+// A listing is buyable only once its owner has accepted THIS user's reservation,
+// which is also what moves the listing into RESERVED.
+function canAddToCart(status) {
+  return (
+    status === 'RESERVED' &&
+    currentUserReservation !== null &&
+    currentUserReservation.status === 'ACCEPTED'
+  );
+}
+
+function disabledButton(id, label) {
+  return `
+    <button
+      class="btn-outline btn-unavailable"
+      id="${id}"
+      type="button"
+      disabled
+    >
+      ${label}
+    </button>
+  `;
+}
+
+function getCartButton(status) {
+  if (canAddToCart(status)) {
+    return `
+      <button
+        class="btn-outline"
+        id="btn-cart"
+        type="button"
+        onclick="addToCart()"
+      >
+        <i class="bi bi-bag"></i>
+        Add to Cart
+      </button>
+    `;
+  }
+
+  // RESERVED but held by someone else — say so rather than showing a bare status.
+  if (status === 'RESERVED') {
+    return disabledButton('btn-cart', 'Reserved by another buyer');
+  }
+  if (status === 'AVAILABLE') {
+    return disabledButton('btn-cart', 'Reserve first to buy');
+  }
+
+  return disabledButton('btn-cart', formatListingStatus(status));
+}
+
+function getReservationButton(listing, status) {
+  // Seed/demo listings have no owner, so nobody can reserve them. Say why
+  // instead of rendering nothing and leaving the buyer guessing.
+  if (!listing.owner_id) {
+    return disabledButton('btn-request-reservation', 'Reservations unavailable');
+  }
+
+  // A pending request can still be withdrawn, so this one stays actionable.
+  if (currentUserReservation && currentUserReservation.status === 'PENDING') {
+    return `
+      <button
+        class="btn-outline"
+        id="btn-request-reservation"
+        type="button"
+        onclick="cancelBuyerReservation()"
+      >
+        <i class="bi bi-x-circle"></i>
+        Cancel Reservation Request
+      </button>
+    `;
+  }
+  if (currentUserReservation && currentUserReservation.status === 'ACCEPTED') {
+    return disabledButton('btn-request-reservation', 'Reservation Accepted');
+  }
+
+  if (status !== 'AVAILABLE') return '';
+
+  return `
+    <button
+      class="btn-outline"
+      id="btn-request-reservation"
+      type="button"
+      onclick="requestReservation()"
+    >
+      <i class="bi bi-calendar-check"></i>
+      Request Reservation
+    </button>
+  `;
+}
+
 function getOwnerReservationPanel() {
   return `
     <section
@@ -228,50 +318,11 @@ function getBuyerActions(listing, status) {
     `
     : '';
 
-  const cartButton =
-    status === 'AVAILABLE'
-      ? `
-        <button
-          class="btn-outline"
-          id="btn-cart"
-          type="button"
-          onclick="addToCart()"
-        >
-          <i class="bi bi-bag"></i>
-          Add to Cart
-        </button>
-      `
-      : `
-        <button
-          class="btn-outline btn-unavailable"
-          id="btn-cart"
-          type="button"
-          disabled
-        >
-          ${formatListingStatus(status)}
-        </button>
-      `;
-
-  const reservationButton =
-    listing.owner_id && status === 'AVAILABLE'
-      ? `
-        <button
-          class="btn-outline"
-          id="btn-request-reservation"
-          type="button"
-          onclick="requestReservation()"
-        >
-          <i class="bi bi-calendar-check"></i>
-          Request Reservation
-        </button>
-      `
-      : '';
-
   return `
     <div class="product-actions">
       ${contactButton}
-      ${cartButton}
-      ${reservationButton}
+      ${getCartButton(status)}
+      ${getReservationButton(listing, status)}
 
       <button
         class="btn-wishlist-heart"
@@ -291,8 +342,17 @@ function getBuyerActions(listing, status) {
 
 function addToCart() {
   if (!currentListing) return;
-  if (getListingStatus(currentListing) !== 'AVAILABLE') {
-    showToast('Only available listings can be added to cart.');
+
+  const status = getListingStatus(currentListing);
+
+  if (!canAddToCart(status)) {
+    if (status === 'RESERVED') {
+      showToast('This listing is reserved by another buyer.');
+    } else if (status === 'AVAILABLE') {
+      showToast('Request a reservation and wait for the seller to accept before buying.');
+    } else {
+      showToast(`This listing is ${formatListingStatus(status).toLowerCase()}.`);
+    }
     return;
   }
 
@@ -322,41 +382,16 @@ function addToCart() {
   showToast('Added to cart.');
 }
 
-function resetReservationButton() {
-  const button = document.getElementById('btn-request-reservation');
-
-  currentBuyerReservation = null;
-
-  if (!button) return;
-
-  button.disabled = false;
-  button.onclick = requestReservation;
-  button.innerHTML = `
-    <i class="bi bi-calendar-check"></i>
-    Request Reservation
-  `;
-}
-
-function showPendingReservationButton(reservation) {
-  const button = document.getElementById('btn-request-reservation');
-
-  if (!button || !reservation || !reservation.id) {
-    return;
-  }
-
-  currentBuyerReservation = reservation;
-
-  button.disabled = false;
-  button.onclick = cancelBuyerReservation;
-
-  button.innerHTML = `
-    <i class="bi bi-x-circle"></i>
-    Cancel Reservation Request
-  `;
+// Every reservation button state is derived from currentUserReservation at
+// render time, so re-rendering is the only thing needed to reflect a change.
+// This replaces the previous pattern of mutating the button's label and onclick
+// by hand, where a stray reset could silently undo a state that had just been set.
+function refreshReservationUi() {
+  if (currentListing) renderListing(currentListing);
 }
 
 function cancelBuyerReservation() {
-  if (!currentBuyerReservation || !currentBuyerReservation.id) {
+  if (!currentUserReservation || !currentUserReservation.id) {
     showToast('No pending reservation request found.');
     return;
   }
@@ -368,23 +403,24 @@ function cancelBuyerReservation() {
     button.textContent = 'Cancelling...';
   }
 
-  authFetch(`/api/reservations/${currentBuyerReservation.id}/cancel`, {
+  authFetch(`/api/reservations/${currentUserReservation.id}/cancel`, {
     method: 'PATCH',
   })
     .then(parseResponse)
     .then(function (result) {
       if (result.status !== 200) {
         showToast(result.data.message || 'Failed to cancel reservation request.');
-        showPendingReservationButton(currentBuyerReservation);
+        refreshReservationUi();
         return;
       }
 
       showToast(result.data.message || 'Reservation request cancelled.');
-      resetReservationButton();
+      currentUserReservation = null;
+      refreshReservationUi();
     })
     .catch(function () {
       showToast('Something went wrong while cancelling the reservation request.');
-      showPendingReservationButton(currentBuyerReservation);
+      refreshReservationUi();
     });
 }
 
@@ -416,28 +452,21 @@ function requestReservation() {
       if (result.status !== 201) {
         showToast(result.data.message || 'Failed to submit reservation request.');
 
-        resetReservationButton();
+        refreshReservationUi();
         return;
       }
 
       showToast(result.data.message || 'Reservation request submitted.');
 
-      const reservation = result.data.reservation;
-
-      if (reservation && reservation.id) {
-        showPendingReservationButton(reservation);
-        return;
-      }
-
-      if (button) {
-        button.disabled = true;
-        button.textContent = 'Request Sent';
-      }
+      // Re-render off the new state so the button becomes "Cancel Reservation
+      // Request" through the same path that runs on a fresh page load.
+      currentUserReservation = result.data.reservation || null;
+      renderListing(currentListing);
     })
     .catch(function () {
       showToast('Something went wrong while submitting the reservation request.');
 
-      resetReservationButton();
+      refreshReservationUi();
     });
 }
 
@@ -518,14 +547,15 @@ function createOwnerReservationCard(reservation) {
             ${escapeReservationText(requesterName)}
           </p>
 
-          ${submittedDate
-      ? `
+          ${
+            submittedDate
+              ? `
                 <p class="owner-reservation-date">
                   Submitted ${submittedDate}
                 </p>
               `
-      : ''
-    }
+              : ''
+          }
         </div>
 
         <span
@@ -616,40 +646,6 @@ function loadOwnerReservationRequests() {
           reservation requests.
         </p>
       `;
-    });
-}
-
-function loadBuyerReservationState() {
-  const button = document.getElementById('btn-request-reservation');
-
-  if (button) {
-    button.disabled = true;
-  }
-  authFetch('/api/reservations/sent')
-    .then(parseResponse)
-    .then(function (result) {
-      if (result.status !== 200) {
-        resetReservationButton();
-        return;
-      }
-
-      const reservation = (Array.isArray(result.data) ? result.data : []).find(function (item) {
-        return (
-          Number(item.listing_id) === Number(currentListing.id) &&
-          String(item.status).toUpperCase() === 'PENDING'
-        );
-      });
-
-      if (reservation) {
-        currentBuyerReservation = reservation;
-        showPendingReservationButton(reservation);
-        resetReservationButton();
-      } else {
-        resetReservationButton();
-      }
-    })
-    .catch(function () {
-      resetReservationButton();
     });
 }
 
@@ -793,10 +789,10 @@ function renderListing(listing) {
 
   const statusUpdatedDate = listing.status_updated_on
     ? new Date(listing.status_updated_on).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
     : null;
 
   const listingImage = listing.image_url
@@ -831,10 +827,11 @@ function renderListing(listing) {
 
         ${statusUpdatedDate ? `&nbsp;·&nbsp; Status updated ${statusUpdatedDate}` : ''}
 
-        ${listing.view_count > 0
-      ? `&nbsp;·&nbsp; <i class="bi bi-eye"></i> ${listing.view_count} views`
-      : ''
-    }
+        ${
+          listing.view_count > 0
+            ? `&nbsp;·&nbsp; <i class="bi bi-eye"></i> ${listing.view_count} views`
+            : ''
+        }
       </div>
 
       <h1 class="product-name">
@@ -877,7 +874,7 @@ function loadSellerInfo(ownerId) {
       var link = document.getElementById('seller-name-link');
       if (link && data.username) link.textContent = data.username;
     })
-    .catch(function () { });
+    .catch(function () {});
 }
 
 // ── RELATED LISTINGS ─────────────────────────────────────────────────────
@@ -1002,6 +999,18 @@ function loadDetailWishlistState() {
 
 // ── LOAD ──────────────────────────────────────────────────────────────────
 
+function renderLoadedListing(listing) {
+  renderListing(listing);
+  loadDetailWishlistState();
+  loadRelatedListings(listing.category);
+  if (listing.owner_id) loadSellerInfo(listing.owner_id);
+  if (typeof initReviews === 'function') initReviews(listing.id, listing.owner_id);
+}
+
+function applyMyReservation(result) {
+  if (result.status === 200) currentUserReservation = result.data.reservation;
+}
+
 function onListingLoaded(result) {
   const section = document.getElementById('listing-detail');
 
@@ -1010,14 +1019,25 @@ function onListingLoaded(result) {
     return;
   }
 
-  renderListing(result.data);
-  if (!isListingOwner(result.data)) {
-    loadBuyerReservationState();
+  const listing = result.data;
+  currentUserReservation = null;
+
+  // Owners and signed-out visitors never hold a reservation — render straight away.
+  if (!localStorage.getItem('token') || isListingOwner(listing)) {
+    renderLoadedListing(listing);
+    return;
   }
-  loadDetailWishlistState();
-  loadRelatedListings(result.data.category);
-  if (result.data.owner_id) loadSellerInfo(result.data.owner_id);
-  if (typeof initReviews === 'function') initReviews(result.data.id, result.data.owner_id);
+
+  // Reservation state decides whether the cart button unlocks and whether the
+  // reservation button offers "cancel", so it must be resolved before the first
+  // render. Failure here is non-fatal — the buttons stay in their locked state.
+  authFetch('/api/listings/' + listing.id + '/reservations/mine')
+    .then(parseResponse)
+    .then(applyMyReservation)
+    .catch(function () {})
+    .finally(function () {
+      renderLoadedListing(listing);
+    });
 }
 
 function onListingError() {
@@ -1086,6 +1106,7 @@ window.createChat = createChat;
 window.updateListingStatus = updateListingStatus;
 window.toggleDetailWishlist = toggleDetailWishlist;
 window.requestReservation = requestReservation;
+window.cancelBuyerReservation = cancelBuyerReservation;
 window.loadOwnerReservationRequests = loadOwnerReservationRequests;
 window.decideReservation = decideReservation;
 

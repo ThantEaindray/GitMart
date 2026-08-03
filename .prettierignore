@@ -3,3 +3,6 @@ test-results
 playwright-report
 coverage
 reports
+
+# Env template — Prettier cannot infer a parser for dotenv files
+.env.example

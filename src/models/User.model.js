@@ -53,7 +53,7 @@ module.exports.getUserById = (data, callback) => {
 
 module.exports.getUserSettings = (data, callback) => {
   const SQLSTATEMENT = `
-        SELECT theme, currency, font_size, display_name, notify_orders, notify_promotions
+        SELECT theme, currency, font_size, display_name, notify_orders, notify_promotions, notify_email
         FROM users
         WHERE id = $1
     `;
@@ -113,10 +113,14 @@ module.exports.updateDisplayName = (data, callback) => {
 
 module.exports.updateNotifications = (data, callback) => {
   const SQLSTATEMENT = `
-        UPDATE users SET notify_orders = $2, notify_promotions = $3
+        UPDATE users SET notify_orders = $2, notify_promotions = $3, notify_email = $4
         WHERE id = $1
     `;
-  pool.query(SQLSTATEMENT, [data.id, data.notifyOrders, data.notifyPromotions], callback);
+  pool.query(
+    SQLSTATEMENT,
+    [data.id, data.notifyOrders, data.notifyPromotions, data.notifyEmail],
+    callback,
+  );
 };
 
 module.exports.deleteUser = (data, callback) => {

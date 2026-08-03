@@ -710,3 +710,149 @@ describe('Reservation API', () => {
     });
   });
 });
+
+// ── GET /api/listings/:listingId/reservations/mine ───────────────────────────
+
+describe('GET /api/listings/:listingId/reservations/mine', () => {
+  test('returns null when the buyer holds no reservation on the listing', async () => {
+    const listing = await insertListing({});
+
+    const response = await request(app)
+      .get(`/api/listings/${listing.id}/reservations/mine`)
+      .set('Authorization', `Bearer ${requesterToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ reservation: null });
+  });
+
+  test("returns the buyer's own reservation", async () => {
+    const listing = await insertListing({});
+    const reservation = await insertReservationRequest({ listingId: listing.id });
+
+    const response = await request(app)
+      .get(`/api/listings/${listing.id}/reservations/mine`)
+      .set('Authorization', `Bearer ${requesterToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.reservation.id).toBe(reservation.id);
+    expect(response.body.reservation.status).toBe('PENDING');
+  });
+
+  test("does not leak another buyer's reservation", async () => {
+    const listing = await insertListing({});
+    await insertReservationRequest({ listingId: listing.id, requesterId: requester.id });
+
+    const response = await request(app)
+      .get(`/api/listings/${listing.id}/reservations/mine`)
+      .set('Authorization', `Bearer ${otherUserToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ reservation: null });
+  });
+
+  test('reports an ACCEPTED reservation so the cart can unlock', async () => {
+    const listing = await insertListing({ status: 'RESERVED' });
+    await insertReservationRequest({ listingId: listing.id, status: 'ACCEPTED' });
+
+    const response = await request(app)
+      .get(`/api/listings/${listing.id}/reservations/mine`)
+      .set('Authorization', `Bearer ${requesterToken}`);
+
+    expect(response.body.reservation.status).toBe('ACCEPTED');
+  });
+
+  test('returns 400 for a non-numeric listing id', async () => {
+    const response = await request(app)
+      .get('/api/listings/abc/reservations/mine')
+      .set('Authorization', `Bearer ${requesterToken}`);
+
+    expect(response.status).toBe(400);
+  });
+
+  test('returns 401 without a token', async () => {
+    const listing = await insertListing({});
+
+    const response = await request(app).get(`/api/listings/${listing.id}/reservations/mine`);
+
+    expect(response.status).toBe(401);
+  });
+});
+
+// ── Checkout gating on accepted reservations ─────────────────────────────────
+
+describe('POST /api/orders - listing reservation guard', () => {
+  function checkoutBody(items) {
+    return {
+      fullName: 'Alice Tan',
+      emailAddress: 'alice@example.com',
+      phoneNumber: '+65 9123 4567',
+      address: '123 Main Street',
+      unitNumber: '#12-345',
+      postalCode: '123456',
+      deliveryMethod: 'Standard',
+      paymentMethod: 'Card',
+      items,
+    };
+  }
+
+  test('blocks checkout when the buyer has no reservation on the listing', async () => {
+    const listing = await insertListing({});
+
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${requesterToken}`)
+      .send(checkoutBody([{ listingId: listing.id, price: 250, quantity: 1 }]));
+
+    expect(response.status).toBe(403);
+    expect(response.body.message).toContain(String(listing.id));
+  });
+
+  test('blocks checkout when the reservation is still PENDING', async () => {
+    const listing = await insertListing({});
+    await insertReservationRequest({ listingId: listing.id, status: 'PENDING' });
+
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${requesterToken}`)
+      .send(checkoutBody([{ listingId: listing.id, price: 250, quantity: 1 }]));
+
+    expect(response.status).toBe(403);
+  });
+
+  test('allows checkout when the buyer holds an ACCEPTED reservation on a RESERVED listing', async () => {
+    const listing = await insertListing({ status: 'RESERVED' });
+    await insertReservationRequest({ listingId: listing.id, status: 'ACCEPTED' });
+
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${requesterToken}`)
+      .send(checkoutBody([{ listingId: listing.id, price: 250, quantity: 1 }]));
+
+    expect(response.status).toBe(201);
+  });
+
+  test("blocks a different buyer from checking out someone else's reserved listing", async () => {
+    const listing = await insertListing({ status: 'RESERVED' });
+    await insertReservationRequest({
+      listingId: listing.id,
+      requesterId: requester.id,
+      status: 'ACCEPTED',
+    });
+
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${otherUserToken}`)
+      .send(checkoutBody([{ listingId: listing.id, price: 250, quantity: 1 }]));
+
+    expect(response.status).toBe(403);
+  });
+
+  test('allows a catalogue-only cart through untouched', async () => {
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${requesterToken}`)
+      .send(checkoutBody([{ productId: 3, price: 20, quantity: 2 }]));
+
+    expect(response.status).toBe(201);
+  });
+});

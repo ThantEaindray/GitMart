@@ -39,14 +39,48 @@ module.exports.getPendingRequest = (data, callback) => {
 };
 
 module.exports.createReservationRequest = (data, callback) => {
+  // Returns the requester's username alongside the new row so the controller can
+  // build a notification for the listing owner without a second round trip.
   const SQLSTATEMENT = `
-    INSERT INTO reservation_requests (
-      listing_id,
-      requester_id,
-      message
+    WITH inserted AS (
+      INSERT INTO reservation_requests (
+        listing_id,
+        requester_id,
+        message
+      )
+      VALUES ($1, $2, $3)
+      RETURNING
+        id,
+        listing_id,
+        requester_id,
+        status,
+        message,
+        created_on,
+        updated_on
     )
-    VALUES ($1, $2, $3)
-    RETURNING
+    SELECT
+      inserted.id,
+      inserted.listing_id,
+      inserted.requester_id,
+      inserted.status,
+      inserted.message,
+      inserted.created_on,
+      inserted.updated_on,
+      users.username AS requester_username
+    FROM inserted
+    LEFT JOIN users
+      ON users.id = inserted.requester_id
+  `;
+
+  const VALUES = [data.listing_id, data.requester_id, data.message];
+
+  pool.query(SQLSTATEMENT, VALUES, callback);
+};
+
+module.exports.getMyReservationForListing = (data, callback) => {
+  // Most recent reservation this user holds on this listing, whatever its status.
+  const SQLSTATEMENT = `
+    SELECT
       id,
       listing_id,
       requester_id,
@@ -54,9 +88,35 @@ module.exports.createReservationRequest = (data, callback) => {
       message,
       created_on,
       updated_on
+    FROM reservation_requests
+    WHERE listing_id = $1
+      AND requester_id = $2
+    ORDER BY
+      created_on DESC,
+      id DESC
+    LIMIT 1
   `;
 
-  const VALUES = [data.listing_id, data.requester_id, data.message];
+  const VALUES = [data.listing_id, data.requester_id];
+
+  pool.query(SQLSTATEMENT, VALUES, callback);
+};
+
+module.exports.getAcceptedListingIdsForUser = (data, callback) => {
+  // Of the given listing IDs, returns only those the user holds an ACCEPTED
+  // reservation for and whose listing is still RESERVED (i.e. buyable by them).
+  const SQLSTATEMENT = `
+    SELECT reservation_requests.listing_id
+    FROM reservation_requests
+    INNER JOIN listings
+      ON listings.id = reservation_requests.listing_id
+    WHERE reservation_requests.requester_id = $1
+      AND reservation_requests.status = 'ACCEPTED'
+      AND listings.status = 'RESERVED'
+      AND reservation_requests.listing_id = ANY($2::integer[])
+  `;
+
+  const VALUES = [data.requester_id, data.listing_ids];
 
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
@@ -186,6 +246,7 @@ module.exports.acceptReservationRequest = async (data) => {
           reservation_requests.listing_id,
           reservation_requests.status,
           listings.owner_id,
+          listings.title,
           listings.status AS listing_status
         FROM reservation_requests
         INNER JOIN listings
@@ -250,7 +311,11 @@ module.exports.acceptReservationRequest = async (data) => {
 
     await client.query('COMMIT');
 
-    return { success: true, reservation: acceptedResult.rows[0] };
+    return {
+      success: true,
+      reservation: acceptedResult.rows[0],
+      listingTitle: reservation.title,
+    };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
