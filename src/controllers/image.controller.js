@@ -3,7 +3,7 @@ const dotenv = require("dotenv")
 const { client } = require('node-scp')
 const fs = require('fs')
 const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env.dev';
-
+const svr = require ("../server.js")
 //set up options for the scp process
 var options = {
   username: process.env.SCP_USR,
@@ -42,7 +42,7 @@ module.exports.writeDB = (req, res, next) => {
   //nice and easy this time we just have to get the info we need about the message and write it into the db
 
   let path = `http://${process.env.SCP_IP}/${req.file}`
-
+  res.locals.path = path
   const data = {
     chat_id: req.body.chat,
     sender_id: req.body.from,
@@ -68,13 +68,26 @@ module.exports.cleanup = (req, res, next) => {
   try {
     fs.unlink(`../tmp/${req.file}`)
   } catch (err) {
-    res.status(500).json(err)
+    return res.status(500).json(err)
   } 
-    
+  res.status(201).json({})
     
 }
 
 //this is the hard part how do we get all the way to the ws when were so deep in here right
 // ig we call some sort of a function on the app.js and then we next when its done
-module.exports.sendWS
+module.exports.sendWS = (req, res, next) => {
+  //all we need to do in this fn is we format the data nicely and send it over to app.js to handle the ws parts
+  const data = {
+    type: "message",
+    from: req.body.from,
+    to: req.body.to,
+    chat: req.body.chat,
+    cont_type: "img",
+    cont:res.locals.path
+  }
+  
+  svr.sendImg(data)
+  next()
+}
 //lowk we can do this one later (tmr) im too tired now 

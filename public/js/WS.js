@@ -28,60 +28,58 @@ webSocket.onmessage = (event) => {
   if (data.type = "message") {
     if (data.to == uId || data.from == uId) {
       //we need to do basically what we did on the history loading part should be easy enough
-      let position = "justify-content-end"
-      let cardcolour = "text-bg-success"
-      //this is if were the sender
-      if (data.from !== uId) {
-        position = "justify-content-start"
-        cardcolour = "text-bg-secondary text-end"
-      }
+    var side = (e.from == uId) ? 'sent' : 'received';
       //so now that we have the positioning we wanna check that its sent to the intended chat
       if (data.chat == openChat) {
-        //ok so we need to do the setup for the unread flag here
-        if (data.to == uId && data.chat !== openChat) {
-          //unread chat fn goes here
-        }
         //the part which is gonna call the image functions 
         if (data.cont_type === "img") {
-          
-        }
-      }
-      if (data.type == "info") {
-        //so we need to get the info here which is just the connections so we just have to get it to like innerhtml and stuff 
-        if (data.inftype == "Conns") {
-      
-        }
-      }
-    }
-    //so what do we need to do when the user wants to send a message (lets just get text working first and then we can sort out the images later)
-    // this is gonna be horribly painful to do isnt it
-
-    function sendTxt(content, toId) {
-      let cont = {
-        type: "message",
-        chat: openChat,
-        from: uId,
-        to: toId,
-        cont_type: "txt",
-        cont: content
-      }
-      localStorage.setItem('toId', toId)
-      //this will help us later snater
-      document.getElementById('message').value = ''
-      //just a barebones bit of verification to make sure things dont break down
-      if (content == undefined) {
-        return
-      }
-      //we need to write it into the message log
-      fetchMethod("/api/chats/send", (stat, data) => {
-        if (stat == 201) {
-          //and we need to send it to the websocket only if it sucessfully stores the data in the db
-          webSocket.send(JSON.stringify(cont))
+          document.getElementById('messages').innerHTML += `
+            <div class="msg ${side}">
+              <img class="msg-img" src="${e.cont}"/>
+            </div>
+          `
         } else {
-          //if its not a 201, its gotta be an error so we just hit it whith the classic standard browser alert box :P
-          alert("error sending message, please try again later.")
+          //if cont type isnt image then it has to be text
+          document.getElementById('messages').innerHTML += `
+            <div class="msg ${side}">
+              <span class="msg-bubble">${e.cont}</span>
+            </div>
+          `;
         }
-      }, "POST", cont, token)
+      } else {
+        //for future use this is where we'll put the function that shows your unread chat messages
+      }
     }
   }
 }
+    //so what do we need to do when the user wants to send a message (lets just get text working first and then we can sort out the images later)
+    // this is gonna be horribly painful to do isnt it
+
+function sendTxt(content, toId) {
+  let cont = {
+      type: "message",
+      chat: openChat,
+      from: uId,
+      to: toId,
+      cont_type: "txt",
+      cont: content
+    }
+  localStorage.setItem('toId', toId)
+  //this will help us later snater
+  document.getElementById('message').value = ''
+  //just a barebones bit of verification to make sure things dont break down
+  if (content == undefined) {
+    return
+  }
+  //we need to write it into the message log
+  fetchMethod("/api/chats/send", (stat, data) => {
+    if (stat == 201) {
+      //and we need to send it to the websocket only if it sucessfully stores the data in the db
+      webSocket.send(JSON.stringify(cont))
+    } else {
+      //if its not a 201, its gotta be an error so we just hit it whith the classic standard browser alert box :P
+      alert("error sending message, please try again later.")
+    }
+  }, "POST", cont, token)
+}
+

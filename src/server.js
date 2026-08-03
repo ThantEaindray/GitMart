@@ -81,5 +81,15 @@ ws.on('close', (cli) => {
     )
   })
 })
+
+//so we also need a module that will handle sending the image data which has to be here since it just does 
+
+module.exports.sendImg = (data) => {
+  console.log("sending image"+ data)
+  ws.clients.forEach((cli) => {
+    cli.send(JSON.stringify(data))
+  })
+}
+
 //so now we get the info cons inftype with the array of all the connections to the system
 // thats the backend logic for the online offline indicators its not pretty but it works

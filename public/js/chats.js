@@ -3,16 +3,16 @@ function loadChat(data) {
   document.getElementById('messages').innerHTML = '';
   data.forEach(function (e) {
     var side = (e.sender_id == uId) ? 'sent' : 'received';
-    if (e.textcontent !== undefined) {
+    if (e.cont_type == "txt") {
       document.getElementById('messages').innerHTML += `
         <div class="msg ${side}">
-          <span class="msg-bubble">${e.textcontent}</span>
+          <span class="msg-bubble">${e.cont}</span>
         </div>
       `;
     } else {
       document.getElementById('messages').innerHTML += `
         <div class="msg ${side}">
-          <img class="msg-img" src="${e.imagecontent}" />
+          <img class="msg-img" src="${e.cont}" />
         </div>
       `
     }
