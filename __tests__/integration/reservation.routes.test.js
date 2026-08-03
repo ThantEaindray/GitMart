@@ -145,33 +145,61 @@ async function insertReservationRequest({
   return result.rows[0];
 }
 
-/**
- * Reset only the tables this suite touches before every test.
- */
-beforeEach(async () => {
-  await pool.query(`
-    TRUNCATE TABLE
-      reservation_requests,
-      chatcontent,
-      offers,
-      chats,
-      listing_views,
-      listings,
-      refresh_tokens,
-      users
-    RESTART IDENTITY CASCADE
-  `);
+// Usernames are declared once and reused for both setup and cleanup so the two
+// can never drift apart and leave rows behind.
+const SUITE_USERNAMES = ['reservation_owner', 'reservation_requester', 'reservation_other'];
 
-  owner = await insertUser('reservation_owner', 'reservation.owner@example.com');
-  requester = await insertUser('reservation_requester', 'reservation.requester@example.com');
-  otherUser = await insertUser('reservation_other', 'reservation.other@example.com');
+/**
+ * Remove only the rows this suite created.
+ *
+ * Deliberately not TRUNCATE: that takes an ACCESS EXCLUSIVE lock on every
+ * listed table, and running it before each test deadlocked against the other
+ * integration suites sharing this database. The project has hit this twice
+ * before (c7b28aa, 1be06ed). Scoped deletes take row locks instead.
+ *
+ * Order matters. offers.product_id has no ON DELETE clause so those rows must
+ * go first; listings.owner_id likewise has none, so listings must go before
+ * users. Everything else referencing listings or users cascades.
+ */
+async function cleanupSuiteData() {
+  await pool.query(
+    `
+      DELETE FROM offers
+      WHERE product_id IN (
+        SELECT id FROM listings
+        WHERE owner_id IN (SELECT id FROM users WHERE username = ANY($1::text[]))
+      )
+    `,
+    [SUITE_USERNAMES],
+  );
+
+  await pool.query(
+    `
+      DELETE FROM listings
+      WHERE owner_id IN (SELECT id FROM users WHERE username = ANY($1::text[]))
+    `,
+    [SUITE_USERNAMES],
+  );
+
+  await pool.query('DELETE FROM users WHERE username = ANY($1::text[])', [SUITE_USERNAMES]);
+}
+
+beforeEach(async () => {
+  await cleanupSuiteData();
+
+  owner = await insertUser(SUITE_USERNAMES[0], 'reservation.owner@example.com');
+  requester = await insertUser(SUITE_USERNAMES[1], 'reservation.requester@example.com');
+  otherUser = await insertUser(SUITE_USERNAMES[2], 'reservation.other@example.com');
 
   ownerToken = createAccessToken(owner.id);
   requesterToken = createAccessToken(requester.id);
   otherUserToken = createAccessToken(otherUser.id);
 });
 
+// Leave the database as this suite found it, so a later suite is not tripped up
+// by rows it did not create.
 afterAll(async () => {
+  await cleanupSuiteData();
   await pool.end();
 });
 
