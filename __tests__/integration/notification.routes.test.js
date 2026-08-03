@@ -16,7 +16,6 @@ const SUITE_USERNAMES = ['notif_owner', 'notif_other'];
 let owner;
 let otherUser;
 let ownerToken;
-let otherUserToken;
 
 function createAccessToken(userId) {
   return jwt.sign({ userId }, process.env.JWT_SECRET_KEY, {
@@ -61,7 +60,6 @@ beforeEach(async () => {
   otherUser = await insertUser(SUITE_USERNAMES[1], 'notif.other@example.com');
 
   ownerToken = createAccessToken(owner.id);
-  otherUserToken = createAccessToken(otherUser.id);
 });
 
 afterAll(async () => {
