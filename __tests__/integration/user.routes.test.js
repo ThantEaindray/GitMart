@@ -58,6 +58,12 @@ describe('GET /api/users/:userId/public', () => {
     expect(res.body).toHaveProperty('message');
   });
 
+  // Invalid partition: non-numeric id fails the u.id integer cast in Postgres
+  test('returns 500 for a non-numeric user id', async () => {
+    const res = await request(app).get('/api/users/not-a-number/public');
+    expect(res.status).toBe(500);
+  });
+
   test('returned profile has listing_count field', async () => {
     const user = await insertUser('it_pub_bob', 'it_pub_bob@example.com');
     const res = await request(app).get(`/api/users/${user.id}/public`);
@@ -141,6 +147,12 @@ describe('GET /api/users/:userId/reviews', () => {
     expect(Array.isArray(res.body)).toBe(true);
   });
 
+  // Invalid partition: non-numeric id fails the l.owner_id integer cast in Postgres
+  test('returns 500 for a non-numeric user id', async () => {
+    const res = await request(app).get('/api/users/not-a-number/reviews');
+    expect(res.status).toBe(500);
+  });
+
   test('does not require Authorization header', async () => {
     const user = await insertUser('it_rev_carol', 'it_rev_carol@example.com');
     const res = await request(app).get(`/api/users/${user.id}/reviews`);
@@ -183,6 +195,15 @@ describe('GET /api/me', () => {
     expect(res.status).toBe(404);
   });
 
+  // Invalid partition: jwtMiddleware trusts the userId claim's type as-is, so a
+  // token whose claim isn't numeric fails the id integer cast in Postgres
+  // rather than jwtMiddleware itself rejecting it.
+  test('returns 500 when the token userId claim is not numeric', async () => {
+    const badToken = createToken('not-a-number');
+    const res = await request(app).get('/api/me').set('Authorization', `Bearer ${badToken}`);
+    expect(res.status).toBe(500);
+  });
+
   test('does not expose password in response', async () => {
     const user = await insertUser('it_me_carol', 'it_me_carol@example.com');
     const token = createToken(user.id);
@@ -204,6 +225,14 @@ describe('GET /api/me/settings', () => {
     const token = createToken(user.id);
     const res = await request(app).get('/api/me/settings').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
+  });
+
+  test('returns 500 when the token userId claim is not numeric', async () => {
+    const badToken = createToken('not-a-number');
+    const res = await request(app)
+      .get('/api/me/settings')
+      .set('Authorization', `Bearer ${badToken}`);
+    expect(res.status).toBe(500);
   });
 
   test('settings response includes currency field', async () => {
@@ -238,6 +267,15 @@ describe('PUT /api/me/settings', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ currency: 'SGD', theme: 'dark' });
     expect(res.status).toBe(200);
+  });
+
+  test('returns 500 when the token userId claim is not numeric', async () => {
+    const badToken = createToken('not-a-number');
+    const res = await request(app)
+      .put('/api/me/settings')
+      .set('Authorization', `Bearer ${badToken}`)
+      .send({ currency: 'SGD' });
+    expect(res.status).toBe(500);
   });
 
   test('updated settings are returned in response', async () => {
