@@ -27,10 +27,10 @@ tag  v* ────► CI and CD Pipeline
 
 Two workflows:
 
-| Workflow                                          | Trigger            | What it does                                                                                             |
-| ------------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------- |
-| [`ci.yml`](../.github/workflows/ci.yml)           | every push and PR  | lint, format check, unit, integration, E2E, migration check, QA report + Pages (main only), Docker build |
-| [`cd.yml`](../.github/workflows/cd.yml)           | tags matching `v*` | re-runs the full suite, builds and pushes the image, creates a GitHub Release, deploys to EC2            |
+| Workflow                                | Trigger            | What it does                                                                                             |
+| --------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------- |
+| [`ci.yml`](../.github/workflows/ci.yml) | every push and PR  | lint, format check, unit, integration, E2E, migration check, QA report + Pages (main only), Docker build |
+| [`cd.yml`](../.github/workflows/cd.yml) | tags matching `v*` | re-runs the full suite, builds and pushes the image, creates a GitHub Release, deploys to EC2            |
 
 `ci.yml` runs `Lint & Format` → `Tests`, then branches: `Reports` (regenerates
 the QA dashboard and publishes it to GitHub Pages, but only actually deploys
