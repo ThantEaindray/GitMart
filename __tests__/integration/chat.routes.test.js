@@ -109,10 +109,7 @@ describe('Chat API', () => {
       expect(response.status).toBe(409);
     });
 
-    // Skipped: hasChat's duplicate-check guard was deliberately reverted to its
-    // original buggy state (results.length is undefined on a pg Result, so the
-    // `> 0` check never fires) — re-enable once that guard is fixed again.
-    test.skip('returns 409 when a chat between the pair already exists', async () => {
+    test('returns 409 when a chat between the pair already exists', async () => {
       await insertChat(alice.id, bob.id);
 
       const response = await request(app)
@@ -123,8 +120,7 @@ describe('Chat API', () => {
       expect(response.status).toBe(409);
     });
 
-    // Skipped: same reverted hasChat guard as above.
-    test.skip('detects an existing chat regardless of which user created it', async () => {
+    test('detects an existing chat regardless of which user created it', async () => {
       // Stored as (bob, alice); Alice requesting a chat with Bob must still be
       // recognised as a duplicate.
       await insertChat(bob.id, alice.id);
@@ -156,11 +152,7 @@ describe('Chat API', () => {
       expect(response.status).toBe(401);
     });
 
-    // Skipped: loadChats' empty-chats guard was deliberately reverted to its
-    // original buggy state (results.length is undefined on a pg Result, so the
-    // `== 0` check never fires and the request hangs instead of ever
-    // responding) — re-enable once that guard is fixed again.
-    test.skip('returns 204 when the user has no chats', async () => {
+    test('returns 204 when the user has no chats', async () => {
       const response = await request(app)
         .get('/api/chats')
         .set('Authorization', `Bearer ${aliceToken}`);
@@ -192,9 +184,7 @@ describe('Chat API', () => {
       expect(response.body).toEqual([{ chat: chat.id, username: alice.username }]);
     });
 
-    // Skipped: same reverted loadChats guard as above — an empty result set
-    // still never returns early, so this hangs the same way.
-    test.skip('does not list chats the user is not part of', async () => {
+    test('does not list chats the user is not part of', async () => {
       await insertChat(bob.id, carol.id);
 
       const response = await request(app)
