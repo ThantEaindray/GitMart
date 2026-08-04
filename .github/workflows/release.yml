@@ -214,7 +214,10 @@ jobs:
             git fetch --all --tags --prune
             git checkout --force "$RELEASE_TAG"
 
-            export GHCR_OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
+            # Computed the same way as the build job's "Compute the lowercase
+            # image name" step, from the same source (github.repository), so
+            # the name pushed to and the name pulled from can never diverge.
+            export GHCR_IMAGE=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')
             export IMAGE_TAG="$RELEASE_TAG"
 
             # Only needed if the GHCR package is private. Left unset, the

@@ -116,7 +116,7 @@ git clone https://github.com/soc-cicd/ay2627s1-project-git-5-1.git ~/gitmart
 cd ~/gitmart
 # create .env with the runtime secrets, then apply the schema once
 
-docker run --rm --env-file .env ghcr.io/<owner>/gitmart:latest node scripts/migrate.js
+docker run --rm --env-file .env ghcr.io/<owner>/ay2627s1-project-git-5-1:latest node scripts/migrate.js
 ```
 
 No `docker-compose.prod.yml` checkout is needed for that first run — it is a
