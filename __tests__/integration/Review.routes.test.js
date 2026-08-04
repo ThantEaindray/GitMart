@@ -108,6 +108,13 @@ describe('GET /api/listings/:id/reviews', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
   });
+
+  // Invalid partition: non-numeric id fails the listing_id integer cast in Postgres
+  test('should return 500 for a non-numeric listing id', async () => {
+    const res = await request(app).get('/api/listings/not-a-number/reviews');
+
+    expect(res.status).toBe(500);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -201,6 +208,18 @@ describe('POST /api/listings/:id/reviews', () => {
     expect(res.status).toBe(201);
   });
 
+  // Invalid partition: listing_id has a FOREIGN KEY constraint, so a review
+  // against a listing that does not exist is rejected by Postgres itself
+  // (23503) rather than by the duplicate-review check (23505) above.
+  test('should return 500 when the listing does not exist', async () => {
+    const res = await request(app)
+      .post('/api/listings/999999/reviews')
+      .set('Authorization', `Bearer ${reviewerToken}`)
+      .send({ rating: 4 });
+
+    expect(res.status).toBe(500);
+  });
+
   // Boundary: duplicate review → 409
   test('should return 409 when user submits a second review for the same listing', async () => {
     await request(app)
@@ -264,6 +283,15 @@ describe('DELETE /api/listings/:id/reviews/:reviewId', () => {
 
     expect(res.status).toBe(404);
     expect(res.body).toHaveProperty('message');
+  });
+
+  // Invalid partition: non-numeric id fails the reviewId integer cast in Postgres
+  test('should return 500 for a non-numeric review id', async () => {
+    const res = await request(app)
+      .delete(`/api/listings/${listingId}/reviews/not-a-number`)
+      .set('Authorization', `Bearer ${reviewerToken}`);
+
+    expect(res.status).toBe(500);
   });
 
   // Invalid partition: different reviewer cannot delete → 404

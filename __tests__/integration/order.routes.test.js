@@ -296,6 +296,21 @@ describe('POST /api/orders - success', () => {
   });
 });
 
+// ── POST /api/orders — reservation lookup failure ─────────────────────────────
+
+describe('POST /api/orders - reservation lookup failure', () => {
+  // Invalid partition: passes the controller's Number.isInteger/>0 filter but
+  // overflows Postgres's integer[] cast (max ~2.1 billion), so the lookup
+  // itself fails rather than just finding no accepted reservation.
+  test('returns 500 when a listingId overflows a Postgres integer', async () => {
+    const res = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ ...validOrderBody, items: [{ listingId: 99999999999999 }] });
+    expect(res.status).toBe(500);
+  });
+});
+
 // ── GET /api/orders ───────────────────────────────────────────────────────────
 
 describe('GET /api/orders', () => {

@@ -100,6 +100,17 @@ describe('GET /api/wishlist', () => {
     expect(res.body).toEqual([]);
   });
 
+  // Invalid partition: jwtMiddleware trusts the userId claim's type as-is, so a
+  // token whose claim isn't numeric fails the user_id integer cast in Postgres
+  // rather than jwtMiddleware itself rejecting it.
+  test('should return 500 when the token userId claim is not numeric', async () => {
+    const res = await request(app)
+      .get('/api/wishlist')
+      .set('Authorization', `Bearer ${makeToken('not-a-number')}`);
+
+    expect(res.status).toBe(500);
+  });
+
   // Valid partition: added item appears in wishlist response
   test('should return 200 and array containing the added item', async () => {
     await pool.query('INSERT INTO wishlist (user_id, listing_id) VALUES ($1, $2)', [
@@ -139,6 +150,16 @@ describe('POST /api/wishlist/:listingId', () => {
     expect(res.body).toHaveProperty('message');
   });
 
+  // Invalid partition: listing_id has a FOREIGN KEY constraint, so adding a
+  // listing that does not exist is rejected by Postgres itself (23503).
+  test('should return 500 when the listing does not exist', async () => {
+    const res = await request(app)
+      .post('/api/wishlist/999999')
+      .set('Authorization', `Bearer ${authToken}`);
+
+    expect(res.status).toBe(500);
+  });
+
   // Boundary: duplicate add still returns 201 (ON CONFLICT DO NOTHING)
   test('should return 201 on duplicate add without error', async () => {
     await request(app)
@@ -176,6 +197,15 @@ describe('DELETE /api/wishlist/:listingId', () => {
     const res = await request(app).delete(`/api/wishlist/${testListingId}`);
 
     expect(res.status).toBe(401);
+  });
+
+  // Invalid partition: non-numeric id fails the listing_id integer cast in Postgres
+  test('should return 500 for a non-numeric listing id', async () => {
+    const res = await request(app)
+      .delete('/api/wishlist/not-a-number')
+      .set('Authorization', `Bearer ${authToken}`);
+
+    expect(res.status).toBe(500);
   });
 
   // Boundary: item not in wishlist → 404

@@ -233,6 +233,13 @@ describe('GET /products?category=', () => {
     expect(found).toHaveProperty('isSold');
   });
 
+  // Invalid partition: exclude is compared against the integer id column, so a
+  // non-numeric value fails the cast in Postgres rather than just matching nothing.
+  test('returns 500 for a non-numeric exclude id', async () => {
+    const res = await request(app).get('/products?category=Electronics&exclude=not-a-number');
+    expect(res.status).toBe(500);
+  });
+
   test('returns at most 4 results (LIMIT 4)', async () => {
     const cat = 'LimitTestCat';
     for (let i = 0; i < 6; i++) {
@@ -253,6 +260,12 @@ describe('GET /products/:id', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('id', p.id);
     expect(res.body).toHaveProperty('name', 'test_prod_byid');
+  });
+
+  // Invalid partition: non-numeric id fails the id integer cast in Postgres
+  test('returns 500 for a non-numeric product id', async () => {
+    const res = await request(app).get('/products/not-a-number');
+    expect(res.status).toBe(500);
   });
 
   test('returns 404 for a non-existent product id', async () => {

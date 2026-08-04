@@ -121,6 +121,17 @@ describe('Notification API', () => {
       expect(response.body).toEqual([]);
     });
 
+    // Invalid partition: jwtMiddleware trusts the userId claim's type as-is, so
+    // a token whose claim isn't numeric fails the user_id integer cast in
+    // Postgres rather than jwtMiddleware itself rejecting it.
+    test('returns 500 when the token userId claim is not numeric', async () => {
+      const response = await request(app)
+        .get('/api/notifications')
+        .set('Authorization', `Bearer ${createAccessToken('not-a-number')}`);
+
+      expect(response.status).toBe(500);
+    });
+
     test('returns newest first', async () => {
       await insertNotification({ userId: owner.id, title: 'Older' });
       await insertNotification({ userId: owner.id, title: 'Newer' });
@@ -162,6 +173,14 @@ describe('Notification API', () => {
       expect(typeof response.body.count).toBe('number');
     });
 
+    test('returns 500 when the token userId claim is not numeric', async () => {
+      const response = await request(app)
+        .get('/api/notifications/unread-count')
+        .set('Authorization', `Bearer ${createAccessToken('not-a-number')}`);
+
+      expect(response.status).toBe(500);
+    });
+
     test('counts only unread notifications belonging to that user', async () => {
       await insertNotification({ userId: owner.id });
       const read = await insertNotification({ userId: owner.id });
@@ -193,6 +212,19 @@ describe('Notification API', () => {
       expect(response.body).toEqual({
         message: 'Notification ID must be a positive integer.',
       });
+    });
+
+    // Invalid partition: the id param is validated, but userId comes straight
+    // from the token claim, so a non-numeric claim still fails the user_id
+    // integer cast in Postgres.
+    test('returns 500 when the token userId claim is not numeric', async () => {
+      const notification = await insertNotification({ userId: owner.id });
+
+      const response = await request(app)
+        .patch(`/api/notifications/${notification.id}/read`)
+        .set('Authorization', `Bearer ${createAccessToken('not-a-number')}`);
+
+      expect(response.status).toBe(500);
     });
 
     test('marks the notification read and returns it', async () => {
@@ -241,6 +273,14 @@ describe('Notification API', () => {
     test('returns 401 without a token', async () => {
       const response = await request(app).patch('/api/notifications/read-all');
       expect(response.status).toBe(401);
+    });
+
+    test('returns 500 when the token userId claim is not numeric', async () => {
+      const response = await request(app)
+        .patch('/api/notifications/read-all')
+        .set('Authorization', `Bearer ${createAccessToken('not-a-number')}`);
+
+      expect(response.status).toBe(500);
     });
 
     test('marks every notification for that user read', async () => {
