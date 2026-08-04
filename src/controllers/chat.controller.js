@@ -1,4 +1,5 @@
 const model = require("../models/chats.model.js")
+const svr = require("../server.js")
 
 module.exports.loadChats = (req, res, next) => {
   const data = {
@@ -137,7 +138,8 @@ module.exports.uploadCont = (req, res, _next) => {
       console.error("problem sending text", err)
       return res.status(500).json(err)      
     }
-    //we dont really even need to return anything for this one the ws will do the rest
+    //we call the ws directly from here now idk why but its gotta be done
+    svr.send(data)
     res.status(201).json({})
   }
   model.uploadCont(data,callback)

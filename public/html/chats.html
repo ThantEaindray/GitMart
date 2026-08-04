@@ -7,6 +7,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link rel="stylesheet" href="../css/noir.css" />
   <link rel="stylesheet" href="../css/auth.css" />
   <script>
@@ -54,12 +55,19 @@
       </div>
 
       <div class="chat-messages" id="messages"></div>
-
-      <form class="chat-input-bar" id="input-form">
-        <input class="chat-input" type="text" id="message" placeholder="Type a message…" autocomplete="off" required/>
-        <button type="btn-primary" data-bs-toggle="modal" data-bs-target="#imgmodal">testbutton</button>
-        <button type="submit" class="btn-primary chat-send-btn">Send</button>
-      </form>
+      <div class="row">
+        <div class="col-1">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#imgmodal">
+              Launch modal
+            </button>
+        </div>
+        <div class="col-11">
+            <form class="chat-input-bar" id="input-form">
+                <input class="chat-input" type="text" id="message" placeholder="Type a message…" autocomplete="off" required/>
+                <button type="submit" class="btn-primary chat-send-btn">Send</button>
+            </form>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -68,7 +76,7 @@
       <form class="image-uploads" id="imageuploads" enctype="multipart/form-data">
           <p>Select a file to upload</p>
           <input id="fileinput" type="file" required/>
-          <input type="submit">
+          <div class="btn btn-primary" id="imgsub" onclick="upload()"> </div>
       </form>
   </div>
   <script src="../js/prefs.js"></script>
@@ -77,5 +85,6 @@
   <script src="../js/chats.js"></script>
   <script src="../js/WS.js"></script>
   <script src="../js/images.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
 </html>

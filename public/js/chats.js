@@ -21,10 +21,12 @@ function loadChat(data) {
   el.scrollTop = el.scrollHeight;
 }
 
-function viewChat(cId) {
+function viewChat(cId, wUsr) {
   //ok so we need to get the stuff from one specific chat now
   // so the chat id will be pulled from the request in the function and then we get the users id from inside of the thing itself
   //we also wanna pass the chat id into the localStorage for future use
+  // also the id of the user were chatting with
+  localStorage.setItem("with", wUsr)
   localStorage.setItem('openChat', cId)
   document.getElementById('chatwith').innerHTML = `<h2>Now Chatting</h2>`;
   fetchMethod(`/api/chats/viewChat/${cId}`, (stat, data) => {
@@ -51,12 +53,9 @@ function renderChats(results) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  //immediately load the webSocket before we do anything else and store it locally for future use
-  const webSocket = new WebSocket(`ws://${location.hostname}:3001/`)
-  localStorage.setItem(webSocket, webSocket)
   //so first things first we need to do the most basic of calling the api to get the users chats to load in, first things first\
   //check for a logged in user
-  const token = localStorage.getItem('token')
+  let token = localStorage.getItem('token')
   if (!token) {
     window.location.href = "./login.html"
     return

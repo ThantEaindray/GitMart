@@ -23,12 +23,17 @@ const ws = new WebSocketServer({ port: WS_PORT })
 let connections = new Array
 //array which holds the list of connections to the socket so we know which one is which to send messages to them
 //now we tell it what to do upon a new connection
-
+ws.on("connection", (cli) => {
+  console.log("new ws connection")
+})
 //alright lets get this started how do we make the websockets work as intended
 //ok so theres 3 types of websocket messages we can get
 // handshake, content, info, disconnects
 // info gets sent out by the server the server recieves the other 3
+// so in theory this whole part will be unused at least for this portion of the code its for a planned feature
 ws.on('message', (data) => {
+  console.log("new incoming", data)
+  //in theory this one wont really matter as much since we're instead doing direct calls from within the system to make the ws work since apparently thats what needs to be done
   //alright so we'll need to narrow it down into the 3 different kinds now
   let parsed = JSON.parse(String.fromCharCode.apply(null, data.data))
   let conn = data.origin
@@ -43,22 +48,6 @@ ws.on('message', (data) => {
           type: "info",
           inftype: "Conns",
           allcons: connections
-        })
-      )
-    })
-  }
-  //now we need to handle the messages if its an actual message
-  if (parsed.type == "message") {
-    //so messages need to be handled differently depending on what sort of data it is (image or text but the fun part is that can be clientside)
-    ws.clients.forEach((cli) => {
-      cli.send(
-        JSON.stringify({
-          type: "message",
-          from: parsed.from,
-          to: parsed.to,
-          chat: parsed.chat,
-          cont_type: parsed.cont_type,
-          content: parsed.cont
         })
       )
     })
@@ -84,8 +73,8 @@ ws.on('close', (cli) => {
 
 //so we also need a module that will handle sending the image data which has to be here since it just does 
 
-module.exports.sendImg = (data) => {
-  console.log(data)
+module.exports.send = (data) => {
+  console.log("sending",data)
   ws.clients.forEach((cli) => {
     cli.send(JSON.stringify(data))
   })

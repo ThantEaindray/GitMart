@@ -8,7 +8,7 @@ const router = express.Router();
 
 //----MULTER CONFIG MUST BE HERE OR THE WHOLE THING BREAKS ABSOLUTELY DO NOT MOVE!!!!!!!!----
 const storage = multer.diskStorage({
-  destination: '../tmp',
+  destination: './src/tmp',
   filename: function(req, file, cb) {
     cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
   }
@@ -16,5 +16,5 @@ const storage = multer.diskStorage({
 const upload = multer({storage:storage})
 //generate a unique name for each image and also get multer ready to do its thing
 
-router.post('/send', jwt.verifyToken, upload.single("cont"), imgController.uploadImg, imgController.writeDB, imgController.sendWS)
+router.post('/send', jwt.verifyToken,upload.single("cont"), imgController.uploadImg, imgController.writeDB, imgController.sendWS, imgController.cleanup)
 module.exports=router

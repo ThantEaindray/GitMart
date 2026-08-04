@@ -30,10 +30,10 @@ module.exports.loadMessages = (data, callback) => {
 
 module.exports.uploadCont = (data, callback) => {
   const SQLSTATEMENT = `
-    INSERT INTO chatcontent (chat_id, sender_id, cont, content_type)
+    INSERT INTO chatcontent (chat_id, sender_id, cont, cont_type)
     VALUES ($1, $2, $3, $4)
   `;
-  const VALUES = [data.chat, data.user, data.content, data.type];
+  const VALUES = [data.chat, data.from, data.cont, data.cont_type];
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
 

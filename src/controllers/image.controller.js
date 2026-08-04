@@ -10,6 +10,7 @@ const svr = require ("../server.js")
 
 //now we have the path preset for where we put all our temp files.
 module.exports.uploadImg = (req, res, next) => {
+  console.log('uploading')
 //so what do we need to do first to  get an image uploaded we need to save it over to the temp folder and from there we can reference it
   Client({
     username: process.env.SCP_USR,
@@ -19,7 +20,7 @@ module.exports.uploadImg = (req, res, next) => {
   }).then(client => {
     client.uploadFile(
       //so we need to get the file which we want to upload over here and then we send that onwards to the server oooooo the magic of the cloud
-      `../tmp/${req.file.filename}`,
+      `./src/tmp/${req.file.filename}`,
       `${process.env.SCP_DIR}/${req.file.filename}`
     )
       .then(response => {
@@ -42,7 +43,7 @@ module.exports.writeDB = (req, res, next) => {
   res.locals.path = path
   const data = {
     chat: req.body.chat,
-    from: req.body.from,
+    from: res.locals.userId,
     cont_type: req.body.cont_type,
     cont: path
   }
@@ -66,13 +67,27 @@ module.exports.sendWS = (req, res, next) => {
   //all we need to do in this fn is we format the data nicely and send it over to app.js to handle the ws parts
   const data = {
     type: "message",
-    from: req.body.from,
+    from: res.locals.userId,
     to: req.body.to,
     chat: req.body.chat,
     cont_type: "img",
     cont:res.locals.path
   }
   
-  svr.sendImg(data)
-  res.status(201).json()
+  svr.send(data)
+  next()
+}
+
+module.exports.cleanup = (req, res, next) => {
+  let file = `./src/tmp/${req.file.filename}`
+  fs.unlink(file,
+      (err => {
+        if (err) {
+          console.error(err)
+          return res.status(500).json(err)
+          }
+          else {
+            return res.status(201).json()
+          }
+      }))
 }

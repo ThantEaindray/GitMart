@@ -1,12 +1,8 @@
-//this file will handle the bulk of the image handling/support for the chats
 
-const token = localStorage.getItem('token')
-const uId = localStorage.getItem('loggedInUserId')
-let openChat = localStorage.getItem('openChat')
-const webSocket = localStorage.getItem('webSocket');
-let toId = localStorage.getItem('toId')
-document.getElementById("imageuploads").document.addEventListener("submit", (event) => {
-  event.preventDefault()
+let toId = localStorage.getItem('with')
+console.log('img.js file loaded')
+function upload(){
+  console.log('submitted')
     //so now we wanna do the part where it takes the image and sends it to the temp folder
     //so here there would be the testing and frontend validation and stuff
   let fromForm = document.getElementById('fileinput')
@@ -22,7 +18,7 @@ document.getElementById("imageuploads").document.addEventListener("submit", (eve
   form.append("cont", fromForm.files[0])
   //so now that we have the data all nice and pretty we should be able to send it to the backend
   upImg(form)
-})
+}
 
 function upImg(toUp) {
   //what do we need to do when an image is gonna be uploaded to the server
@@ -43,8 +39,8 @@ function upImg(toUp) {
     headers["Authorization"] = "Bearer " + token;
   }
 
-  fetch("/api/images/upload", {
-    method: 'POST',
+  fetch("/api/images/send", {
+    method: "POST",
     headers: headers,
     body: toUp
   })
