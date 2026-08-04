@@ -5,18 +5,19 @@ place for that to work.
 
 ## Pipeline overview
 
-Both workflows are structured as a chain of distinct jobs rather than one job
-with many steps, so each stage shows as its own node in the Actions graph —
-a lint failure, a test failure, and a deploy failure are visually distinct
+Workflows are structured as a chain of distinct jobs rather than one job with
+many steps, so each stage shows as its own node in the Actions graph — a
+lint failure, a test failure, and a deploy failure are visually distinct
 instead of all being "the CI job went red."
 
 ```
-push / PR ──► CI                Lint & Format -> Tests -+-> Reports -> GitHub Pages
-                                                          |              (main only)
-                                                          +-> Docker image builds
+push / PR ──► CI                Lint & Format -> Tests -> Reports -> GitHub Pages
                                  (every branch, every PR; Pages only publishes on main)
 
-tag  v* ────► CI and CD Pipeline
+push / PR ──► Docker            Docker image builds
+                                 (every branch, every PR — independent of CI)
+
+tag  v* ────► CD Pipeline
                                  Lint & Format -> Tests -+-> Release (GitHub Release)
                                                           +-> Build (image -> GHCR)
                                                                     |
@@ -25,19 +26,22 @@ tag  v* ────► CI and CD Pipeline
                                  (only tags matching v*)
 ```
 
-Two workflows:
+Three workflows:
 
-| Workflow                                | Trigger            | What it does                                                                                             |
-| --------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------- |
-| [`ci.yml`](../.github/workflows/ci.yml) | every push and PR  | lint, format check, unit, integration, E2E, migration check, QA report + Pages (main only), Docker build |
-| [`cd.yml`](../.github/workflows/cd.yml) | tags matching `v*` | re-runs the full suite, builds and pushes the image, creates a GitHub Release, deploys to EC2            |
+| Workflow                                        | Trigger            | What it does                                                                                  |
+| ----------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------- |
+| [`ci.yml`](../.github/workflows/ci.yml)         | every push and PR  | lint, format check, unit, integration, E2E, migration check, QA report + Pages (main only)    |
+| [`docker.yml`](../.github/workflows/docker.yml) | every push and PR  | builds the production image to prove the Dockerfile still works — never pushes it anywhere    |
+| [`cd.yml`](../.github/workflows/cd.yml)         | tags matching `v*` | re-runs the full suite, builds and pushes the image, creates a GitHub Release, deploys to EC2 |
 
-`ci.yml` runs `Lint & Format` → `Tests`, then branches: `Reports` (regenerates
-the QA dashboard and publishes it to GitHub Pages, but only actually deploys
-when the push is to `main`) runs alongside the independent `Docker image
-builds` job. `cd.yml` runs the same `Lint & Format` → `Tests` chain,
-then branches into `Release` (creates the GitHub Release) and `Build` (pushes
-the image to GHCR) in parallel, before `Deploy` waits on both.
+`ci.yml` runs `Lint & Format` → `Tests`, then `Reports` (regenerates the QA
+dashboard and publishes it to GitHub Pages, but only actually deploys when
+the push is to `main`). `docker.yml` is a single independent job, split out
+from `ci.yml` since it shares nothing with that chain — it doesn't need lint
+or tests to pass first, and nothing downstream needs it to finish either.
+`cd.yml` runs the same `Lint & Format` → `Tests` chain, then branches into
+`Release` (creates the GitHub Release) and `Build` (pushes the image to
+GHCR) in parallel, before `Deploy` waits on both.
 
 ## QA dashboard (GitHub Pages)
 
