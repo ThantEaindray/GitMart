@@ -9,7 +9,7 @@
 # story, which was not asked for and is a materially bigger decision.
 #
 # GHCR_IMAGE and IMAGE_TAG are set by the deploy script before this file runs
-# — see the "deploy" job in .github/workflows/release.yml. GHCR_IMAGE is
+# — see the "deploy" job in .github/workflows/cd.yml. GHCR_IMAGE is
 # derived from github.repository the same way the build job derives the name
 # it pushes to, so the two can never name two different packages again.
 

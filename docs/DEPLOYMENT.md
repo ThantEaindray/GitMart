@@ -30,12 +30,12 @@ Two workflows:
 | Workflow                                          | Trigger            | What it does                                                                                             |
 | ------------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------- |
 | [`ci.yml`](../.github/workflows/ci.yml)           | every push and PR  | lint, format check, unit, integration, E2E, migration check, QA report + Pages (main only), Docker build |
-| [`release.yml`](../.github/workflows/release.yml) | tags matching `v*` | re-runs the full suite, builds and pushes the image, creates a GitHub Release, deploys to EC2            |
+| [`cd.yml`](../.github/workflows/cd.yml)           | tags matching `v*` | re-runs the full suite, builds and pushes the image, creates a GitHub Release, deploys to EC2            |
 
 `ci.yml` runs `Lint & Format` → `Tests`, then branches: `Reports` (regenerates
 the QA dashboard and publishes it to GitHub Pages, but only actually deploys
 when the push is to `main`) runs alongside the independent `Docker image
-builds` job. `release.yml` runs the same `Lint & Format` → `Tests` chain,
+builds` job. `cd.yml` runs the same `Lint & Format` → `Tests` chain,
 then branches into `Release` (creates the GitHub Release) and `Build` (pushes
 the image to GHCR) in parallel, before `Deploy` waits on both.
 
