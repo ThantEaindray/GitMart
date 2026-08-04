@@ -6,6 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+# A push to a branch with an open PR fires both a `push` and a `pull_request`
+# run for the same commit, and every further push starts another pair without
+# cancelling the last — see the four runs still "in_progress" an hour later
+# on 2026-08-04 after a hung Tests job. Scoping the group to ref+event keeps
+# the two intentional parallel runs but cancels a run superseded by a newer
+# push to the same branch.
+concurrency:
+  group: ci-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
 jobs:
   # ── Lint & Format ──────────────────────────────────────────────────────
   lint-and-format:
@@ -42,6 +52,10 @@ jobs:
     name: Tests
     needs: lint-and-format
     runs-on: ubuntu-latest
+    # Without this, a genuine hang (rather than a per-test Jest timeout) runs
+    # up to the platform default of 360 minutes before anyone notices — see
+    # the four runs still "in_progress" an hour later on 2026-08-04.
+    timeout-minutes: 15
 
     services:
       postgres:
@@ -120,6 +134,9 @@ jobs:
     name: Reports
     needs: tests
     runs-on: ubuntu-latest
+    # qa-report.js reruns the full suite internally; continue-on-error on the
+    # report step only protects against it failing, not against it hanging.
+    timeout-minutes: 15
 
     services:
       postgres:

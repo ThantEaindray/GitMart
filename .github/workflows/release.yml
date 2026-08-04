@@ -42,6 +42,9 @@ jobs:
     name: Tests
     needs: lint-and-format
     runs-on: ubuntu-latest
+    # See ci.yml's Tests job for why this exists — without it a genuine hang
+    # runs up to the platform default of 360 minutes before anyone notices.
+    timeout-minutes: 15
 
     services:
       postgres:
