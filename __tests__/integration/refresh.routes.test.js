@@ -136,6 +136,28 @@ describe('POST /api/refresh', () => {
     expect(afterRevocation.status).toBe(401);
   });
 
+  test('every row is already gone by the time the revocation response returns', async () => {
+    // Regression guard for a race: deleteAllRefreshTokensForUser used to be
+    // fired with a no-op callback and the 401 sent immediately, so a request
+    // landing right after this one could still find a live row. The handler
+    // now waits on the delete's own callback before responding, so by the
+    // time this request resolves, the deletion is guaranteed to have already
+    // committed — checked here with no artificial delay.
+    const login = await registerAndLogin();
+    const originalCookie = readRefreshCookie(login);
+
+    await request(app).post('/api/refresh').set('Cookie', originalCookie);
+    const replay = await request(app).post('/api/refresh').set('Cookie', originalCookie);
+
+    expect(replay.status).toBe(401);
+
+    const stored = await pool.query(
+      'SELECT COUNT(*) AS count FROM refresh_tokens WHERE user_id = $1',
+      [login.body.userId],
+    );
+    expect(Number(stored.rows[0].count)).toBe(0);
+  });
+
   test('rememberMe true produces a persistent cookie with an expiry', async () => {
     const login = await registerAndLogin({ rememberMe: true });
     const cookies = login.headers['set-cookie'] || [];
