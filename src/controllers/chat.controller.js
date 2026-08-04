@@ -12,8 +12,12 @@ module.exports.loadChats = (req, res, next) => {
     }
 
     //we need to check if the user even has any chats to begin with
-
-    if (results.length == 0) {
+    // node-postgres returns a Result object, which exposes rows/rowCount but no
+    // length. Checking results.length compared undefined to 0, so this guard
+    // never fired: execution fell through to namesPictures, whose forEach over
+    // an empty id list never invoked its callback, so next() was never called
+    // and the request hung open forever.
+    if (results.rows.length === 0) {
       console.log('user has no chats to load');
       return res.status(204).json({ message: 'user has no chats to load' });
     }
@@ -158,9 +162,12 @@ module.exports.hasChat = (req, res, next) => {
       return res.status(500).json(err);
     }
     // if the results length is <0 then we know that the chat exists
-    if (results.length > 0) {
+    // Same Result-object mistake as loadChats above: undefined > 0 is false, so
+    // this guard never fired and duplicate chats between the same pair of users
+    // could be created without limit.
+    if (results.rows.length > 0) {
       console.log('chat already exists');
-      res.locals.chatid = results.id;
+      res.locals.chatid = results.rows[0].id;
       return res.status(409).json({});
     }
     //and finally we can call a next
