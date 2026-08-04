@@ -104,9 +104,16 @@ module.exports.verifyRefreshToken = (req, res, next) => {
     model.getRefreshToken({ token }, (dbErr, result) => {
       if (dbErr) return res.status(500).json({ message: 'Internal server error' });
       if (result.rows.length === 0) {
-        // Token was already rotated or revoked — possible theft. Nuke all sessions for this user.
-        model.deleteAllRefreshTokensForUser({ userId: decoded.userId }, function () {});
-        return res.status(401).json({ error: 'Session invalidated. Please log in again.' });
+        // Token was already rotated or revoked — possible theft. Nuke all
+        // sessions for this user, and respond only once that has actually
+        // happened, rather than firing it and responding immediately: the
+        // previous fire-and-forget version returned 401 "Session invalidated"
+        // before the deletion query had necessarily completed, so a request
+        // racing right behind this one could still find a live row.
+        return model.deleteAllRefreshTokensForUser({ userId: decoded.userId }, (deleteErr) => {
+          if (deleteErr) return res.status(500).json({ message: 'Internal server error' });
+          return res.status(401).json({ error: 'Session invalidated. Please log in again.' });
+        });
       }
 
       const row = result.rows[0];
