@@ -6,7 +6,6 @@ const pool = require('./models/db');
 
 // Import route handlers
 const somethingRouter = require('./routers/Something.router');
-const personRouter = require('./routers/Person.router');
 const productRouter = require('./routers/product.router');
 
 // Import checkout order routes.
@@ -59,7 +58,6 @@ app.get('/api/health', (req, res) => {
 
 // Existing backend routes
 app.use('/somethings', somethingRouter);
-app.use('/persons', personRouter);
 app.use('/products', productRouter);
 
 // Checkout order API routes.

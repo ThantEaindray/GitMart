@@ -89,8 +89,8 @@ async function insertListing({
 /**
  * Reset only the tables related to users and listings before every test.
  *
- * The existing Something and Person tests use different tables, so they
- * are not affected by this cleanup.
+ * The existing Something tests use a different table, so they are not
+ * affected by this cleanup.
  */
 beforeEach(async () => {
   await pool.query(`
