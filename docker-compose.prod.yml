@@ -24,3 +24,8 @@ services:
     environment:
       WS_PORT: 3001
     restart: unless-stopped
+    # Postgres on this host runs natively (not containerised), reachable from
+    # inside the app container as host.docker.internal rather than localhost
+    # — a container's own localhost never refers to the host machine.
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
