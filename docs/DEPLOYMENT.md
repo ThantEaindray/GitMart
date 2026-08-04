@@ -5,30 +5,58 @@ place for that to work.
 
 ## Pipeline overview
 
-```
-push / PR ──────────────► CI          lint, format, unit, integration, E2E,
-                                       migration check, Docker image builds
-                                       (every branch, every PR)
+Both workflows are structured as a chain of distinct jobs rather than one job
+with many steps, so each stage shows as its own node in the Actions graph —
+a lint failure, a test failure, and a deploy failure are visually distinct
+instead of all being "the CI job went red."
 
-tag  v* ────────────────► Release     verify ─┬─► release (GitHub Release)
-                                               └─► build (image → GHCR)
-                                                         │
-                                                         ▼
-                                                       deploy
-                                       (only tags matching v*)
+```
+push / PR ──► CI                Lint & Format -> Tests -+-> Reports -> GitHub Pages
+                                                          |              (main only)
+                                                          +-> Docker image builds
+                                 (every branch, every PR; Pages only publishes on main)
+
+tag  v* ────► CI and CD Pipeline
+                                 Lint & Format -> Tests -+-> Release (GitHub Release)
+                                                          +-> Build (image -> GHCR)
+                                                                    |
+                                                                    v
+                                                                 Deploy
+                                 (only tags matching v*)
 ```
 
 Two workflows:
 
-| Workflow                                          | Trigger            | What it does                                                                                  |
-| ------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------- |
-| [`ci.yml`](../.github/workflows/ci.yml)           | every push and PR  | lint, format check, unit, integration, E2E, migration check, Docker build                     |
-| [`release.yml`](../.github/workflows/release.yml) | tags matching `v*` | re-runs the full suite, builds and pushes the image, creates a GitHub Release, deploys to EC2 |
+| Workflow                                          | Trigger            | What it does                                                                                             |
+| ------------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------- |
+| [`ci.yml`](../.github/workflows/ci.yml)           | every push and PR  | lint, format check, unit, integration, E2E, migration check, QA report + Pages (main only), Docker build |
+| [`release.yml`](../.github/workflows/release.yml) | tags matching `v*` | re-runs the full suite, builds and pushes the image, creates a GitHub Release, deploys to EC2            |
 
-`release.yml` runs as four jobs: `verify` gates everything; `release` and
-`build` both depend only on `verify` and run in parallel, since creating the
-GitHub Release and building the image do not depend on each other; `deploy`
-waits on both.
+`ci.yml` runs `Lint & Format` → `Tests`, then branches: `Reports` (regenerates
+the QA dashboard and publishes it to GitHub Pages, but only actually deploys
+when the push is to `main`) runs alongside the independent `Docker image
+builds` job. `release.yml` runs the same `Lint & Format` → `Tests` chain,
+then branches into `Release` (creates the GitHub Release) and `Build` (pushes
+the image to GHCR) in parallel, before `Deploy` waits on both.
+
+## QA dashboard (GitHub Pages)
+
+Every push to `main` regenerates the full QA report — the same
+`scripts/qa-report.js` used locally via `npm run report`, run as-is and never
+edited, since it is protected and monitored by GitHub Classroom — and
+publishes it to **`https://soc-cicd.github.io/ay2627s1-project-git-5-1/`**,
+linking to the full report, the ESLint detail report, the coverage report,
+and the Playwright E2E report.
+
+On any other branch or PR, `Reports` still runs (so its output is available
+as a downloadable Actions artifact for local review), but the `GitHub Pages`
+job that actually publishes it is skipped — only `main` is allowed to
+overwrite the public dashboard.
+
+`scripts/qa-report.js` exits with a non-zero status whenever any step it ran
+failed. The report-generation step uses `continue-on-error: true` so a
+failing run still gets published — a red dashboard is more useful than no
+dashboard at all, and is in fact the case where publishing matters most.
 
 ## Container image
 

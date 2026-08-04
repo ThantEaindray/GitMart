@@ -1,4 +1,4 @@
-name: Release
+name: CI and CD Pipeline
 
 on:
   push:
@@ -6,13 +6,41 @@ on:
       - 'v*'
 
 jobs:
-  # ── Gate ────────────────────────────────────────────────────────────────
-  # Nothing is released or deployed until the full suite passes against the
-  # tagged commit. Split into its own job so the deploy cannot start unless
-  # this succeeds, and so a deploy failure is distinguishable from a test
-  # failure at a glance.
-  verify:
-    name: Verify
+  # ── Lint & Format ──────────────────────────────────────────────────────
+  # Split from Tests, same as ci.yml, so the two show as distinct stages
+  # rather than one long job — a lint failure on a tagged commit is visible
+  # at a glance instead of buried partway through a combined log.
+  lint-and-format:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the tagged commit
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+  # ── Tests ────────────────────────────────────────────────────────────────
+  # Nothing is released, built or deployed until the full suite passes
+  # against the tagged commit. Kept as its own job so release/build cannot
+  # start unless this succeeds, and so a deploy failure is distinguishable
+  # from a test failure at a glance.
+  tests:
+    name: Tests
+    needs: lint-and-format
     runs-on: ubuntu-latest
 
     services:
@@ -51,9 +79,6 @@ jobs:
           echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET || 'ci-test-refresh-secret' }}" >> .env.test
           echo "BCRYPT_PEPPER=${{ secrets.BCRYPT_PEPPER || 'ci-test-pepper' }}" >> .env.test
 
-      - name: Lint
-        run: npm run lint
-
       - name: Unit tests
         run: npm run test:unit
 
@@ -77,7 +102,7 @@ jobs:
   # ── Release ─────────────────────────────────────────────────────────────
   release:
     name: Create GitHub Release
-    needs: verify
+    needs: tests
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -131,7 +156,7 @@ jobs:
   # there is no reason to make one wait for the other.
   build:
     name: Build and push image
-    needs: verify
+    needs: tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
