@@ -22,7 +22,6 @@ DROP TABLE IF EXISTS products        CASCADE;
 DROP TABLE IF EXISTS refresh_tokens  CASCADE;
 DROP TABLE IF EXISTS users           CASCADE;
 DROP TABLE IF EXISTS "Something"     CASCADE;
-DROP TABLE IF EXISTS "Person"        CASCADE;
 
 -- ── Something ─────────────────────────────────────────────
 CREATE TABLE "Something" (
@@ -30,17 +29,6 @@ CREATE TABLE "Something" (
   "name" TEXT   NOT NULL,
   CONSTRAINT "Something_pkey" PRIMARY KEY ("id")
 );
-
--- ── Person ────────────────────────────────────────────────
-CREATE TABLE "Person" (
-  "id"     SERIAL NOT NULL,
-  "email"  TEXT   NOT NULL,
-  "name"   TEXT   NOT NULL,
-  "avatar" TEXT,
-  CONSTRAINT "Person_pkey" PRIMARY KEY ("id")
-);
-
-CREATE UNIQUE INDEX "Person_email_key" ON "Person"("email");
 
 -- ── Users ─────────────────────────────────────────────────
 CREATE TABLE users (
