@@ -6,22 +6,56 @@ place for that to work.
 ## Pipeline overview
 
 ```
-push / PR ──────────────► CI          lint, format, unit, integration, E2E, migrations
-                                      (every branch, every PR)
+push / PR ──────────────► CI          lint, format, unit, integration, E2E,
+                                       migration check, Docker image builds
+                                       (every branch, every PR)
 
-tag  v* ────────────────► Release     verify → create release → deploy
-                                      (only tags matching v*)
+tag  v* ────────────────► Release     verify ─┬─► release (GitHub Release)
+                                               └─► build (image → GHCR)
+                                                         │
+                                                         ▼
+                                                       deploy
+                                       (only tags matching v*)
 ```
 
 Two workflows:
 
-| Workflow                                          | Trigger            | What it does                                                     |
-| ------------------------------------------------- | ------------------ | ---------------------------------------------------------------- |
-| [`ci.yml`](../.github/workflows/ci.yml)           | every push and PR  | lint, format check, unit, integration, E2E, migration check      |
-| [`release.yml`](../.github/workflows/release.yml) | tags matching `v*` | re-runs the full suite, creates a GitHub Release, deploys to EC2 |
+| Workflow                                          | Trigger            | What it does                                                                                  |
+| ------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------- |
+| [`ci.yml`](../.github/workflows/ci.yml)           | every push and PR  | lint, format check, unit, integration, E2E, migration check, Docker build                     |
+| [`release.yml`](../.github/workflows/release.yml) | tags matching `v*` | re-runs the full suite, builds and pushes the image, creates a GitHub Release, deploys to EC2 |
 
-`release.yml` runs as three dependent jobs — `verify` → `release` → `deploy` —
-so a failing test stops the release, and a failing release stops the deploy.
+`release.yml` runs as four jobs: `verify` gates everything; `release` and
+`build` both depend only on `verify` and run in parallel, since creating the
+GitHub Release and building the image do not depend on each other; `deploy`
+waits on both.
+
+## Container image
+
+The app ships as a Docker image, built from the [`Dockerfile`](../Dockerfile)
+in the repo root and pushed to the **GitHub Container Registry** (GHCR) at
+`ghcr.io/<owner>/<repo>`, tagged with the release tag and `latest`.
+
+Pushing needs no new secret — it authenticates with the automatic
+`GITHUB_TOKEN`, granted `packages: write` for that one job. **Pulling** the
+image on the EC2 host is a separate question: by default a GHCR package
+inherits the repository's visibility, so on a private repo the image is
+private too, and the server needs credentials to pull it. Two ways to handle
+that:
+
+- **Make the package public** (Package settings → Change visibility, after
+  the first image has been pushed at least once). Simplest option, and
+  reasonable for a student project with no sensitive data in the image.
+- **Add a `GHCR_PAT` secret** — a classic GitHub PAT scoped to
+  `read:packages`. The deploy script logs in with it if present, and skips
+  the login step entirely if it is absent, so this is opt-in.
+
+The Dockerfile is multi-stage: dependencies (including compiling bcrypt's
+native binding, which needs `python3`/`make`/`g++` on Alpine) are installed
+in a `deps` stage, and only the built `node_modules` plus the application
+code are copied into the final `runtime` stage. The image runs as a
+non-root user and exposes a `HEALTHCHECK` using Node's built-in `http`
+client rather than curl/wget, which Alpine does not ship by default.
 
 ## Cutting a release
 
@@ -44,44 +78,85 @@ Already configured:
 | `JWT_SECRET_KEY`     | signing access tokens in CI  |
 | `JWT_REFRESH_SECRET` | signing refresh tokens in CI |
 | `BCRYPT_PEPPER`      | password hashing in CI       |
+| `EC2_HOST`           | SSH target for deploy        |
+| `EC2_USER`           | SSH user for deploy          |
+| `EC2_SSH_KEY`        | SSH private key for deploy   |
 
-**Not yet configured** — the deploy step skips itself until these exist:
+Not required, but supported:
 
-| Secret        | Example                                               | Notes                                                |
-| ------------- | ----------------------------------------------------- | ---------------------------------------------------- |
-| `EC2_HOST`    | `ec2-13-250-x-x.ap-southeast-1.compute.amazonaws.com` | public DNS or IP                                     |
-| `EC2_USER`    | `ubuntu`                                              | the SSH user                                         |
-| `EC2_SSH_KEY` | contents of the `.pem` file                           | the whole private key, including the BEGIN/END lines |
-
-Add them under **Settings → Secrets and variables → Actions**.
+| Secret     | Needed when                                                                  |
+| ---------- | ---------------------------------------------------------------------------- |
+| `GHCR_PAT` | the GHCR package is private (see above) — a classic PAT with `read:packages` |
 
 The deploy job checks for `EC2_HOST` and skips cleanly when it is absent, so
-the workflow stays green before a host is provisioned rather than failing on a
-step nobody can act on.
+the workflow stays green before a host is provisioned rather than failing on
+a step nobody can act on.
 
 ## What the server needs
 
-The deploy assumes a box already set up with:
+Containerising the deploy changes this list substantially from a plain Node
+setup: the host runs Docker, not the app directly, so it needs neither
+Node.js, `npm`, `pm2`, nor a full application checkout.
 
-- Node.js 20 and `npm`
-- `pm2`, with the app registered as `gitmart`
-- the repository cloned at `~/gitmart`
-- a `.env` holding `DATABASE_URL`, the JWT secrets, `BCRYPT_PEPPER`, and
-  optionally the `SMTP_*` values
-- a reachable PostgreSQL instance
+- **Docker** and the **Compose plugin** (`docker compose`, not the older
+  standalone `docker-compose`)
+- `curl`, for the deploy script's health check
+- a shallow git checkout at `~/gitmart` — only used to fetch
+  `docker-compose.prod.yml` at the tagged version, not to run the app from
+- a `.env` file at `~/gitmart/.env` holding the runtime secrets
+  (`DATABASE_URL`, the JWT secrets, `BCRYPT_PEPPER`, and optionally the
+  `SMTP_*` values) — never committed, created once by hand on the host
+- a reachable PostgreSQL instance — **not** containerised alongside the app;
+  see below
 
 First-time setup, roughly:
 
 ```bash
 git clone https://github.com/soc-cicd/ay2627s1-project-git-5-1.git ~/gitmart
 cd ~/gitmart
-npm ci --omit=dev
-# create .env, then apply the schema once
-node scripts/reset.js          # ⚠ first install only — this DROPs every table
-npm run migrate:prod
-pm2 start src/server.js --name gitmart
-pm2 save
+# create .env with the runtime secrets, then apply the schema once
+
+docker run --rm --env-file .env ghcr.io/<owner>/gitmart:latest node scripts/migrate.js
 ```
+
+No `docker-compose.prod.yml` checkout is needed for that first run — it is a
+one-off container from the published image, run directly. The first tagged
+deploy afterwards brings `docker-compose.prod.yml` in via the normal flow.
+
+## Why Postgres is not containerised
+
+`docker-compose.prod.yml` runs the app only. Production Postgres stays an
+external, already-running instance, so the app container is stateless and
+disposable — replacing it on every deploy loses nothing, and there is
+nothing to back up on the EC2 box itself.
+
+Containerising a stateful database on a single instance is a real option,
+but a materially bigger decision: it needs a persistent volume, a backup
+strategy, and a plan for what happens to that volume when the instance is
+replaced. That was not asked for here and is not something to back into as
+a side effect of moving the app into a container.
+
+The local development [`docker-compose.yml`](../docker-compose.yml) is
+different on purpose — it **does** run Postgres, in a disposable volume,
+because losing local dev data and re-seeding is a non-event.
+
+## Local development with Docker Compose
+
+An alternative to the existing `npm run dev` workflow — both work, and
+whether the local database is a native Postgres install or a container is
+each developer's call.
+
+```bash
+docker compose up --build
+docker compose exec app npm run migration:reset   # first run only
+```
+
+This starts the app on `localhost:3000` and a disposable Postgres on
+`localhost:5432`. `DATABASE_URL` is overridden inside `docker-compose.yml`
+to point at the `db` service by its Compose network hostname — the value in
+`.env.dev` pointing at `localhost` would otherwise resolve to the app
+container itself, not the database container, since each has its own
+network namespace.
 
 ## Database migrations
 
@@ -92,13 +167,19 @@ That is correct for development and CI, and catastrophic in production.
 
 Deployments instead run **`npm run migrate:prod`**, which applies the numbered
 files in [`migrations/`](../migrations) exactly once each, tracking what has run
-in a `schema_migrations` table.
+in a `schema_migrations` table. In the containerised pipeline this runs as a
+one-off container from the newly pulled image, before that image is brought
+up as the running service:
 
-| Command                   | Behaviour                                         | Where      |
-| ------------------------- | ------------------------------------------------- | ---------- |
-| `npm run migration:reset` | drops and recreates everything, then seeds        | dev, CI    |
-| `npm run migrate`         | applies pending migrations against `.env.dev`     | dev        |
-| `npm run migrate:prod`    | applies pending migrations using ambient env vars | the server |
+```bash
+docker compose -f docker-compose.prod.yml run --rm app npm run migrate:prod
+```
+
+| Command                   | Behaviour                                         | Where                         |
+| ------------------------- | ------------------------------------------------- | ----------------------------- |
+| `npm run migration:reset` | drops and recreates everything, then seeds        | dev, CI                       |
+| `npm run migrate`         | applies pending migrations against `.env.dev`     | dev                           |
+| `npm run migrate:prod`    | applies pending migrations using ambient env vars | inside the deployed container |
 
 ### Writing a migration
 
@@ -128,21 +209,30 @@ migrations.
 
 ## Health check and rollback
 
-After `pm2 restart`, the deploy waits five seconds then calls
-`GET /api/health`. That endpoint runs `SELECT 1` rather than simply returning
-200, because a process that is up but cannot reach Postgres is not actually
-serving — and that is exactly the state worth catching.
+After bringing the new container up, the deploy waits five seconds then
+calls `GET /api/health`. That endpoint runs `SELECT 1` rather than simply
+returning 200, because a process that is up but cannot reach Postgres is not
+actually serving — and that is exactly the state worth catching.
 
-If the health check fails, the deploy checks the previous commit back out,
-reinstalls, restarts, and exits non-zero. The rollback restores **code**, not
-data: because migrations are additive, the previous version runs fine against
-the newer schema.
+If the health check fails, the deploy switches `docker-compose.prod.yml`
+back to the previous image tag and brings that up instead, then exits
+non-zero. "Previous" here is tracked by hand: `IMAGE_TAG` has no equivalent
+of `git rev-parse HEAD`, so the deploy script writes the tag it just
+deployed to `.last-good-tag` on the host once the health check passes, and
+reads that file back on the next deploy. The rollback restores **code**,
+not data: because migrations are additive, the previous image runs fine
+against the newer schema.
 
 ## Known gaps
 
 - **No staging environment.** Tags deploy straight to production.
 - **Single instance.** The SSE registry is in-process, so a second instance
   would silently drop real-time notifications — see issue #69.
-- **Restart, not zero-downtime.** `pm2 restart` drops connections briefly.
-  `pm2 reload` would avoid that but needs cluster mode.
+- **Restart, not zero-downtime.** `docker compose up -d` recreates the
+  container, which drops connections briefly. Blue/green or a rolling
+  update would avoid that, at the cost of running two containers at once
+  during the swap — not worth the complexity for a single-instance deploy.
+- **`.last-good-tag` is host-local state.** Fine for one instance; would
+  need to move somewhere shared (e.g. a small file in the deploy job's own
+  cache, or a tag lookup against GHCR) before running more than one.
 - **`schema.sql` and `migrations/` are kept in step manually.**

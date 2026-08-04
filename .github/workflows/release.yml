@@ -124,13 +124,58 @@ jobs:
               prerelease: tag.includes('-'),
             });
 
+  # ── Build image ────────────────────────────────────────────────────────
+  # Builds the image already proven buildable by ci.yml's docker-build job,
+  # this time from the tagged commit, and pushes it to GHCR. Runs alongside
+  # `release` rather than after it — the two do not depend on each other, and
+  # there is no reason to make one wait for the other.
+  build:
+    name: Build and push image
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout the tagged commit
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # GHCR requires a lowercase image name; github.repository is not
+      # guaranteed to be, even though this repo's happens to be already.
+      - name: Compute the lowercase image name
+        id: image
+        run: echo "name=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runtime
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:${{ github.ref_name }}
+            ${{ steps.image.outputs.name }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   # ── Deploy ──────────────────────────────────────────────────────────────
   # Skipped when the EC2 secrets are absent, so the workflow stays green on a
   # fork or before a host has been provisioned, rather than failing on a step
   # nobody can act on.
   deploy:
     name: Deploy to EC2
-    needs: release
+    needs: [release, build]
     runs-on: ubuntu-latest
 
     steps:
@@ -151,40 +196,58 @@ jobs:
         uses: appleboy/ssh-action@v1
         env:
           RELEASE_TAG: ${{ github.ref_name }}
+          # Passed through even when unset — the deploy script treats an empty
+          # value as "package is public, skip login" rather than failing.
+          GHCR_PAT: ${{ secrets.GHCR_PAT }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: RELEASE_TAG
+          envs: RELEASE_TAG,GHCR_PAT
           script: |
             set -euo pipefail
             cd ~/gitmart
 
-            # Record what is running so the deploy can be undone.
-            PREVIOUS=$(git rev-parse HEAD)
-            echo "Currently deployed: $PREVIOUS"
-
-            # Check out the exact tag being released. The previous version
-            # pulled main, which is not necessarily the tagged commit.
+            # Only docker-compose.prod.yml needs to come from the tag — the app
+            # itself now ships as a pre-built image, so the host no longer
+            # needs Node, npm or the application source at all.
             git fetch --all --tags --prune
             git checkout --force "$RELEASE_TAG"
 
-            npm ci --omit=dev
+            export GHCR_OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
+            export IMAGE_TAG="$RELEASE_TAG"
 
-            # Additive migrations only — migration:reset DROPs every table and
-            # would destroy production data.
-            npm run migrate:prod
+            # Only needed if the GHCR package is private. Left unset, the
+            # package must be public for `docker compose pull` to succeed.
+            if [ -n "${GHCR_PAT:-}" ]; then
+              echo "$GHCR_PAT" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            fi
 
-            pm2 restart gitmart --update-env
+            # Record what is running so the deploy can be undone. Docker has no
+            # equivalent of `git rev-parse HEAD` for "what tag is live", so
+            # this is tracked by hand in a file on the host.
+            PREVIOUS_TAG=$(cat .last-good-tag 2>/dev/null || echo "")
+            echo "Currently deployed: ${PREVIOUS_TAG:-none}"
 
-            # Confirm the process is actually serving before calling it done.
+            docker compose -f docker-compose.prod.yml pull
+
+            # Additive migrations only — migrate:prod never drops a table.
+            # Runs as a one-off container from the new image, before that
+            # image is brought up as the running service.
+            docker compose -f docker-compose.prod.yml run --rm app npm run migrate:prod
+
+            docker compose -f docker-compose.prod.yml up -d
+
+            # Confirm the app is actually serving before calling it done.
             sleep 5
             if ! curl --fail --silent --max-time 10 http://localhost:3000/api/health > /dev/null; then
-              echo "Health check FAILED — rolling back to $PREVIOUS"
-              git checkout --force "$PREVIOUS"
-              npm ci --omit=dev
-              pm2 restart gitmart --update-env
+              echo "Health check FAILED — rolling back to ${PREVIOUS_TAG:-the previous image}"
+              if [ -n "$PREVIOUS_TAG" ]; then
+                export IMAGE_TAG="$PREVIOUS_TAG"
+                docker compose -f docker-compose.prod.yml up -d
+              fi
               exit 1
             fi
 
+            echo "$RELEASE_TAG" > .last-good-tag
             echo "Deployed $RELEASE_TAG successfully."
