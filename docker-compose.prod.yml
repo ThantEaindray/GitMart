@@ -1,0 +1,26 @@
+# Deploy-time stack for the EC2 host. Pulls a pre-built image from GHCR
+# rather than building — the image was already built and tested in CI, so
+# rebuilding here would mean running untested code.
+#
+# No database service here: production Postgres stays external (its own
+# managed instance), so the app container is stateless and disposable —
+# replacing it on every deploy loses nothing. Containerising a stateful
+# database on a single EC2 instance would need its own volume and backup
+# story, which was not asked for and is a materially bigger decision.
+#
+# GHCR_IMAGE and IMAGE_TAG are set by the deploy script before this file runs
+# — see the "deploy" job in .github/workflows/cd.yml. GHCR_IMAGE is
+# derived from github.repository the same way the build job derives the name
+# it pushes to, so the two can never name two different packages again.
+
+services:
+  app:
+    image: ${GHCR_IMAGE}:${IMAGE_TAG}
+    ports:
+      - '3000:3000'
+      - '3001:3001'
+    env_file:
+      - .env
+    environment:
+      WS_PORT: 3001
+    restart: unless-stopped

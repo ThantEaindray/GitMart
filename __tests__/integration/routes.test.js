@@ -218,3 +218,19 @@ describe('Unknown routes', () => {
     expect(res.body.error).toMatch(/Unknown resource/);
   });
 });
+
+// ── GET /api/health ───────────────────────────────────────────────────────
+// The deploy pipeline rolls back when this fails, so it needs to be right.
+describe('GET /api/health', () => {
+  test('reports ok when the database is reachable', async () => {
+    const response = await request(app).get('/api/health');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ status: 'ok', database: 'reachable' });
+  });
+
+  test('is public, so the deploy check needs no credentials', async () => {
+    const response = await request(app).get('/api/health');
+    expect(response.status).toBe(200);
+  });
+});
