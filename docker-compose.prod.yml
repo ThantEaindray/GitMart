@@ -29,3 +29,31 @@ services:
     # — a container's own localhost never refers to the host machine.
     extra_hosts:
       - 'host.docker.internal:host-gateway'
+
+  # Reverse proxy for the domain. Terminates TLS with a free, auto-renewing
+  # Let's Encrypt cert — Caddy handles the whole ACME flow itself, no certbot
+  # or manual renewal cron needed. Talks to `app` over the compose network by
+  # service name, same as `host.docker.internal` does for Postgres above.
+  #
+  # The app's own ports stay published too (see above), so the existing
+  # http://<ec2-ip>:3000 path keeps working unchanged alongside this.
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    depends_on:
+      - app
+
+volumes:
+  # Named volumes rather than bind mounts so the issued certificate survives
+  # `docker compose up -d` recreating the container on every deploy — without
+  # this, every deploy would re-request a cert and risk Let's Encrypt's rate
+  # limit.
+  caddy_data:
+  caddy_config:

@@ -137,9 +137,41 @@ Node.js, `npm`, `pm2`, nor a full application checkout.
   `docker-compose.prod.yml` at the tagged version, not to run the app from
 - a `.env` file at `~/gitmart/.env` holding the runtime secrets
   (`DATABASE_URL`, the JWT secrets, `BCRYPT_PEPPER`, and optionally the
-  `SMTP_*` values) — never committed, created once by hand on the host
+  `SMTP_*` values and `APP_URL`) — never committed, created once by hand on
+  the host
 - a reachable PostgreSQL instance — **not** containerised alongside the app;
   see below
+- the domain's DNS pointed at the instance, and inbound TCP 80/443 open in
+  its security group — see "Domain and HTTPS" below
+
+## Domain and HTTPS (Caddy)
+
+`docker-compose.prod.yml` runs a [Caddy](https://caddyserver.com/) reverse
+proxy alongside the app, configured via the [`Caddyfile`](../Caddyfile) at the
+repo root. Caddy terminates TLS with a free certificate it obtains and
+renews automatically (no certbot, no manual renewal cron), and forwards
+everything to the app over the compose network — plain HTTP traffic to the
+main app port, WebSocket upgrade requests (matched by the `Connection`/
+`Upgrade` headers) to the `ws` server's port. The app's own ports stay
+published too, so `http://<ec2-ip>:3000` keeps working unchanged alongside
+the domain.
+
+One-time setup on a fresh host, once the DNS records below are in place:
+
+1. At the domain registrar, add two DNS records pointing at the instance's
+   public/Elastic IP:
+   - `A    @      <elastic-ip>`
+   - `A    www    <elastic-ip>`
+2. In the EC2 instance's security group, allow inbound TCP 80 and 443 from
+   anywhere (Caddy needs 80 for the ACME HTTP-01 challenge, 443 to serve).
+3. Update `~/gitmart/.env` to set `APP_URL` to the `https://` domain, so
+   links built into outgoing notification emails point at it.
+4. Bring the stack up as usual — `docker compose -f docker-compose.prod.yml
+up -d` — Caddy requests its certificate on first start.
+
+If the domain's DNS hasn't propagated yet, or port 80 isn't reachable from
+the internet, Caddy's certificate request fails and it retries with backoff
+— check `docker compose logs caddy` on the host if `https://` isn't coming up.
 
 First-time setup, roughly:
 
