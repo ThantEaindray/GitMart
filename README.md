@@ -71,6 +71,55 @@ delivered, or cancelled.
 
 ---
 
+## Order Status Tracking Evidence
+
+The order status tracking feature now includes buyer-facing order history updates,
+backend validation, status history support, and automated test coverage.
+
+### Feature Coverage
+
+- Checkout orders start with a `Pending` fulfilment status.
+- Status updates append timestamped tracking history entries.
+- Backend validation prevents unsupported statuses and invalid status transitions.
+- The order history page displays status badges, tracking timelines, summary counts,
+  filter counts, final-status guidance, and contextual empty states.
+- Older orders without detailed `statusHistory` still show a fallback tracking entry
+  based on the current order status.
+
+### Unit Test Evidence
+
+| Test File | Coverage |
+| --------- | -------- |
+| `__tests__/unit/orderStatusTransitions.test.js` | Valid and invalid order status transition rules |
+| `__tests__/unit/orderModelStatusHistory.test.js` | Initial status history, appended updates, and user-owned order checks |
+| `__tests__/unit/orderControllerStatusUpdate.test.js` | Missing status, invalid status, not found orders, invalid transitions, and valid updates |
+
+### Playwright Test Evidence
+
+| Test File | Workflow Covered |
+| --------- | ---------------- |
+| `e2e-tests/order-history-filters.spec.js` | Status filter counts and filtering visible orders |
+| `e2e-tests/order-tracking-timeline.spec.js` | Expanding an order to view tracking timeline entries and order details |
+| `e2e-tests/order-status-update.spec.js` | Updating a pending order to processing and refreshing the timeline |
+| `e2e-tests/order-status-history-fallback.spec.js` | Showing fallback tracking content for orders without detailed status history |
+
+### Useful Test Commands
+
+```bash
+npm run test:unit
+npm run test:e2e
+.\node_modules\.bin\dotenv.cmd -e .env.test -- .\node_modules\.bin\playwright.cmd test e2e-tests/order-status-update.spec.js --config=configs/playwright.config.js
+```
+
+If port `443` is already in use locally, run Playwright with a temporary WebSocket
+port override before the command:
+
+```powershell
+$env:WS_PORT='3443'
+```
+
+---
+
 ## Tech Stack
 
 | Category       | Tools                        |
