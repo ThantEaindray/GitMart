@@ -744,3 +744,184 @@ describe('Listing.model - deleteListing', () => {
     });
   });
 });
+
+// ── getListingLifecycleById ───────────────────────────────────────────────────
+describe('Listing.model - getListingLifecycleById', () => {
+  const { getListingLifecycleById } = require('../../src/models/Listing.model');
+  afterEach(() => jest.clearAllMocks());
+
+  test('should return lifecycle fields when listing exists', (done) => {
+    const fakeLifecycle = {
+      id: 1,
+      owner_id: 42,
+      status: 'AVAILABLE',
+      isSold: false,
+      isClosed: false,
+    };
+    mockQuery(null, [fakeLifecycle]);
+
+    getListingLifecycleById({ id: 1 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledTimes(1);
+      const [, values] = pool.query.mock.calls[0];
+      expect(values).toEqual([1]);
+      expect(result.rows[0].status).toBe('AVAILABLE');
+      done();
+    });
+  });
+
+  test('should return empty rows when listing does not exist', (done) => {
+    mockQuery(null, []);
+
+    getListingLifecycleById({ id: 999 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
+  });
+
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('query failed');
+    mockQuery(dbError, null);
+
+    getListingLifecycleById({ id: 1 }, (err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
+  });
+});
+
+// ── updateListingStatus (model) ───────────────────────────────────────────────
+describe('Listing.model - updateListingStatus', () => {
+  const { updateListingStatus } = require('../../src/models/Listing.model');
+  afterEach(() => jest.clearAllMocks());
+
+  const updateData = {
+    status: 'RESERVED',
+    isSold: false,
+    isClosed: false,
+    id: 1,
+    owner_id: 42,
+    current_status: 'AVAILABLE',
+  };
+
+  test('should update status and return the updated row', (done) => {
+    const updatedRow = { id: 1, owner_id: 42, status: 'RESERVED', isSold: false, isClosed: false };
+    mockQuery(null, [updatedRow]);
+
+    updateListingStatus(updateData, (err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledTimes(1);
+      const [, values] = pool.query.mock.calls[0];
+      expect(values).toEqual(['RESERVED', false, false, 1, 42, 'AVAILABLE']);
+      expect(result.rows[0].status).toBe('RESERVED');
+      done();
+    });
+  });
+
+  test('should return empty rows when owner_id does not match', (done) => {
+    mockQuery(null, []);
+
+    updateListingStatus({ ...updateData, owner_id: 99 }, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
+  });
+
+  test('should return empty rows when current_status does not match (concurrent update)', (done) => {
+    mockQuery(null, []);
+
+    updateListingStatus({ ...updateData, current_status: 'SOLD' }, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
+  });
+
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('update failed');
+    mockQuery(dbError, null);
+
+    updateListingStatus(updateData, (err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
+  });
+});
+
+// ── searchListings sort variations ────────────────────────────────────────────
+describe('Listing.model - searchListings sort options', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  const baseData = { search: '', minPrice: null, maxPrice: null, category: '', sort: '' };
+
+  test('should use price ASC ordering for cheapest sort', (done) => {
+    mockQuery(null, []);
+
+    searchListings({ ...baseData, sort: 'cheapest' }, (err) => {
+      expect(err).toBeNull();
+      const [sql] = pool.query.mock.calls[0];
+      expect(sql).toContain('price ASC');
+      done();
+    });
+  });
+
+  test('should use price DESC ordering for expensive sort', (done) => {
+    mockQuery(null, []);
+
+    searchListings({ ...baseData, sort: 'expensive' }, (err) => {
+      expect(err).toBeNull();
+      const [sql] = pool.query.mock.calls[0];
+      expect(sql).toContain('price DESC');
+      done();
+    });
+  });
+
+  test('should fall back to newest sort for unknown sort value', (done) => {
+    mockQuery(null, []);
+
+    searchListings({ ...baseData, sort: 'unknown' }, (err) => {
+      expect(err).toBeNull();
+      const [sql] = pool.query.mock.calls[0];
+      expect(sql).toContain('created_on DESC');
+      done();
+    });
+  });
+
+  test('should use view_count ordering for most_viewed sort', (done) => {
+    mockQuery(null, []);
+
+    searchListings({ ...baseData, sort: 'most_viewed' }, (err) => {
+      expect(err).toBeNull();
+      const [sql] = pool.query.mock.calls[0];
+      expect(sql).toContain('view_count DESC');
+      done();
+    });
+  });
+
+  test('should place listings with no views last rather than first', (done) => {
+    // view_count is nullable, and in Postgres DESC puts NULLs first by default,
+    // which would show never-viewed listings at the top of "Most Viewed".
+    mockQuery(null, []);
+
+    searchListings({ ...baseData, sort: 'most_viewed' }, () => {
+      const [sql] = pool.query.mock.calls[0];
+      expect(sql).toContain('NULLS LAST');
+      done();
+    });
+  });
+
+  test('should never splice an unrecognised sort value into the SQL', (done) => {
+    // The sort value is interpolated into ORDER BY, so the whitelist is the
+    // only thing preventing injection through that parameter.
+    mockQuery(null, []);
+
+    searchListings({ ...baseData, sort: 'price; DROP TABLE listings;--' }, () => {
+      const [sql] = pool.query.mock.calls[0];
+      expect(sql).not.toContain('DROP TABLE');
+      expect(sql).toContain('created_on DESC');
+      done();
+    });
+  });
+});

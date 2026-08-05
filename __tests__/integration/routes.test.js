@@ -9,53 +9,17 @@ const pool = require('../../src/models/db');
 beforeEach(async () => {
   // Clean slate for every test
   await pool.query('DELETE FROM "Something"');
-  await pool.query('DELETE FROM "Person"');
 });
 
 afterAll(async () => {
   await pool.query('DELETE FROM "Something"');
-  await pool.query('DELETE FROM "Person"');
   await pool.end();
 });
 
 // ── Helper ───────────────────────────────────────────────
-async function seedPersons() {
-  await pool.query(
-    `INSERT INTO "Person" ("email","name") VALUES
-      ('alice@example.com','Alice'),
-      ('bob@example.com','Bob')`,
-  );
-}
-
 async function seedSomethings() {
   await pool.query(`INSERT INTO "Something" ("name") VALUES ('Seed 1'),('Seed 2')`);
 }
-
-// ─────────────────────────────────────────────────────────
-// GET /persons
-// ─────────────────────────────────────────────────────────
-describe('GET /persons', () => {
-  // Boundary: zero rows – empty table returns empty array
-  test('should return 200 and an empty array when no persons exist', async () => {
-    const res = await request(app).get('/persons');
-
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual([]);
-  });
-
-  // Valid partition: seeded data returns all rows with expected fields
-  test('should return 200 and all persons', async () => {
-    await seedPersons();
-
-    const res = await request(app).get('/persons');
-
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(2);
-    expect(res.body[0]).toHaveProperty('id');
-    expect(res.body[0]).toHaveProperty('email');
-    expect(res.body[0]).toHaveProperty('name');
-  });
-});
 
 // ─────────────────────────────────────────────────────────
 // GET /somethings
@@ -216,5 +180,21 @@ describe('Unknown routes', () => {
 
     expect(res.status).toBe(404);
     expect(res.body.error).toMatch(/Unknown resource/);
+  });
+});
+
+// ── GET /api/health ───────────────────────────────────────────────────────
+// The deploy pipeline rolls back when this fails, so it needs to be right.
+describe('GET /api/health', () => {
+  test('reports ok when the database is reachable', async () => {
+    const response = await request(app).get('/api/health');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ status: 'ok', database: 'reachable' });
+  });
+
+  test('is public, so the deploy check needs no credentials', async () => {
+    const response = await request(app).get('/api/health');
+    expect(response.status).toBe(200);
   });
 });

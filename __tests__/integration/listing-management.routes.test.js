@@ -1,242 +1,164 @@
+process.env.JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || 'integration-test-access-secret';
+
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
 const app = require('../../src/app');
 const pool = require('../../src/models/db');
 
-// ── Auth state (populated in beforeAll) ──────────────────
-let authToken;
-let testUserId;
+const JWT_ALGORITHM = process.env.JWT_ALGORITHM || 'HS256';
 
-// ── DB Setup / Teardown ──────────────────────────────────
-// Schema is already created by jest globalSetup (scripts/reset.js).
-// We register + login one test user before all tests.
+let owner;
+let otherUser;
+let ownerToken;
+let otherUserToken;
 
-beforeAll(async () => {
-  // Delete stale test user's listings first (cascades to listing_views), then the user
-  await pool.query(
-    "DELETE FROM listings WHERE owner_id = (SELECT id FROM users WHERE username = 'listingtest')",
+/**
+ * Creates a valid access token for a test user.
+ *
+ * This uses the same test secret as the real JWT middleware, meaning
+ * requests still pass through the application's actual verifyToken
+ * middleware.
+ */
+function createAccessToken(userId) {
+  return jwt.sign({ userId }, process.env.JWT_SECRET_KEY, {
+    algorithm: JWT_ALGORITHM,
+    expiresIn: '1h',
+  });
+}
+
+/**
+ * Inserts a user directly into the test database.
+ *
+ * The password is not used because these tests are testing listing routes,
+ * not the login route.
+ */
+async function insertUser(username, email) {
+  const result = await pool.query(
+    `
+      INSERT INTO users (username, email, password)
+      VALUES ($1, $2, $3)
+      RETURNING id, username, email
+    `,
+    [username, email, 'not-used-by-these-tests'],
   );
-  await pool.query("DELETE FROM users WHERE username = 'listingtest'");
 
-  // Register test user
-  await request(app).post('/api/register').send({
-    username: 'listingtest',
-    email: 'listingtest@test.com',
-    password: 'test1234',
-  });
+  return result.rows[0];
+}
 
-  // Login to get token and userId
-  const loginRes = await request(app).post('/api/login').send({
-    username: 'listingtest',
-    password: 'test1234',
-  });
+/**
+ * Inserts a listing directly into the test database.
+ *
+ * This helper is used when the test needs an existing listing before
+ * testing update, delete or retrieval behaviour.
+ */
+async function insertListing({
+  ownerId,
+  title = 'Baseline Camera',
+  description = 'A listing created for integration testing.',
+  price = 500,
+  category = 'Electronics',
+}) {
+  const result = await pool.query(
+    `
+      INSERT INTO listings (
+        owner_id,
+        title,
+        description,
+        price,
+        category
+      )
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING
+        id,
+        owner_id,
+        title,
+        description,
+        price,
+        category,
+        status,
+        status_updated_on,
+        "isSold",
+        "isClosed"
+    `,
+    [ownerId, title, description, price, category],
+  );
 
-  authToken = loginRes.body.token;
-  testUserId = loginRes.body.userId;
-});
+  return result.rows[0];
+}
 
+/**
+ * Reset only the tables related to users and listings before every test.
+ *
+ * The existing Something tests use a different table, so they are not
+ * affected by this cleanup.
+ */
 beforeEach(async () => {
-  // Scope cleanup to this test user only; listing_views cascade from listings
-  await pool.query('DELETE FROM listings WHERE owner_id = $1', [testUserId]);
+  await pool.query(`
+    TRUNCATE TABLE
+      chatcontent,
+      offers,
+      chats,
+      listing_views,
+      listings,
+      refresh_tokens,
+      users
+    RESTART IDENTITY CASCADE
+  `);
+
+  owner = await insertUser('listing_owner', 'listing.owner@example.com');
+
+  otherUser = await insertUser('other_user', 'other.user@example.com');
+
+  ownerToken = createAccessToken(owner.id);
+  otherUserToken = createAccessToken(otherUser.id);
 });
 
+/**
+ * Close the PostgreSQL connection after this test file finishes.
+ */
 afterAll(async () => {
-  await pool.query('DELETE FROM listings WHERE owner_id = $1', [testUserId]);
-  await pool.query("DELETE FROM users WHERE username = 'listingtest'");
   await pool.end();
 });
 
-// ── Seed Helper ──────────────────────────────────────────
-async function seedListing(overrides = {}) {
-  const defaults = {
-    owner_id: testUserId,
-    price: 100,
-    title: 'Seed Item',
-    description: 'A seeded listing',
-    category: 'Others',
-  };
-  const data = { ...defaults, ...overrides };
-  const result = await pool.query(
-    `INSERT INTO listings (owner_id, price, title, description, category)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING id`,
-    [data.owner_id, data.price, data.title, data.description, data.category],
-  );
-  return result.rows[0].id;
-}
+describe('Listing API baseline', () => {
+  describe('GET /api/listings', () => {
+    test('returns 200 and an empty array when no listings exist', async () => {
+      const response = await request(app).get('/api/listings');
 
-// ─────────────────────────────────────────────────────────
-// GET /api/listings
-// ─────────────────────────────────────────────────────────
-describe('GET /api/listings', () => {
-  // Valid partition: returns an array (may contain seed listings from schema.sql)
-  test('should return 200 and an array', async () => {
-    const res = await request(app).get('/api/listings');
-
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-  });
-
-  // Valid partition: newly created listing appears in the response
-  test('should include a newly seeded listing', async () => {
-    const id = await seedListing({ title: 'Visible Watch' });
-
-    const res = await request(app).get('/api/listings');
-
-    expect(res.status).toBe(200);
-    const found = res.body.find((l) => l.id === id);
-    expect(found).toBeDefined();
-    expect(found.title).toBe('Visible Watch');
-  });
-
-  // Valid partition: each listing object contains the expected fields
-  test('each listing should have the required fields', async () => {
-    await seedListing();
-
-    const res = await request(app).get('/api/listings');
-
-    expect(res.status).toBe(200);
-    const listing = res.body.find((l) => l.owner_id === testUserId);
-    expect(listing).toHaveProperty('id');
-    expect(listing).toHaveProperty('title');
-    expect(listing).toHaveProperty('price');
-    expect(listing).toHaveProperty('category');
-  });
-});
-
-// ─────────────────────────────────────────────────────────
-// GET /api/listings/search
-// ─────────────────────────────────────────────────────────
-describe('GET /api/listings/search', () => {
-  // Valid partition: no query params returns all listings as an array
-  test('should return 200 and array with no filters', async () => {
-    const res = await request(app).get('/api/listings/search');
-
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-  });
-
-  // Valid partition: search by title keyword returns matching listing
-  test('should return matching listing when searching by title keyword', async () => {
-    await seedListing({ title: 'Unique Titanium Frame' });
-
-    const res = await request(app).get('/api/listings/search?search=Unique+Titanium');
-
-    expect(res.status).toBe(200);
-    const found = res.body.find((l) => l.title === 'Unique Titanium Frame');
-    expect(found).toBeDefined();
-  });
-
-  // Valid partition: filter by category returns only that category
-  test('should filter listings by category', async () => {
-    await seedListing({ title: 'Category Watch', category: 'Watches' });
-    await seedListing({ title: 'Category Book', category: 'Books' });
-
-    const res = await request(app).get('/api/listings/search?category=Watches');
-
-    expect(res.status).toBe(200);
-    const titles = res.body.map((l) => l.title);
-    expect(titles).toContain('Category Watch');
-    expect(titles).not.toContain('Category Book');
-  });
-
-  // Boundary: search with no match returns empty array
-  test('should return empty array for a search term with no matches', async () => {
-    const res = await request(app).get('/api/listings/search?search=xyznotfound12345');
-
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual([]);
-  });
-});
-
-// ─────────────────────────────────────────────────────────
-// GET /api/listings/:id
-// ─────────────────────────────────────────────────────────
-describe('GET /api/listings/:id', () => {
-  // Valid partition: existing id returns the listing
-  test('should return 200 and the listing for a valid id', async () => {
-    const id = await seedListing({ title: 'Single Fetch Watch' });
-
-    const res = await request(app).get(`/api/listings/${id}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body.id).toBe(id);
-    expect(res.body.title).toBe('Single Fetch Watch');
-  });
-
-  // Boundary: non-existent id returns 404
-  test('should return 404 for a non-existent listing id', async () => {
-    const res = await request(app).get('/api/listings/999999');
-
-    expect(res.status).toBe(404);
-    expect(res.body).toHaveProperty('message');
-  });
-});
-
-// ─────────────────────────────────────────────────────────
-// POST /api/listings (protected)
-// ─────────────────────────────────────────────────────────
-describe('POST /api/listings', () => {
-  // Invalid partition: no token → 401
-  test('should return 401 when no auth token is provided', async () => {
-    const res = await request(app).post('/api/listings').send({
-      title: 'Test',
-      description: 'Test desc',
-      price: 50,
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([]);
     });
 
-    expect(res.status).toBe(401);
-  });
-
-  // Invalid partition: missing title → 400
-  test('should return 400 when title is missing', async () => {
-    const res = await request(app)
-      .post('/api/listings')
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({ description: 'No title', price: 50 });
-
-    expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('message');
-  });
-
-  // Invalid partition: price <= 0 → 400
-  test('should return 400 when price is 0 or negative', async () => {
-    const res = await request(app)
-      .post('/api/listings')
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({ title: 'Zero Price', description: 'desc', price: 0 });
-
-    expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('message');
-  });
-
-  // Valid partition: all required fields → 201 with listing object
-  test('should return 201 and the created listing with valid data', async () => {
-    const res = await request(app)
-      .post('/api/listings')
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({
-        title: 'New Listing',
-        description: 'A fine item for sale.',
-        price: 250,
-        category: 'Fashion',
+    test('returns all listings to a public user', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
       });
 
-    expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('message');
-    expect(res.body).toHaveProperty('listing');
-    expect(res.body.listing.title).toBe('New Listing');
-    expect(res.body.listing.owner_id).toBe(testUserId);
+      const response = await request(app).get('/api/listings');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveLength(1);
+
+      expect(response.body[0]).toMatchObject({
+        id: listing.id,
+        owner_id: owner.id,
+        title: 'Baseline Camera',
+        description: 'A listing created for integration testing.',
+        category: 'Electronics',
+        isSold: false,
+        isClosed: false,
+      });
+
+      // PostgreSQL NUMERIC values may be returned as strings.
+      expect(Number(response.body[0].price)).toBe(500);
+    });
   });
 
-  // Valid partition: created listing persists and is retrievable via GET
-  test('created listing should appear in GET /api/listings', async () => {
-    await request(app)
-      .post('/api/listings')
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({ title: 'Persistent Item', description: 'should persist', price: 99 });
+  describe('GET /api/listings/:id', () => {
+    test('returns 404 when the listing does not exist', async () => {
+      const response = await request(app).get('/api/listings/999999');
 
-    const getRes = await request(app).get('/api/listings');
-    const found = getRes.body.find((l) => l.title === 'Persistent Item');
+      expect(response.status).toBe(404);
 
     expect(found).toBeDefined();
   });

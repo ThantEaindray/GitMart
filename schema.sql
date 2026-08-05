@@ -9,17 +9,19 @@
 -- ─────────────────────────────────────────────────────────
 
 -- Drop existing tables (children before parents to avoid FK errors)
+DROP TABLE IF EXISTS notifications   CASCADE;
 DROP TABLE IF EXISTS chatcontent     CASCADE;
+DROP TABLE IF EXISTS reservation_requests CASCADE;
 DROP TABLE IF EXISTS offers          CASCADE;
 DROP TABLE IF EXISTS chats           CASCADE;
 DROP TABLE IF EXISTS wishlist        CASCADE;
+DROP TABLE IF EXISTS listing_reviews CASCADE;
 DROP TABLE IF EXISTS listing_views   CASCADE;
 DROP TABLE IF EXISTS listings        CASCADE;
 DROP TABLE IF EXISTS products        CASCADE;
 DROP TABLE IF EXISTS refresh_tokens  CASCADE;
 DROP TABLE IF EXISTS users           CASCADE;
 DROP TABLE IF EXISTS "Something"     CASCADE;
-DROP TABLE IF EXISTS "Person"        CASCADE;
 
 -- ── Something ─────────────────────────────────────────────
 CREATE TABLE "Something" (
@@ -27,17 +29,6 @@ CREATE TABLE "Something" (
   "name" TEXT   NOT NULL,
   CONSTRAINT "Something_pkey" PRIMARY KEY ("id")
 );
-
--- ── Person ────────────────────────────────────────────────
-CREATE TABLE "Person" (
-  "id"     SERIAL NOT NULL,
-  "email"  TEXT   NOT NULL,
-  "name"   TEXT   NOT NULL,
-  "avatar" TEXT,
-  CONSTRAINT "Person_pkey" PRIMARY KEY ("id")
-);
-
-CREATE UNIQUE INDEX "Person_email_key" ON "Person"("email");
 
 -- ── Users ─────────────────────────────────────────────────
 CREATE TABLE users (
@@ -53,7 +44,8 @@ CREATE TABLE users (
   font_size          TEXT    DEFAULT NULL,
   display_name       TEXT    DEFAULT NULL,
   notify_orders      BOOLEAN NOT NULL DEFAULT true,
-  notify_promotions  BOOLEAN NOT NULL DEFAULT false
+  notify_promotions  BOOLEAN NOT NULL DEFAULT false,
+  notify_email       BOOLEAN NOT NULL DEFAULT true
 );
 
 -- ── Refresh Tokens ────────────────────────────────────────
@@ -130,6 +122,17 @@ CREATE TABLE listings (
     )
 );
 
+-- ── Listing Reviews ──────────────────────────────────────
+CREATE TABLE listing_reviews (
+  id           SERIAL    PRIMARY KEY,
+  listing_id   INTEGER   NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+  reviewer_id  INTEGER   NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
+  rating       INTEGER   NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment      TEXT,
+  created_on   TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (listing_id, reviewer_id)
+);
+
 -- ── Wishlist (saved listings per user) ───────────────────
 CREATE TABLE wishlist (
   user_id    INTEGER NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
@@ -137,6 +140,53 @@ CREATE TABLE wishlist (
   added_on   TIMESTAMP NOT NULL DEFAULT NOW(),
   PRIMARY KEY (user_id, listing_id)
 );
+
+-- ── Reservation Requests ──────────────────────────────────
+CREATE TABLE reservation_requests (
+  id           SERIAL    PRIMARY KEY,
+
+  listing_id   INTEGER   NOT NULL
+    REFERENCES listings(id) ON DELETE CASCADE,
+
+  requester_id INTEGER   NOT NULL
+    REFERENCES users(id) ON DELETE CASCADE,
+
+  status       TEXT      NOT NULL DEFAULT 'PENDING',
+  message      TEXT,
+
+  created_on   TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_on   TIMESTAMP NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT reservation_requests_status_check
+    CHECK (
+      status IN (
+        'PENDING',
+        'ACCEPTED',
+        'REJECTED',
+        'CANCELLED'
+      )
+    ),
+
+  CONSTRAINT reservation_requests_message_length_check
+    CHECK (
+      message IS NULL
+      OR CHAR_LENGTH(message) <= 500
+    )
+);
+
+CREATE UNIQUE INDEX reservation_requests_unique_pending
+  ON reservation_requests (listing_id, requester_id)
+  WHERE status = 'PENDING';
+
+CREATE UNIQUE INDEX reservation_requests_one_accepted_per_listing
+  ON reservation_requests (listing_id)
+  WHERE status = 'ACCEPTED';
+
+CREATE INDEX reservation_requests_requester_status_idx
+  ON reservation_requests (requester_id, status);
+
+CREATE INDEX reservation_requests_listing_status_idx
+  ON reservation_requests (listing_id, status);
 
 -- ── Listing Views (unique per user per listing) ───────────
 CREATE TABLE listing_views (
@@ -173,6 +223,47 @@ CREATE TABLE offers (
   price        NUMERIC(10,2)  NOT NULL CHECK (price > 0),
   "isAccepted" BOOLEAN        DEFAULT false
 );
+
+-- ── Notifications ─────────────────────────────────────────
+--  Replaces the previous in-memory store, which lost every
+--  notification on server restart. The icon is NOT stored:
+--  it is presentation, derived from `type` in the controller,
+--  so restyling never needs a data migration.
+CREATE TABLE notifications (
+  id         SERIAL    PRIMARY KEY,
+
+  user_id    INTEGER   NOT NULL
+    REFERENCES users(id) ON DELETE CASCADE,
+
+  type       TEXT      NOT NULL,
+  title      TEXT      NOT NULL,
+  message    TEXT      NOT NULL,
+  is_read    BOOLEAN   NOT NULL DEFAULT false,
+  created_on TIMESTAMP NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT notifications_type_check
+    CHECK (
+      type IN (
+        'order',
+        'order_status',
+        'reservation',
+        'reservation_status',
+        'wishlist',
+        'message',
+        'system'
+      )
+    )
+);
+
+-- Serves the notifications page: one user's rows, newest first.
+CREATE INDEX notifications_user_created_idx
+  ON notifications (user_id, created_on DESC, id DESC);
+
+-- Partial index for the unread badge count. Only unread rows are
+-- indexed, so it stays small even as read history grows.
+CREATE INDEX notifications_user_unread_idx
+  ON notifications (user_id)
+  WHERE is_read = false;
 
 -- ── Seed Data ─────────────────────────────────────────────
 INSERT INTO products (name, category, description, price, rating, review_count, icon, image_url) VALUES

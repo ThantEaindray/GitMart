@@ -6,10 +6,11 @@ const jwtMiddleware = require('../middleware/jwtMiddleware');
 
 // Order routes require a logged-in user.
 
-// Create a new checkout order.
+// Create a new checkout order — reservations are verified before the order is written.
 router.post(
   '/',
   jwtMiddleware.verifyToken,
+  orderController.verifyListingReservations,
   orderController.createOrder,
   orderController.sendResponse,
 );

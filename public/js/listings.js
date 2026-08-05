@@ -245,6 +245,8 @@ function createListingCard(listing) {
           ${formatPrice(Number(listing.price))}
         </span>
 
+        ${Number(listing.review_count) > 0 ? `<span class="card-rating" style="font-size:0.78rem;color:var(--accent,#c9a96e);">★ ${listing.avg_rating} <span style="color:var(--muted)">(${listing.review_count})</span></span>` : ''}
+
         ${viewCountHtml}
         ${wishlistButtonHtml}
       </div>
@@ -305,42 +307,99 @@ function debounce(fn, delay) {
   };
 }
 
-function buildSearchUrl() {
-  const search = (document.getElementById('search-input') || {}).value || '';
+function readFilterValue(id) {
+  const element = document.getElementById(id);
+  return element ? element.value : '';
+}
 
-  const minPrice = (document.getElementById('min-price') || {}).value || '';
+// Single source of truth for the active filters, read straight off the controls.
+function readFilters() {
+  return {
+    search: readFilterValue('search-input').trim(),
+    minPrice: readFilterValue('min-price'),
+    maxPrice: readFilterValue('max-price'),
+    category: readFilterValue('category-select'),
+    sort: readFilterValue('sort-select') || 'newest',
+  };
+}
 
-  const maxPrice = (document.getElementById('max-price') || {}).value || '';
+// Sort is excluded: it always has a value, so counting it would mean the badge
+// could never read zero.
+function countActiveFilters(filters) {
+  return [filters.search, filters.minPrice, filters.maxPrice, filters.category].filter(Boolean)
+    .length;
+}
 
-  const sort = (document.getElementById('sort-select') || {}).value || 'newest';
-
-  const category = new URLSearchParams(window.location.search).get('category') || '';
-
+function toQueryParams(filters) {
   const params = new URLSearchParams();
 
-  if (search.trim()) {
-    params.set('search', search.trim());
-  }
+  if (filters.search) params.set('search', filters.search);
+  if (filters.minPrice) params.set('minPrice', filters.minPrice);
+  if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
+  if (filters.category) params.set('category', filters.category);
+  params.set('sort', filters.sort);
 
-  if (minPrice) {
-    params.set('minPrice', minPrice);
-  }
+  return params;
+}
 
-  if (maxPrice) {
-    params.set('maxPrice', maxPrice);
-  }
+function updateFilterCount(filters) {
+  const badge = document.getElementById('filter-count');
+  if (!badge) return;
 
-  params.set('sort', sort);
+  const count = countActiveFilters(filters);
+  badge.textContent = String(count);
+  badge.hidden = count === 0;
+}
 
-  if (category) {
-    params.set('category', category);
-  }
+// Mirrors the filters into the address bar so a filtered view can be shared or
+// bookmarked. replaceState rather than pushState, so filtering does not bury
+// the previous page under a stack of history entries.
+function syncUrl(filters) {
+  const params = toQueryParams(filters);
+  if (filters.sort === 'newest') params.delete('sort');
 
-  return '/api/listings/search?' + params.toString();
+  const query = params.toString();
+  window.history.replaceState(null, '', query ? '?' + query : window.location.pathname);
 }
 
 function fetchListings() {
-  fetch(buildSearchUrl()).then(parseResponse).then(renderListings).catch(onListingsError);
+  const filters = readFilters();
+
+  updateFilterCount(filters);
+  syncUrl(filters);
+
+  fetch('/api/listings/search?' + toQueryParams(filters).toString())
+    .then(parseResponse)
+    .then(renderListings)
+    .catch(onListingsError);
+}
+
+// Restores the controls from the URL so a shared link opens in the same state.
+function applyFiltersFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+
+  const assign = (id, value) => {
+    const element = document.getElementById(id);
+    if (element && value) element.value = value;
+  };
+
+  assign('search-input', params.get('search'));
+  assign('min-price', params.get('minPrice'));
+  assign('max-price', params.get('maxPrice'));
+  assign('category-select', params.get('category'));
+  assign('sort-select', params.get('sort'));
+}
+
+function clearFilters() {
+  ['search-input', 'min-price', 'max-price', 'category-select'].forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) element.value = '';
+  });
+
+  const sortSelect = document.getElementById('sort-select');
+  if (sortSelect) sortSelect.value = 'newest';
+
+  fetchListings();
 }
 
 // ── MOST VIEWED ───────────────────────────────────────────────────────────
@@ -538,13 +597,21 @@ function initListingsPage() {
     }
   }
 
+  // Populate the controls from the URL before the first fetch, so arriving via
+  // a shared link or a category tile shows the matching filter state.
+  applyFiltersFromUrl();
+
   const searchInput = document.getElementById('search-input');
 
   const minPrice = document.getElementById('min-price');
 
   const maxPrice = document.getElementById('max-price');
 
+  const categorySelect = document.getElementById('category-select');
+
   const sortSelect = document.getElementById('sort-select');
+
+  const clearButton = document.getElementById('clear-filters');
 
   if (searchInput) {
     searchInput.addEventListener('input', debounce(fetchListings, 300));
@@ -558,8 +625,16 @@ function initListingsPage() {
     maxPrice.addEventListener('input', debounce(fetchListings, 400));
   }
 
+  if (categorySelect) {
+    categorySelect.addEventListener('change', fetchListings);
+  }
+
   if (sortSelect) {
     sortSelect.addEventListener('change', fetchListings);
+  }
+
+  if (clearButton) {
+    clearButton.addEventListener('click', clearFilters);
   }
 
   fetchListings();
