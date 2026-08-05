@@ -870,48 +870,42 @@ WHERE id = $1
 
     // Boundary: the update is optimistically locked on the status read during
     // loadListingForStatusUpdate (`WHERE id = $1 AND owner_id = $2 AND status
-    // = $3`). Firing several valid AVAILABLE -> RESERVED requests concurrently
-    // for the same listing means only the first UPDATE to reach Postgres still
-    // matches that WHERE clause; the rest match zero rows and hit the 409 in
-    // updateListingStatus itself (distinct from the transition-validity 409 in
-    // loadListingForStatusUpdate covered above).
-    test('returns 409 when concurrent status changes race for the same listing', async () => {
+    // = $3`), guarding against the listing's status changing between that read
+    // and this write. Racing real concurrent HTTP requests to reach this
+    // window reliably is inherently timing-dependent (it passed locally but
+    // failed on a slower CI runner), so instead the race is simulated
+    // directly: the DB row is moved on first, then updateListingStatus is
+    // invoked with the stale statusUpdateData loadListingForStatusUpdate would
+    // have produced if it had read the listing just before that happened.
+    test('returns 409 when the listing status changed since it was read', async () => {
+      const listingController = require('../../src/controllers/Listing.controller');
       const listing = await insertListing({
         ownerId: owner.id,
       });
 
-      // A cold pool.query connection takes tens of ms to establish, which
-      // staggers requests enough that they stop actually overlapping. Warming
-      // the pool first with some throwaway parallel queries means the real
-      // requests below all already have a connection ready and genuinely race.
-      await Promise.all(Array.from({ length: 10 }, () => pool.query('SELECT 1')));
+      await pool.query(`UPDATE listings SET status = 'RESERVED' WHERE id = $1`, [listing.id]);
 
-      // `request(app)` spins up a brand new ephemeral server per call, so
-      // back-to-back calls end up serialized by that setup cost rather than
-      // truly racing. An agent binds one server up front and reuses it, so
-      // requests fired through it actually overlap at the DB layer.
-      const agent = request.agent(app);
+      const res = {
+        locals: {
+          statusUpdateData: {
+            id: listing.id,
+            owner_id: owner.id,
+            current_status: 'AVAILABLE',
+            status: 'SOLD',
+            isSold: true,
+            isClosed: false,
+          },
+        },
+      };
 
-      const responses = await Promise.all(
-        Array.from({ length: 6 }, () =>
-          agent
-            .patch(`/api/listings/${listing.id}/status`)
-            .set('Authorization', `Bearer ${ownerToken}`)
-            .send({ status: 'RESERVED' }),
-        ),
-      );
+      const result = await new Promise((resolve) => {
+        res.status = (code) => ({ json: (body) => resolve({ code, body }) });
+        listingController.updateListingStatus({}, res);
+      });
 
-      const statuses = responses.map((r) => r.status);
-      expect(statuses).toContain(200);
-      expect(statuses.filter((s) => s === 200)).toHaveLength(1);
-
-      const losers = responses.filter((r) => r.status !== 200);
-      losers.forEach((loser) => {
-        expect(loser.status).toBe(409);
-        expect(loser.body).toEqual({
-          message:
-            'The listing status changed before this request was completed. Please try again.',
-        });
+      expect(result.code).toBe(409);
+      expect(result.body).toEqual({
+        message: 'The listing status changed before this request was completed. Please try again.',
       });
     });
   });

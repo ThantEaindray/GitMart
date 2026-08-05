@@ -664,29 +664,27 @@ describe('POST /api/register', () => {
   // Boundary: checkUsernameExists/checkEmailExists only check for an existing
   // row before the insert; the actual protection against duplicates is the
   // UNIQUE constraint on users.username/email, enforced at insert time.
-  // Firing several registrations concurrently with the same username means
-  // more than one can pass both existence checks before any of them has
-  // inserted, so at least one hits that unique-constraint violation inside
-  // register itself rather than the pre-checks.
-  test('returns 500 when concurrent registrations race for the same username', async () => {
-    await Promise.all(Array.from({ length: 10 }, () => pool.query('SELECT 1')));
+  // Reproducing that race through real concurrent HTTP requests is inherently
+  // timing-dependent (the pre-checks would just as likely win on a slower
+  // runner), so instead a user with the same username is inserted directly
+  // and register is invoked as if checkUsernameExists/checkEmailExists had
+  // already passed it — reaching the same unique-constraint violation
+  // deterministically.
+  test('returns 500 when the username is taken once the insert runs', async () => {
+    const userController = require('../../src/controllers/User.controller');
+    await insertUser('it_reg_race_direct', 'it_reg_race_direct@example.com');
 
-    const agent = request.agent(app);
-    const responses = await Promise.all(
-      Array.from({ length: 6 }, (_, i) =>
-        agent.post('/api/register').send({
-          username: 'it_reg_race',
-          email: `it_reg_race_${i}@example.com`,
-          password: 'secret123',
-        }),
-      ),
-    );
+    const req = {
+      body: { username: 'it_reg_race_direct', email: 'it_reg_race_other@example.com' },
+    };
+    const res = { locals: { hash: 'not-a-real-hash' } };
 
-    const statuses = responses.map((r) => r.status);
-    expect(statuses.filter((s) => s === 201)).toHaveLength(1);
+    const result = await new Promise((resolve) => {
+      res.status = (code) => ({ json: (body) => resolve({ code, body }) });
+      userController.register(req, res, () => resolve({ code: 'next-called' }));
+    });
 
-    const losers = responses.filter((r) => r.status !== 201);
-    losers.forEach((loser) => expect(loser.status).toBe(500));
+    expect(result.code).toBe(500);
   });
 });
 

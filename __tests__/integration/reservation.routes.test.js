@@ -396,35 +396,32 @@ describe('Reservation API', () => {
     // Boundary: checkNoPendingRequest only checks for an existing pending row
     // before the insert; the actual protection against duplicates is the
     // reservation_requests_unique_pending index, enforced at insert time.
-    // Firing several requests concurrently for the same listing+requester
-    // means more than one can pass checkNoPendingRequest before either has
-    // inserted, so at least one hits that unique-index violation (23505)
-    // inside createReservationRequest itself rather than the pre-check.
-    test('returns 409 when concurrent requests race to reserve the same listing', async () => {
+    // Reproducing that race through real concurrent HTTP requests is
+    // inherently timing-dependent (checkNoPendingRequest's pre-check would
+    // just as likely win on a slower runner), so instead a pending row is
+    // inserted directly and createReservationRequest is invoked as if
+    // checkNoPendingRequest had already passed it — reaching the same
+    // unique-index violation (23505) deterministically.
+    test('returns 409 when a pending request already exists once the insert runs', async () => {
+      const reservationController = require('../../src/controllers/Reservation.controller');
       const listing = await insertListing();
+      await insertReservationRequest({ listingId: listing.id });
 
-      // A cold pool.query connection takes tens of ms to establish, which
-      // staggers requests enough that they stop actually overlapping.
-      await Promise.all(Array.from({ length: 10 }, () => pool.query('SELECT 1')));
+      const res = {
+        locals: {
+          reservationInput: { listingId: listing.id, message: null },
+          userId: requester.id,
+        },
+      };
 
-      const agent = request.agent(app);
-      const responses = await Promise.all(
-        Array.from({ length: 6 }, () =>
-          agent
-            .post(`/api/listings/${listing.id}/reservations`)
-            .set('Authorization', `Bearer ${requesterToken}`),
-        ),
-      );
+      const result = await new Promise((resolve) => {
+        res.status = (code) => ({ json: (body) => resolve({ code, body }) });
+        reservationController.createReservationRequest({}, res);
+      });
 
-      const statuses = responses.map((r) => r.status);
-      expect(statuses.filter((s) => s === 201)).toHaveLength(1);
-
-      const losers = responses.filter((r) => r.status !== 201);
-      losers.forEach((loser) => {
-        expect(loser.status).toBe(409);
-        expect(loser.body).toEqual({
-          message: 'You already have a pending reservation request for this listing.',
-        });
+      expect(result.code).toBe(409);
+      expect(result.body).toEqual({
+        message: 'You already have a pending reservation request for this listing.',
       });
     });
 
@@ -642,36 +639,38 @@ describe('Reservation API', () => {
     });
 
     // Boundary: cancelPendingReservation optimistically locks on `status =
-    // 'PENDING'` in its WHERE clause, checked again at write time even though
-    // loadReservationForCancel already confirmed PENDING at read time. Firing
-    // several cancel requests concurrently for the same reservation means
-    // only the first UPDATE to reach Postgres still matches; the rest hit the
-    // model-level 409 in cancelReservationRequest itself.
-    test('returns 409 when concurrent cancel requests race for the same reservation', async () => {
+    // 'PENDING'` in its WHERE clause, guarding against the reservation's
+    // status changing between loadReservationForCancel's read and this write.
+    // Racing real concurrent HTTP requests to reach this window is inherently
+    // timing-dependent, so instead the race is simulated directly: the DB row
+    // is moved on first, then cancelReservationRequest is invoked with the
+    // reservation loadReservationForCancel would have handed off if it had
+    // read the row just before that happened.
+    test('returns 409 when the reservation is no longer pending by the time it is cancelled', async () => {
+      const reservationController = require('../../src/controllers/Reservation.controller');
       const listing = await insertListing();
       const reservation = await insertReservationRequest({ listingId: listing.id });
 
-      // A cold pool.query connection takes tens of ms to establish, which
-      // staggers requests enough that they stop actually overlapping.
-      await Promise.all(Array.from({ length: 10 }, () => pool.query('SELECT 1')));
+      await pool.query(`UPDATE reservation_requests SET status = 'REJECTED' WHERE id = $1`, [
+        reservation.id,
+      ]);
 
-      const agent = request.agent(app);
-      const responses = await Promise.all(
-        Array.from({ length: 6 }, () =>
-          agent
-            .patch(`/api/reservations/${reservation.id}/cancel`)
-            .set('Authorization', `Bearer ${requesterToken}`),
-        ),
-      );
+      const res = {
+        locals: {
+          reservationToCancel: { id: reservation.id },
+          userId: requester.id,
+        },
+      };
 
-      const statuses = responses.map((r) => r.status);
-      expect(statuses.filter((s) => s === 200)).toHaveLength(1);
+      const result = await new Promise((resolve) => {
+        res.status = (code) => ({ json: (body) => resolve({ code, body }) });
+        reservationController.cancelReservationRequest({}, res);
+      });
 
-      const losers = responses.filter((r) => r.status !== 200);
-      losers.forEach((loser) => expect(loser.status).toBe(409));
-      expect(losers.map((r) => r.body.message)).toContain(
-        'The reservation request is no longer pending.',
-      );
+      expect(result.code).toBe(409);
+      expect(result.body).toEqual({
+        message: 'The reservation request is no longer pending.',
+      });
     });
   });
 
@@ -909,36 +908,38 @@ describe('Reservation API', () => {
     });
 
     // Boundary: rejectReservationRequest optimistically locks on `status =
-    // 'PENDING'` in its WHERE clause, checked again at write time even though
-    // loadReservationForReject already confirmed PENDING at read time. Firing
-    // several reject requests concurrently for the same reservation means
-    // only the first UPDATE to reach Postgres still matches; the rest hit the
-    // model-level 409 in rejectReservationRequest itself.
-    test('returns 409 when concurrent reject requests race for the same reservation', async () => {
+    // 'PENDING'` in its WHERE clause, guarding against the reservation's
+    // status changing between loadReservationForReject's read and this write.
+    // Racing real concurrent HTTP requests to reach this window is inherently
+    // timing-dependent, so instead the race is simulated directly: the DB row
+    // is moved on first, then rejectReservationRequest is invoked with the
+    // reservation loadReservationForReject would have handed off if it had
+    // read the row just before that happened.
+    test('returns 409 when the reservation is no longer pending by the time it is rejected', async () => {
+      const reservationController = require('../../src/controllers/Reservation.controller');
       const listing = await insertListing();
       const reservation = await insertReservationRequest({ listingId: listing.id });
 
-      // A cold pool.query connection takes tens of ms to establish, which
-      // staggers requests enough that they stop actually overlapping.
-      await Promise.all(Array.from({ length: 10 }, () => pool.query('SELECT 1')));
+      await pool.query(`UPDATE reservation_requests SET status = 'CANCELLED' WHERE id = $1`, [
+        reservation.id,
+      ]);
 
-      const agent = request.agent(app);
-      const responses = await Promise.all(
-        Array.from({ length: 6 }, () =>
-          agent
-            .patch(`/api/reservations/${reservation.id}/reject`)
-            .set('Authorization', `Bearer ${ownerToken}`),
-        ),
-      );
+      const res = {
+        locals: {
+          reservationToReject: { id: reservation.id },
+          userId: owner.id,
+        },
+      };
 
-      const statuses = responses.map((r) => r.status);
-      expect(statuses.filter((s) => s === 200)).toHaveLength(1);
+      const result = await new Promise((resolve) => {
+        res.status = (code) => ({ json: (body) => resolve({ code, body }) });
+        reservationController.rejectReservationRequest({}, res);
+      });
 
-      const losers = responses.filter((r) => r.status !== 200);
-      losers.forEach((loser) => expect(loser.status).toBe(409));
-      expect(losers.map((r) => r.body.message)).toContain(
-        'The reservation request is no longer pending.',
-      );
+      expect(result.code).toBe(409);
+      expect(result.body).toEqual({
+        message: 'The reservation request is no longer pending.',
+      });
     });
   });
 });
