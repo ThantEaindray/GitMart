@@ -273,11 +273,33 @@ jobs:
 
             docker compose -f docker-compose.prod.yml up -d
 
-            # Confirm the app is actually serving before calling it done.
+            # Confirm the app is actually serving, and that Caddy's config is
+            # valid. The app check alone would miss a broken Caddyfile: the
+            # app is only reachable on localhost (see docker-compose.prod.yml),
+            # entirely bypassing Caddy, so a syntax error or bad directive
+            # there could otherwise slip through as a "successful" deploy.
             sleep 5
+            DEPLOY_OK=true
+
             if ! curl --fail --silent --max-time 10 http://localhost:3000/api/health > /dev/null; then
-              echo "Health check FAILED — rolling back to ${PREVIOUS_TAG:-the previous image}"
+              echo "App health check FAILED"
+              DEPLOY_OK=false
+            fi
+
+            if ! docker compose -f docker-compose.prod.yml exec -T caddy \
+              caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile; then
+              echo "Caddy config validation FAILED"
+              DEPLOY_OK=false
+            fi
+
+            if [ "$DEPLOY_OK" = false ]; then
+              echo "Rolling back to ${PREVIOUS_TAG:-the previous image}"
               if [ -n "$PREVIOUS_TAG" ]; then
+                # Restore docker-compose.prod.yml and the Caddyfile from the
+                # previous tag too, not just the app image — otherwise a
+                # config-level regression (a bad Caddyfile edit, say) would
+                # keep running unchanged through the "rollback".
+                git checkout --force "$PREVIOUS_TAG"
                 export IMAGE_TAG="$PREVIOUS_TAG"
                 docker compose -f docker-compose.prod.yml up -d
               fi

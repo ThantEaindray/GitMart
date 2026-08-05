@@ -281,19 +281,30 @@ migrations.
 
 ## Health check and rollback
 
-After bringing the new container up, the deploy waits five seconds then
-calls `GET /api/health`. That endpoint runs `SELECT 1` rather than simply
-returning 200, because a process that is up but cannot reach Postgres is not
-actually serving — and that is exactly the state worth catching.
+After bringing the new container up, the deploy waits five seconds then runs
+two checks:
 
-If the health check fails, the deploy switches `docker-compose.prod.yml`
-back to the previous image tag and brings that up instead, then exits
-non-zero. "Previous" here is tracked by hand: `IMAGE_TAG` has no equivalent
-of `git rev-parse HEAD`, so the deploy script writes the tag it just
-deployed to `.last-good-tag` on the host once the health check passes, and
-reads that file back on the next deploy. The rollback restores **code**,
-not data: because migrations are additive, the previous image runs fine
-against the newer schema.
+1. `GET /api/health`, hit directly on `localhost` since the app's port is not
+   published publicly (see "Domain and HTTPS" above). That endpoint runs
+   `SELECT 1` rather than simply returning 200, because a process that is up
+   but cannot reach Postgres is not actually serving — and that is exactly
+   the state worth catching.
+2. `caddy validate` against the running Caddy container's config. The app
+   check alone talks straight to the app over localhost, entirely bypassing
+   Caddy, so a broken `Caddyfile` (bad syntax, a bad directive) could
+   otherwise pass as a "successful" deploy while the actual public entry
+   point is down.
+
+If either check fails, the deploy checks out **both** `docker-compose.prod.yml`
+and the `Caddyfile` from the previous tag — not just the image — before
+bringing that back up, then exits non-zero. Restoring only the image would
+leave a config-level regression (a bad compose or Caddyfile change) in place
+even though the "rollback" reported success. "Previous" here is tracked by
+hand: `IMAGE_TAG` has no equivalent of `git rev-parse HEAD`, so the deploy
+script writes the tag it just deployed to `.last-good-tag` on the host once
+both checks pass, and reads that file back on the next deploy. The rollback
+restores **code**, not data: because migrations are additive, the previous
+image runs fine against the newer schema.
 
 ## Known gaps
 
