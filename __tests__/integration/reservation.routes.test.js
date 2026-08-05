@@ -254,6 +254,16 @@ describe('Reservation API', () => {
       });
     });
 
+    // Invalid partition: passes the controller's own isPositiveInteger check
+    // but overflows Postgres's integer column when used in the WHERE clause.
+    test('returns 500 when the listing id overflows a Postgres integer', async () => {
+      const response = await request(app)
+        .post('/api/listings/99999999999999/reservations')
+        .set('Authorization', `Bearer ${requesterToken}`);
+
+      expect(response.status).toBe(500);
+    });
+
     test('returns 409 when the listing has no owner', async () => {
       const ownerlessListing = await insertListing({ ownerId: null });
 
@@ -367,6 +377,70 @@ describe('Reservation API', () => {
         message: 'You already have a pending reservation request for this listing.',
       });
     });
+
+    // Invalid partition: a whitespace-only message trims down to an empty
+    // string, which is falsy — unlike every other message-carrying test here
+    // — so this covers the `rawMessage.trim() || null` fallback to null.
+    test('treats a whitespace-only message as no message', async () => {
+      const listing = await insertListing();
+
+      const response = await request(app)
+        .post(`/api/listings/${listing.id}/reservations`)
+        .set('Authorization', `Bearer ${requesterToken}`)
+        .send({ message: '   ' });
+
+      expect(response.status).toBe(201);
+      expect(response.body.reservation.message).toBeNull();
+    });
+
+    // Boundary: checkNoPendingRequest only checks for an existing pending row
+    // before the insert; the actual protection against duplicates is the
+    // reservation_requests_unique_pending index, enforced at insert time.
+    // Firing several requests concurrently for the same listing+requester
+    // means more than one can pass checkNoPendingRequest before either has
+    // inserted, so at least one hits that unique-index violation (23505)
+    // inside createReservationRequest itself rather than the pre-check.
+    test('returns 409 when concurrent requests race to reserve the same listing', async () => {
+      const listing = await insertListing();
+
+      // A cold pool.query connection takes tens of ms to establish, which
+      // staggers requests enough that they stop actually overlapping.
+      await Promise.all(Array.from({ length: 10 }, () => pool.query('SELECT 1')));
+
+      const agent = request.agent(app);
+      const responses = await Promise.all(
+        Array.from({ length: 6 }, () =>
+          agent
+            .post(`/api/listings/${listing.id}/reservations`)
+            .set('Authorization', `Bearer ${requesterToken}`),
+        ),
+      );
+
+      const statuses = responses.map((r) => r.status);
+      expect(statuses.filter((s) => s === 201)).toHaveLength(1);
+
+      const losers = responses.filter((r) => r.status !== 201);
+      losers.forEach((loser) => {
+        expect(loser.status).toBe(409);
+        expect(loser.body).toEqual({
+          message: 'You already have a pending reservation request for this listing.',
+        });
+      });
+    });
+
+    // Invalid partition: loadListingForReservation's own query never touches
+    // userId, so a malformed claim passes it through and only fails once
+    // checkNoPendingRequest queries by requester_id.
+    test('returns 500 when the token userId claim is not numeric', async () => {
+      const listing = await insertListing();
+      const badToken = createAccessToken('not-a-number');
+
+      const response = await request(app)
+        .post(`/api/listings/${listing.id}/reservations`)
+        .set('Authorization', `Bearer ${badToken}`);
+
+      expect(response.status).toBe(500);
+    });
   });
 
   // ───────────────────────────────────────────────────────
@@ -406,6 +480,15 @@ describe('Reservation API', () => {
         listing_id: listing.id,
         requester_id: requester.id,
       });
+    });
+
+    test('returns 500 when the token userId claim is not numeric', async () => {
+      const badToken = createAccessToken('not-a-number');
+      const response = await request(app)
+        .get('/api/reservations/sent')
+        .set('Authorization', `Bearer ${badToken}`);
+
+      expect(response.status).toBe(500);
     });
   });
 
@@ -451,6 +534,15 @@ describe('Reservation API', () => {
         requester_username: requester.username,
       });
     });
+
+    test('returns 500 when the token userId claim is not numeric', async () => {
+      const badToken = createAccessToken('not-a-number');
+      const response = await request(app)
+        .get('/api/reservations/received')
+        .set('Authorization', `Bearer ${badToken}`);
+
+      expect(response.status).toBe(500);
+    });
   });
 
   // ───────────────────────────────────────────────────────
@@ -486,6 +578,16 @@ describe('Reservation API', () => {
       expect(response.body).toEqual({
         message: 'Reservation request not found.',
       });
+    });
+
+    // Invalid partition: passes the controller's own isPositiveInteger check
+    // but overflows Postgres's integer column when used in the WHERE clause.
+    test('returns 500 when the reservation id overflows a Postgres integer', async () => {
+      const response = await request(app)
+        .patch('/api/reservations/99999999999999/cancel')
+        .set('Authorization', `Bearer ${requesterToken}`);
+
+      expect(response.status).toBe(500);
     });
 
     test('returns 403 when someone other than the requester tries to cancel', async () => {
@@ -538,6 +640,39 @@ describe('Reservation API', () => {
 
       expect(databaseResult.rows[0].status).toBe('CANCELLED');
     });
+
+    // Boundary: cancelPendingReservation optimistically locks on `status =
+    // 'PENDING'` in its WHERE clause, checked again at write time even though
+    // loadReservationForCancel already confirmed PENDING at read time. Firing
+    // several cancel requests concurrently for the same reservation means
+    // only the first UPDATE to reach Postgres still matches; the rest hit the
+    // model-level 409 in cancelReservationRequest itself.
+    test('returns 409 when concurrent cancel requests race for the same reservation', async () => {
+      const listing = await insertListing();
+      const reservation = await insertReservationRequest({ listingId: listing.id });
+
+      // A cold pool.query connection takes tens of ms to establish, which
+      // staggers requests enough that they stop actually overlapping.
+      await Promise.all(Array.from({ length: 10 }, () => pool.query('SELECT 1')));
+
+      const agent = request.agent(app);
+      const responses = await Promise.all(
+        Array.from({ length: 6 }, () =>
+          agent
+            .patch(`/api/reservations/${reservation.id}/cancel`)
+            .set('Authorization', `Bearer ${requesterToken}`),
+        ),
+      );
+
+      const statuses = responses.map((r) => r.status);
+      expect(statuses.filter((s) => s === 200)).toHaveLength(1);
+
+      const losers = responses.filter((r) => r.status !== 200);
+      losers.forEach((loser) => expect(loser.status).toBe(409));
+      expect(losers.map((r) => r.body.message)).toContain(
+        'The reservation request is no longer pending.',
+      );
+    });
   });
 
   // ───────────────────────────────────────────────────────
@@ -573,6 +708,16 @@ describe('Reservation API', () => {
       expect(response.body).toEqual({
         message: 'Reservation request not found.',
       });
+    });
+
+    // Invalid partition: passes the controller's own isPositiveInteger check
+    // but overflows Postgres's integer column inside the accept transaction.
+    test('returns 500 when the reservation id overflows a Postgres integer', async () => {
+      const response = await request(app)
+        .patch('/api/reservations/99999999999999/accept')
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(500);
     });
 
     test('returns 403 when someone other than the listing owner tries to accept', async () => {
@@ -698,6 +843,16 @@ describe('Reservation API', () => {
       });
     });
 
+    // Invalid partition: passes the controller's own isPositiveInteger check
+    // but overflows Postgres's integer column when used in the WHERE clause.
+    test('returns 500 when the reservation id overflows a Postgres integer', async () => {
+      const response = await request(app)
+        .patch('/api/reservations/99999999999999/reject')
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(500);
+    });
+
     test('returns 403 when someone other than the listing owner tries to reject', async () => {
       const listing = await insertListing();
       const reservation = await insertReservationRequest({ listingId: listing.id });
@@ -751,6 +906,39 @@ describe('Reservation API', () => {
         listing.id,
       ]);
       expect(listingRow.rows[0].status).toBe('AVAILABLE');
+    });
+
+    // Boundary: rejectReservationRequest optimistically locks on `status =
+    // 'PENDING'` in its WHERE clause, checked again at write time even though
+    // loadReservationForReject already confirmed PENDING at read time. Firing
+    // several reject requests concurrently for the same reservation means
+    // only the first UPDATE to reach Postgres still matches; the rest hit the
+    // model-level 409 in rejectReservationRequest itself.
+    test('returns 409 when concurrent reject requests race for the same reservation', async () => {
+      const listing = await insertListing();
+      const reservation = await insertReservationRequest({ listingId: listing.id });
+
+      // A cold pool.query connection takes tens of ms to establish, which
+      // staggers requests enough that they stop actually overlapping.
+      await Promise.all(Array.from({ length: 10 }, () => pool.query('SELECT 1')));
+
+      const agent = request.agent(app);
+      const responses = await Promise.all(
+        Array.from({ length: 6 }, () =>
+          agent
+            .patch(`/api/reservations/${reservation.id}/reject`)
+            .set('Authorization', `Bearer ${ownerToken}`),
+        ),
+      );
+
+      const statuses = responses.map((r) => r.status);
+      expect(statuses.filter((s) => s === 200)).toHaveLength(1);
+
+      const losers = responses.filter((r) => r.status !== 200);
+      losers.forEach((loser) => expect(loser.status).toBe(409));
+      expect(losers.map((r) => r.body.message)).toContain(
+        'The reservation request is no longer pending.',
+      );
     });
   });
 });
@@ -819,6 +1007,17 @@ describe('GET /api/listings/:listingId/reservations/mine', () => {
     const response = await request(app).get(`/api/listings/${listing.id}/reservations/mine`);
 
     expect(response.status).toBe(401);
+  });
+
+  test('returns 500 when the token userId claim is not numeric', async () => {
+    const listing = await insertListing({});
+    const badToken = createAccessToken('not-a-number');
+
+    const response = await request(app)
+      .get(`/api/listings/${listing.id}/reservations/mine`)
+      .set('Authorization', `Bearer ${badToken}`);
+
+    expect(response.status).toBe(500);
   });
 });
 

@@ -123,6 +123,13 @@ describe('Listing discovery routes', () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual([]);
     });
+
+    // Invalid partition: non-numeric owner_id fails the integer cast in Postgres
+    test('returns 500 for a non-numeric owner id', async () => {
+      const response = await request(app).get('/api/listings/owner/not-a-number');
+
+      expect(response.status).toBe(500);
+    });
   });
 
   // ── GET /api/listings/search ────────────────────────────────────────────
@@ -223,6 +230,15 @@ describe('Listing discovery routes', () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual([]);
     });
+
+    // Invalid partition: every other test above always supplies `search`, so
+    // this covers the `req.query.search || ''` fallback when it is omitted.
+    test('returns 200 when the search query param is omitted entirely', async () => {
+      const response = await request(app).get('/api/listings/search?category=Books');
+
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body)).toBe(true);
+    });
   });
 
   // ── GET /api/listings/recently-viewed ───────────────────────────────────
@@ -267,6 +283,17 @@ describe('Listing discovery routes', () => {
         .set('Authorization', `Bearer ${buyerToken}`);
 
       expect(response.body.map((l) => l.title)).not.toContain('Anon Viewed Item');
+    });
+
+    // Invalid partition: jwtMiddleware trusts the userId claim's type as-is,
+    // so a non-numeric claim fails the userId integer cast in Postgres.
+    test('returns 500 when the token userId claim is not numeric', async () => {
+      const badToken = createAccessToken('not-a-number');
+      const response = await request(app)
+        .get('/api/listings/recently-viewed')
+        .set('Authorization', `Bearer ${badToken}`);
+
+      expect(response.status).toBe(500);
     });
   });
 
@@ -325,6 +352,18 @@ describe('Listing discovery routes', () => {
       // The buyer owns nothing, so their breakdown must be empty.
       expect(response.body.viewBreakdown).toEqual([]);
     });
+
+    // Invalid partition: jwtMiddleware trusts the userId claim's type as-is,
+    // so a non-numeric claim fails the owner_id integer cast at the first
+    // step of the chain (loadSellerStats).
+    test('returns 500 when the token userId claim is not numeric', async () => {
+      const badToken = createAccessToken('not-a-number');
+      const response = await request(app)
+        .get('/api/listings/dashboard')
+        .set('Authorization', `Bearer ${badToken}`);
+
+      expect(response.status).toBe(500);
+    });
   });
 
   // ── POST /api/listings/analyse-image ────────────────────────────────────
@@ -351,6 +390,28 @@ describe('Listing discovery routes', () => {
         .post('/api/listings/analyse-image')
         .set('Authorization', `Bearer ${sellerToken}`)
         .send({ mimeType: 'image/png' });
+
+      expect(response.status).toBe(400);
+    });
+
+    // Invalid partition: the mime type is missing while imageBase64 is present,
+    // so the `!mimeType` half of the check (rather than `!imageBase64`) is the
+    // one that decides the result.
+    test('returns 400 when only the image is supplied', async () => {
+      const response = await request(app)
+        .post('/api/listings/analyse-image')
+        .set('Authorization', `Bearer ${sellerToken}`)
+        .send({ imageBase64: 'abc123' });
+
+      expect(response.status).toBe(400);
+    });
+
+    // Invalid partition: no body at all (as opposed to an empty JSON object)
+    // covers the `req.body || {}` fallback rather than destructuring `{}` itself.
+    test('returns 400 when no body is sent at all', async () => {
+      const response = await request(app)
+        .post('/api/listings/analyse-image')
+        .set('Authorization', `Bearer ${sellerToken}`);
 
       expect(response.status).toBe(400);
     });

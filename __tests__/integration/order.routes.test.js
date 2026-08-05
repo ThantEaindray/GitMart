@@ -311,6 +311,55 @@ describe('POST /api/orders - reservation lookup failure', () => {
   });
 });
 
+// ── POST /api/orders — purchase-state tracking (markPurchasedItemsSold) ──────
+
+describe('POST /api/orders - purchase state tracking', () => {
+  // Invalid partition: items omitted entirely (as opposed to items: []) means
+  // markPurchasedItemsSold is invoked with no argument at all, exercising its
+  // own `items = []` default parameter.
+  test('returns 201 when items is omitted entirely from the body', async () => {
+    const { items: _items, ...bodyWithoutItems } = validOrderBody;
+    const res = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send(bodyWithoutItems);
+    expect(res.status).toBe(201);
+  });
+
+  // Invalid partition: items sent as null (rather than omitted) skips the
+  // default parameter — since default values only apply to undefined — and
+  // instead exercises the `items || []` fallback inside getPurchasedIds.
+  test('returns 201 when items is explicitly null', async () => {
+    const res = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ ...validOrderBody, items: null });
+    expect(res.status).toBe(201);
+  });
+
+  // Valid partition: a product-style item identified only by legacy `id`
+  // (no productId, isOneOff: false) exercises the `!isOneOff ? item.id : null`
+  // branch that supplies productId from `id`.
+  test('returns 201 for a product item identified only by id', async () => {
+    const res = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ ...validOrderBody, items: [{ isOneOff: false, id: 4242 }] });
+    expect(res.status).toBe(201);
+  });
+
+  // Valid partition: a one-off item identified only by legacy `id` (no
+  // listingId, isOneOff: true) exercises the `isOneOff ? item.id : null`
+  // branch that supplies listingId from `id`.
+  test('returns 201 for a one-off item identified only by id', async () => {
+    const res = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ ...validOrderBody, items: [{ isOneOff: true, id: 4343 }] });
+    expect(res.status).toBe(201);
+  });
+});
+
 // ── GET /api/orders ───────────────────────────────────────────────────────────
 
 describe('GET /api/orders', () => {

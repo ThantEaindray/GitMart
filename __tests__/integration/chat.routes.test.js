@@ -143,6 +143,30 @@ describe('Chat API', () => {
 
       expect(response.status).toBe(201);
     });
+
+    // Invalid partition: user_2 has a FOREIGN KEY constraint, so starting a chat
+    // with a recipient that doesn't exist is rejected by Postgres itself.
+    test('returns 500 when the recipient does not exist', async () => {
+      const response = await request(app)
+        .post('/api/chats/new')
+        .set('Authorization', `Bearer ${aliceToken}`)
+        .send({ id: 999999 });
+
+      expect(response.status).toBe(500);
+    });
+
+    // Invalid partition: hasChat runs before newChat in this chain, and its
+    // own duplicate-check query fails the integer cast in Postgres before
+    // newChat's FK check is ever reached.
+    test('returns 500 when the token userId claim is not numeric', async () => {
+      const badToken = createAccessToken('not-a-number');
+      const response = await request(app)
+        .post('/api/chats/new')
+        .set('Authorization', `Bearer ${badToken}`)
+        .send({ id: bob.id });
+
+      expect(response.status).toBe(500);
+    });
   });
 
   // ── GET /api/chats ──────────────────────────────────────────────────────
@@ -158,6 +182,18 @@ describe('Chat API', () => {
         .set('Authorization', `Bearer ${aliceToken}`);
 
       expect(response.status).toBe(204);
+    });
+
+    // Invalid partition: jwtMiddleware trusts the userId claim's type as-is, so
+    // a token whose claim isn't numeric fails the user_1/user_2 integer cast
+    // in Postgres rather than jwtMiddleware itself rejecting it.
+    test('returns 500 when the token userId claim is not numeric', async () => {
+      const badToken = createAccessToken('not-a-number');
+      const response = await request(app)
+        .get('/api/chats')
+        .set('Authorization', `Bearer ${badToken}`);
+
+      expect(response.status).toBe(500);
     });
 
     test('lists the chat with the other participant name', async () => {

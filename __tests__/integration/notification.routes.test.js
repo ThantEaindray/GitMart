@@ -416,5 +416,30 @@ describe('Notification API', () => {
       const response = await request(app).get('/api/notifications/stream?token=not-a-real-token');
       expect(response.status).toBe(401);
     });
+
+    // Invalid partition: jwtMiddleware trusts the userId claim's type as-is,
+    // so the stream still opens (headers are flushed before the DB is ever
+    // queried) but the unread-count lookup then fails the integer cast in
+    // Postgres. The handler logs and returns without writing an init event
+    // rather than crashing the connection.
+    test('still opens the stream when the token userId claim is not numeric', async () => {
+      const badToken = createAccessToken('not-a-number');
+
+      const result = await new Promise((resolve, reject) => {
+        const req = http.get(
+          `${baseUrl}/api/notifications/stream?token=${encodeURIComponent(badToken)}`,
+          (res) => {
+            req.destroy();
+            resolve({ status: res.statusCode, headers: res.headers });
+          },
+        );
+        req.on('error', (error) => {
+          if (error.code !== 'ECONNRESET') reject(error);
+        });
+      });
+
+      expect(result.status).toBe(200);
+      expect(result.headers['content-type']).toContain('text/event-stream');
+    });
   });
 });

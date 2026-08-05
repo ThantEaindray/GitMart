@@ -140,12 +140,33 @@ describe('POST /api/listings/:id/reviews', () => {
     expect(res.body).toHaveProperty('message');
   });
 
+  // Invalid partition: no body at all (as opposed to an empty JSON object)
+  // covers the `req.body || {}` fallback rather than destructuring `{}` itself.
+  test('should return 400 when no body is sent at all', async () => {
+    const res = await request(app)
+      .post(`/api/listings/${listingId}/reviews`)
+      .set('Authorization', `Bearer ${reviewerToken}`);
+
+    expect(res.status).toBe(400);
+  });
+
   // Invalid partition: rating below 1 → 400
   test('should return 400 when rating is below 1', async () => {
     const res = await request(app)
       .post(`/api/listings/${listingId}/reviews`)
       .set('Authorization', `Bearer ${reviewerToken}`)
       .send({ rating: 0 });
+
+    expect(res.status).toBe(400);
+  });
+
+  // Invalid partition: a negative rating is truthy (unlike 0), so this only
+  // fails the `Number(rating) < 1` check rather than the `!rating` check above.
+  test('should return 400 for a negative rating', async () => {
+    const res = await request(app)
+      .post(`/api/listings/${listingId}/reviews`)
+      .set('Authorization', `Bearer ${reviewerToken}`)
+      .send({ rating: -1 });
 
     expect(res.status).toBe(400);
   });

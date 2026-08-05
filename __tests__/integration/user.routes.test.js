@@ -182,6 +182,46 @@ describe('GET /api/me', () => {
     expect(res.body).toHaveProperty('username', 'it_me_alice');
   });
 
+  // verifyToken falls back through decoded.user_id ?? decoded.userId ?? decoded.id
+  // ?? decoded.sub — every other test signs { userId }, so this is the only
+  // coverage of the user_id claim actually taking priority.
+  test('accepts a token whose claim is user_id instead of userId', async () => {
+    const user = await insertUser('it_me_snake', 'it_me_snake@example.com');
+    const token = jwt.sign({ user_id: user.id }, process.env.JWT_SECRET_KEY, {
+      algorithm: JWT_ALGORITHM,
+      expiresIn: '1h',
+    });
+    const res = await request(app).get('/api/me').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('id', user.id);
+  });
+
+  // Covers the third link in the same fallback chain: a claim named `id`
+  // rather than user_id/userId.
+  test('accepts a token whose claim is id instead of userId', async () => {
+    const user = await insertUser('it_me_id_claim', 'it_me_id_claim@example.com');
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET_KEY, {
+      algorithm: JWT_ALGORITHM,
+      expiresIn: '1h',
+    });
+    const res = await request(app).get('/api/me').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('id', user.id);
+  });
+
+  // Covers the last link in the same fallback chain: the standard JWT `sub`
+  // claim, used when none of user_id/userId/id are present.
+  test('accepts a token whose claim is sub instead of userId', async () => {
+    const user = await insertUser('it_me_sub_claim', 'it_me_sub_claim@example.com');
+    const token = jwt.sign({ sub: user.id }, process.env.JWT_SECRET_KEY, {
+      algorithm: JWT_ALGORITHM,
+      expiresIn: '1h',
+    });
+    const res = await request(app).get('/api/me').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('id', user.id);
+  });
+
   test('returned user has email field', async () => {
     const user = await insertUser('it_me_bob', 'it_me_bob@example.com');
     const token = createToken(user.id);
@@ -327,6 +367,70 @@ describe('PUT /api/me/profile', () => {
       .send({});
     expect(res.status).toBe(200);
   });
+
+  test('returns 500 when the token userId claim is not numeric', async () => {
+    const badToken = createToken('not-a-number');
+    const res = await request(app)
+      .put('/api/me/profile')
+      .set('Authorization', `Bearer ${badToken}`)
+      .send({ displayName: 'Ghost' });
+    expect(res.status).toBe(500);
+  });
+});
+
+// ── PUT /api/me/profile-image ─────────────────────────────────────────────────
+
+describe('PUT /api/me/profile-image', () => {
+  const TINY_PNG_BASE64 =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+
+  test('returns 401 when no token is provided', async () => {
+    const res = await request(app)
+      .put('/api/me/profile-image')
+      .send({ imageBase64: TINY_PNG_BASE64 });
+    expect(res.status).toBe(401);
+  });
+
+  test('returns 400 when imageBase64 is missing', async () => {
+    const user = await insertUser('it_pimg_alice', 'it_pimg_alice@example.com');
+    const token = createToken(user.id);
+    const res = await request(app)
+      .put('/api/me/profile-image')
+      .set('Authorization', `Bearer ${token}`)
+      .send({});
+    expect(res.status).toBe(400);
+  });
+
+  // Invalid partition: no body at all (as opposed to an empty JSON object)
+  // covers the `req.body || {}` fallback rather than destructuring `{}` itself.
+  test('returns 400 when no body is sent at all', async () => {
+    const user = await insertUser('it_pimg_nobody', 'it_pimg_nobody@example.com');
+    const token = createToken(user.id);
+    const res = await request(app)
+      .put('/api/me/profile-image')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(400);
+  });
+
+  test('returns 200 when updating the profile image', async () => {
+    const user = await insertUser('it_pimg_bob', 'it_pimg_bob@example.com');
+    const token = createToken(user.id);
+    const res = await request(app)
+      .put('/api/me/profile-image')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ imageBase64: TINY_PNG_BASE64 });
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Profile image updated successfully.');
+  });
+
+  test('returns 500 when the token userId claim is not numeric', async () => {
+    const badToken = createToken('not-a-number');
+    const res = await request(app)
+      .put('/api/me/profile-image')
+      .set('Authorization', `Bearer ${badToken}`)
+      .send({ imageBase64: TINY_PNG_BASE64 });
+    expect(res.status).toBe(500);
+  });
 });
 
 // ── DELETE /api/me/profile-image ──────────────────────────────────────────────
@@ -354,6 +458,14 @@ describe('DELETE /api/me/profile-image', () => {
       .delete('/api/me/profile-image')
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
+  });
+
+  test('returns 500 when the token userId claim is not numeric', async () => {
+    const badToken = createToken('not-a-number');
+    const res = await request(app)
+      .delete('/api/me/profile-image')
+      .set('Authorization', `Bearer ${badToken}`);
+    expect(res.status).toBe(500);
   });
 });
 
@@ -384,6 +496,15 @@ describe('PUT /api/me/notifications', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({});
     expect(res.status).toBe(200);
+  });
+
+  test('returns 500 when the token userId claim is not numeric', async () => {
+    const badToken = createToken('not-a-number');
+    const res = await request(app)
+      .put('/api/me/notifications')
+      .set('Authorization', `Bearer ${badToken}`)
+      .send({});
+    expect(res.status).toBe(500);
   });
 });
 
@@ -417,6 +538,12 @@ describe('DELETE /api/me', () => {
     await request(app).delete('/api/me').set('Authorization', `Bearer ${token}`);
     const res = await request(app).get(`/api/users/${user.id}/public`);
     expect(res.status).toBe(404);
+  });
+
+  test('returns 500 when the token userId claim is not numeric', async () => {
+    const badToken = createToken('not-a-number');
+    const res = await request(app).delete('/api/me').set('Authorization', `Bearer ${badToken}`);
+    expect(res.status).toBe(500);
   });
 });
 
@@ -509,6 +636,58 @@ describe('POST /api/register', () => {
     });
     expect(res.status).toBe(400);
   });
+
+  // Invalid partition: a NUL byte is valid JSON text but Postgres's TEXT type
+  // rejects it outright ("invalid byte sequence for encoding UTF8: 0x00"),
+  // so the username lookup itself fails rather than the app rejecting it.
+  test('returns 500 when username contains a NUL byte', async () => {
+    const res = await request(app).post('/api/register').send({
+      username: 'it_reg_nul\0user',
+      email: 'it_reg_nulbyte@example.com',
+      password: 'secret123',
+    });
+    expect(res.status).toBe(500);
+  });
+
+  // Same invalid partition as above, but the NUL byte is in email instead —
+  // covers checkEmailExists's own DB-error branch rather than
+  // checkUsernameExists's, which already passed by this point.
+  test('returns 500 when email contains a NUL byte', async () => {
+    const res = await request(app).post('/api/register').send({
+      username: 'it_reg_nulbyte_email',
+      email: 'it_reg_nul\0@example.com',
+      password: 'secret123',
+    });
+    expect(res.status).toBe(500);
+  });
+
+  // Boundary: checkUsernameExists/checkEmailExists only check for an existing
+  // row before the insert; the actual protection against duplicates is the
+  // UNIQUE constraint on users.username/email, enforced at insert time.
+  // Firing several registrations concurrently with the same username means
+  // more than one can pass both existence checks before any of them has
+  // inserted, so at least one hits that unique-constraint violation inside
+  // register itself rather than the pre-checks.
+  test('returns 500 when concurrent registrations race for the same username', async () => {
+    await Promise.all(Array.from({ length: 10 }, () => pool.query('SELECT 1')));
+
+    const agent = request.agent(app);
+    const responses = await Promise.all(
+      Array.from({ length: 6 }, (_, i) =>
+        agent.post('/api/register').send({
+          username: 'it_reg_race',
+          email: `it_reg_race_${i}@example.com`,
+          password: 'secret123',
+        }),
+      ),
+    );
+
+    const statuses = responses.map((r) => r.status);
+    expect(statuses.filter((s) => s === 201)).toHaveLength(1);
+
+    const losers = responses.filter((r) => r.status !== 201);
+    losers.forEach((loser) => expect(loser.status).toBe(500));
+  });
 });
 
 // ── POST /api/login ───────────────────────────────────────────────────────────
@@ -529,6 +708,16 @@ describe('POST /api/login', () => {
       .post('/api/login')
       .send({ username: 'it_no_such_user_xyz', password: 'pass' });
     expect(res.status).toBe(404);
+  });
+
+  // Invalid partition: a NUL byte is valid JSON text but Postgres's TEXT type
+  // rejects it outright ("invalid byte sequence for encoding UTF8: 0x00"),
+  // so the username lookup itself fails rather than the app rejecting it.
+  test('returns 500 when username contains a NUL byte', async () => {
+    const res = await request(app)
+      .post('/api/login')
+      .send({ username: 'it_login_nul\0user', password: 'pass' });
+    expect(res.status).toBe(500);
   });
 
   test('returns token on successful login after registration', async () => {
@@ -619,5 +808,23 @@ describe('PUT /api/me/password', () => {
       .send({ currentPassword: 'old', newPassword: '123' });
     expect(res.status).toBe(400);
     expect(res.body.message).toContain('6');
+  });
+
+  test('returns 404 for a token whose user no longer exists', async () => {
+    const fakeToken = createToken(99999999);
+    const res = await request(app)
+      .put('/api/me/password')
+      .set('Authorization', `Bearer ${fakeToken}`)
+      .send({ currentPassword: 'old', newPassword: 'newpass1' });
+    expect(res.status).toBe(404);
+  });
+
+  test('returns 500 when the token userId claim is not numeric', async () => {
+    const badToken = createToken('not-a-number');
+    const res = await request(app)
+      .put('/api/me/password')
+      .set('Authorization', `Bearer ${badToken}`)
+      .send({ currentPassword: 'old', newPassword: 'newpass1' });
+    expect(res.status).toBe(500);
   });
 });
