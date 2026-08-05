@@ -194,7 +194,16 @@ test.describe('Wishlist', () => {
     await setAuth(page, buyerToken, buyerId);
     await page.goto(`${BASE}/html/listing.html?id=${testListingId}`);
     await page.waitForSelector('.product-name', { timeout: 8000 });
-    await page.locator('#btn-detail-heart').click();
+    // The click only dispatches the event; it returns before toggleDetailWishlist's
+    // fetch resolves. Waiting for the click alone races the assertion below against
+    // that in-flight request, so wait for the actual POST response instead.
+    await Promise.all([
+      page.waitForResponse(
+        (res) =>
+          res.url().includes(`/api/wishlist/${testListingId}`) && res.request().method() === 'POST',
+      ),
+      page.locator('#btn-detail-heart').click(),
+    ]);
     // Verify via API that listing is now in wishlist
     const res = await request.get(`${BASE}/api/wishlist`, {
       headers: { Authorization: `Bearer ${buyerToken}` },
