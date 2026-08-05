@@ -55,29 +55,40 @@
       </div>
 
       <div class="chat-messages" id="messages"></div>
-      <div class="row">
-        <div class="col-1">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#imgmodal">
-              Launch modal
-            </button>
-        </div>
-        <div class="col-11">
             <form class="chat-input-bar" id="input-form">
+                <button class="btn-primary chat-send-btn" data-bs-toggle="modal" data-bs-target="#imgmodal">
+                  <i class="bi bi-file-earmark-arrow-up"></i>
+                </button>
                 <input class="chat-input" type="text" id="message" placeholder="Type a message…" autocomplete="off" required/>
                 <button type="submit" class="btn-primary chat-send-btn">Send</button>
             </form>
+      </div>
+    </div>
+
+
+  <div class="toast" id="toast"></div>
+  <div class="modal" tabindex="-1" id="imgmodal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Send an image</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        <form class="image-uploads" id="imageuploads" enctype="multipart/form-data">
+        <div class="modal-body">       
+            <p>Select a file to upload</p>
+            <input id="fileinput" type="file" required/>
+        </div>
+        <div class="modal-footer">
+            <div class="btn btn-primary" id="imgsub" onclick="upload()" data-bs-dismiss="modal">Send!</div>
+        </div>
+        </form>
       </div>
     </div>
   </div>
-
-  <div class="toast" id="toast"></div>
   <div class="modal modal-centered" id="imgmodal">
-      <form class="image-uploads" id="imageuploads" enctype="multipart/form-data">
-          <p>Select a file to upload</p>
-          <input id="fileinput" type="file" required/>
-          <div class="btn btn-primary" id="imgsub" onclick="upload()"> </div>
-      </form>
+      <button class="btn btn-primary" id="cancelimg" data-bs-dismiss="modal">close</button>
+
   </div>
   <script src="../js/prefs.js"></script>
   <script src="../js/api.js"></script>
