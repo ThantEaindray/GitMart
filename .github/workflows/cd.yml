@@ -236,9 +236,13 @@ jobs:
             set -euo pipefail
             cd ~/gitmart
 
-            # Only docker-compose.prod.yml needs to come from the tag — the app
-            # itself now ships as a pre-built image, so the host no longer
-            # needs Node, npm or the application source at all.
+            # Only docker-compose.prod.yml and the Caddyfile it bind-mounts
+            # need to come from the tag — the app itself now ships as a
+            # pre-built image, so the host no longer needs Node, npm or the
+            # application source at all. `checkout --force` replaces the
+            # whole working tree in one atomic step, so both files always
+            # land from the exact same commit — there is no window where one
+            # is newer than the other.
             git fetch --all --tags --prune
             git checkout --force "$RELEASE_TAG"
 

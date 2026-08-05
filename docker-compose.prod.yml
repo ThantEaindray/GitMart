@@ -16,9 +16,14 @@
 services:
   app:
     image: ${GHCR_IMAGE}:${IMAGE_TAG}
+    # Bound to the host's loopback only, not published publicly — Caddy is
+    # the sole public entry point (see below), so plain HTTP traffic can't
+    # bypass it by hitting the app directly. Still reachable from the host
+    # itself: the deploy script's health check curls localhost:3000 right
+    # after `up -d`, and an SSH tunnel can reach either port for debugging.
     ports:
-      - '3000:3000'
-      - '3001:3001'
+      - '127.0.0.1:3000:3000'
+      - '127.0.0.1:3001:3001'
     env_file:
       - .env
     environment:
@@ -30,13 +35,12 @@ services:
     extra_hosts:
       - 'host.docker.internal:host-gateway'
 
-  # Reverse proxy for the domain. Terminates TLS with a free, auto-renewing
-  # Let's Encrypt cert — Caddy handles the whole ACME flow itself, no certbot
-  # or manual renewal cron needed. Talks to `app` over the compose network by
-  # service name, same as `host.docker.internal` does for Postgres above.
-  #
-  # The app's own ports stay published too (see above), so the existing
-  # http://<ec2-ip>:3000 path keeps working unchanged alongside this.
+  # Reverse proxy for the domain, and the only service with a publicly
+  # reachable port (see the app's `ports` above). Terminates TLS with a free,
+  # auto-renewing Let's Encrypt cert — Caddy handles the whole ACME flow
+  # itself, no certbot or manual renewal cron needed. Talks to `app` over the
+  # compose network by service name, same as `host.docker.internal` does for
+  # Postgres above.
   caddy:
     image: caddy:2-alpine
     ports:

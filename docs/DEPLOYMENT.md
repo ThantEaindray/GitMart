@@ -134,7 +134,8 @@ Node.js, `npm`, `pm2`, nor a full application checkout.
   standalone `docker-compose`)
 - `curl`, for the deploy script's health check
 - a shallow git checkout at `~/gitmart` — only used to fetch
-  `docker-compose.prod.yml` at the tagged version, not to run the app from
+  `docker-compose.prod.yml` and the [`Caddyfile`](../Caddyfile) it
+  bind-mounts at the tagged version, not to run the app from
 - a `.env` file at `~/gitmart/.env` holding the runtime secrets
   (`DATABASE_URL`, the JWT secrets, `BCRYPT_PEPPER`, and optionally the
   `SMTP_*` values and `APP_URL`) — never committed, created once by hand on
@@ -152,9 +153,14 @@ repo root. Caddy terminates TLS with a free certificate it obtains and
 renews automatically (no certbot, no manual renewal cron), and forwards
 everything to the app over the compose network — plain HTTP traffic to the
 main app port, WebSocket upgrade requests (matched by the `Connection`/
-`Upgrade` headers) to the `ws` server's port. The app's own ports stay
-published too, so `http://<ec2-ip>:3000` keeps working unchanged alongside
-the domain.
+`Upgrade` headers) to the `ws` server's port. **Caddy is the only way in from
+the internet**: the app's ports are bound to `127.0.0.1` rather than
+published publicly, so all traffic goes through TLS termination rather than
+being able to bypass it by hitting the app directly on `:3000`/`:3001`. The
+`127.0.0.1` binding still lets the deploy script's own health check
+(`curl http://localhost:3000/api/health`, run directly on the host after
+`up -d`) and manual debugging over an SSH tunnel reach the app — it just
+isn't reachable from anywhere else.
 
 One-time setup on a fresh host, once the DNS records below are in place:
 
@@ -164,6 +170,8 @@ One-time setup on a fresh host, once the DNS records below are in place:
    - `A    www    <elastic-ip>`
 2. In the EC2 instance's security group, allow inbound TCP 80 and 443 from
    anywhere (Caddy needs 80 for the ACME HTTP-01 challenge, 443 to serve).
+   If 3000/3001 were opened previously for direct testing, close them again
+   now — Caddy is meant to be the only public entry point.
 3. Update `~/gitmart/.env` to set `APP_URL` to the `https://` domain, so
    links built into outgoing notification emails point at it.
 4. Bring the stack up as usual — `docker compose -f docker-compose.prod.yml
@@ -183,9 +191,9 @@ cd ~/gitmart
 docker run --rm --env-file .env ghcr.io/<owner>/ay2627s1-project-git-5-1:latest node scripts/migrate.js
 ```
 
-No `docker-compose.prod.yml` checkout is needed for that first run — it is a
-one-off container from the published image, run directly. The first tagged
-deploy afterwards brings `docker-compose.prod.yml` in via the normal flow.
+No `docker-compose.prod.yml`/`Caddyfile` checkout is needed for that first
+run — it is a one-off container from the published image, run directly. The
+first tagged deploy afterwards brings both files in via the normal flow.
 
 ## Why Postgres is not containerised
 
