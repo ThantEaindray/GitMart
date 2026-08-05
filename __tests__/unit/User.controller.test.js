@@ -36,7 +36,9 @@ describe('checkUsernameExists', () => {
     const res = makeRes();
     controller.checkUsernameExists(req, res, jest.fn());
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('6') }));
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('6') }),
+    );
   });
 
   it('returns 500 on DB error', () => {
@@ -147,7 +149,9 @@ describe('login', () => {
     const req = { body: { username: 'alice', password: 'pass', rememberMe: true } };
     const res = makeRes();
     const next = jest.fn();
-    mockFn(model.getUserByUsername, null, [{ id: 7, username: 'alice', password: 'hash', isStaff: false }]);
+    mockFn(model.getUserByUsername, null, [
+      { id: 7, username: 'alice', password: 'hash', isStaff: false },
+    ]);
     controller.login(req, res, next);
     expect(res.locals.userId).toBe(7);
     expect(res.locals.rememberMe).toBe(true);
@@ -158,7 +162,9 @@ describe('login', () => {
     const req = { body: { username: 'alice', password: 'pass' } };
     const res = makeRes();
     const next = jest.fn();
-    mockFn(model.getUserByUsername, null, [{ id: 7, username: 'alice', password: 'hash', isStaff: false }]);
+    mockFn(model.getUserByUsername, null, [
+      { id: 7, username: 'alice', password: 'hash', isStaff: false },
+    ]);
     controller.login(req, res, next);
     expect(res.locals.rememberMe).toBe(false);
   });

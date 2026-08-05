@@ -94,16 +94,38 @@ function createWishlistCard(item) {
     listingImage +
     '</div>' +
     '<div class="card-body">' +
-    '<div class="card-cat" style="color:' + statusColor + ';">' + status + ' &nbsp;·&nbsp; ' + date + '</div>' +
-    '<div class="card-name">' + item.title + '</div>' +
-    '<p style="font-size:0.82em;color:var(--muted);margin:6px 0 10px;line-height:1.5;">' + item.description + '</p>' +
+    '<div class="card-cat" style="color:' +
+    statusColor +
+    ';">' +
+    status +
+    ' &nbsp;·&nbsp; ' +
+    date +
+    '</div>' +
+    '<div class="card-name">' +
+    item.title +
+    '</div>' +
+    '<p style="font-size:0.82em;color:var(--muted);margin:6px 0 10px;line-height:1.5;">' +
+    item.description +
+    '</p>' +
     '<div class="card-footer">' +
-    '<span class="card-price" data-price="' + item.price + '">' + formatPrice(Number(item.price)) + '</span>' +
-    (item.view_count > 0 ? '<span style="font-size:0.78rem;color:var(--muted);"><i class="bi bi-eye"></i> ' + item.view_count + '</span>' : '') +
+    '<span class="card-price" data-price="' +
+    item.price +
+    '">' +
+    formatPrice(Number(item.price)) +
+    '</span>' +
+    (item.view_count > 0
+      ? '<span style="font-size:0.78rem;color:var(--muted);"><i class="bi bi-eye"></i> ' +
+        item.view_count +
+        '</span>'
+      : '') +
     '</div>' +
     '<div class="wishlist-card-actions">' +
-    '<button class="btn-secondary btn-remove" data-listing-id="' + item.listing_id + '" type="button">Remove</button>' +
-    '<a href="listing.html?id=' + item.listing_id + '" class="btn-primary">View</a>' +
+    '<button class="btn-secondary btn-remove" data-listing-id="' +
+    item.listing_id +
+    '" type="button">Remove</button>' +
+    '<a href="listing.html?id=' +
+    item.listing_id +
+    '" class="btn-primary">View</a>' +
     '</div>' +
     '</div>';
 
@@ -148,10 +170,7 @@ function loadWishlist() {
     window.location.href = 'login.html';
     return;
   }
-  authFetch('/api/wishlist')
-    .then(parseResponse)
-    .then(onWishlistLoaded)
-    .catch(onWishlistLoadError);
+  authFetch('/api/wishlist').then(parseResponse).then(onWishlistLoaded).catch(onWishlistLoadError);
 }
 
 document.addEventListener('DOMContentLoaded', loadWishlist);

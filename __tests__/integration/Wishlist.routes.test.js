@@ -67,9 +67,7 @@ describe('GET /api/wishlist', () => {
 
   // Boundary: empty wishlist returns empty array
   test('should return 200 and empty array when wishlist is empty', async () => {
-    const res = await request(app)
-      .get('/api/wishlist')
-      .set('Authorization', `Bearer ${authToken}`);
+    const res = await request(app).get('/api/wishlist').set('Authorization', `Bearer ${authToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
@@ -82,9 +80,7 @@ describe('GET /api/wishlist', () => {
       testListingId,
     ]);
 
-    const res = await request(app)
-      .get('/api/wishlist')
-      .set('Authorization', `Bearer ${authToken}`);
+    const res = await request(app).get('/api/wishlist').set('Authorization', `Bearer ${authToken}`);
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);

@@ -281,9 +281,7 @@ describe('DELETE /api/listings/:id', () => {
   test('deleted listing should return 404 on subsequent GET', async () => {
     const id = await seedListing({ title: 'Gone Soon' });
 
-    await request(app)
-      .delete(`/api/listings/${id}`)
-      .set('Authorization', `Bearer ${authToken}`);
+    await request(app).delete(`/api/listings/${id}`).set('Authorization', `Bearer ${authToken}`);
 
     const getRes = await request(app).get(`/api/listings/${id}`);
 
@@ -374,9 +372,7 @@ describe('GET /api/listings/most-viewed', () => {
   test('each item should have id, title, view_count fields', async () => {
     const id = await seedListing({ title: 'Viewed Item' });
     // Simulate a view by hitting GET /api/listings/:id with auth
-    await request(app)
-      .get(`/api/listings/${id}`)
-      .set('Authorization', `Bearer ${authToken}`);
+    await request(app).get(`/api/listings/${id}`).set('Authorization', `Bearer ${authToken}`);
 
     const res = await request(app).get('/api/listings/most-viewed');
 
@@ -413,9 +409,7 @@ describe('GET /api/listings/recently-viewed', () => {
   // Valid partition: viewed listing appears in recently-viewed
   test('should include a listing after the user views it', async () => {
     const id = await seedListing({ title: 'Recently Viewed Item' });
-    await request(app)
-      .get(`/api/listings/${id}`)
-      .set('Authorization', `Bearer ${authToken}`);
+    await request(app).get(`/api/listings/${id}`).set('Authorization', `Bearer ${authToken}`);
 
     const res = await request(app)
       .get('/api/listings/recently-viewed')

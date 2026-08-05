@@ -300,22 +300,28 @@ describe('Listing.model - updateListing', () => {
   test('should return empty rows when caller is not the owner', (done) => {
     mockQuery(null, []);
 
-    updateListing({ id: 1, owner_id: 99, title: 'X', description: 'Y', price: 10 }, (err, result) => {
-      expect(err).toBeNull();
-      expect(result.rows).toEqual([]);
-      done();
-    });
+    updateListing(
+      { id: 1, owner_id: 99, title: 'X', description: 'Y', price: 10 },
+      (err, result) => {
+        expect(err).toBeNull();
+        expect(result.rows).toEqual([]);
+        done();
+      },
+    );
   });
 
   // Boundary: non-existent id returns empty rows
   test('should return empty rows when listing does not exist', (done) => {
     mockQuery(null, []);
 
-    updateListing({ id: 999, owner_id: 42, title: 'X', description: 'Y', price: 10 }, (err, result) => {
-      expect(err).toBeNull();
-      expect(result.rows).toEqual([]);
-      done();
-    });
+    updateListing(
+      { id: 999, owner_id: 42, title: 'X', description: 'Y', price: 10 },
+      (err, result) => {
+        expect(err).toBeNull();
+        expect(result.rows).toEqual([]);
+        done();
+      },
+    );
   });
 
   // Error handling: DB error propagates to callback
@@ -569,7 +575,16 @@ describe('Listing.model - getSellerStats', () => {
 
   // Boundary: owner with no listings returns zeroed stats row
   test('should return a stats row even when owner has no listings', (done) => {
-    const emptyStats = { total: '0', active: '0', sold: '0', closed: '0', avg_price: null, min_price: null, max_price: null, total_views: '0' };
+    const emptyStats = {
+      total: '0',
+      active: '0',
+      sold: '0',
+      closed: '0',
+      avg_price: null,
+      min_price: null,
+      max_price: null,
+      total_views: '0',
+    };
     mockQuery(null, [emptyStats]);
 
     getSellerStats({ owner_id: 999 }, (err, result) => {
@@ -597,7 +612,10 @@ describe('Listing.model - getSellerCategoryBreakdown', () => {
 
   // Valid partition: returns category counts for the owner
   test('should return category breakdown for the given owner', (done) => {
-    const fakeBreakdown = [{ category: 'Watches', count: '2' }, { category: 'Others', count: '1' }];
+    const fakeBreakdown = [
+      { category: 'Watches', count: '2' },
+      { category: 'Others', count: '1' },
+    ];
     mockQuery(null, fakeBreakdown);
 
     getSellerCategoryBreakdown({ owner_id: 42 }, (err, result) => {
@@ -638,7 +656,10 @@ describe('Listing.model - getSellerViewBreakdown', () => {
 
   // Valid partition: returns top viewed listings for the owner
   test('should return view breakdown for the given owner', (done) => {
-    const fakeViews = [{ title: 'Top Watch', view_count: 10 }, { title: 'Second Item', view_count: 5 }];
+    const fakeViews = [
+      { title: 'Top Watch', view_count: 10 },
+      { title: 'Second Item', view_count: 5 },
+    ];
     mockQuery(null, fakeViews);
 
     getSellerViewBreakdown({ owner_id: 42 }, (err, result) => {

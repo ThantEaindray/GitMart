@@ -23,8 +23,8 @@ const userRouter = require('./routers/User.router');
 const listingRouter = require('./routers/Listing.router');
 const wishlistRouter = require('./routers/Wishlist.router');
 
-const chatrouter = require('./routers/chats.router')
-const imagerouter= require('./routers/image.router')
+const chatrouter = require('./routers/chats.router');
+const imagerouter = require('./routers/image.router');
 const app = express();
 
 // Parse incoming JSON request bodies.
@@ -59,7 +59,7 @@ app.use('/api', userRouter);
 app.use('/api', listingRouter);
 app.use('/api', wishlistRouter);
 app.use('/api/chats', chatrouter);
-app.use('/api/images', imagerouter)
+app.use('/api/images', imagerouter);
 // 404 handler — if no route above matched the request,
 //create a 404 error and pass it to the error handler below.
 //app.use((req, res, next) => {

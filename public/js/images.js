@@ -1,23 +1,22 @@
-
-let toId = localStorage.getItem('with')
-console.log('img.js file loaded')
-function upload(){
-  console.log('submitted')
-    //so now we wanna do the part where it takes the image and sends it to the temp folder
-    //so here there would be the testing and frontend validation and stuff
-  let fromForm = document.getElementById('fileinput')
-    // just imagine that there is validation
-    // check security using virustotal?
-    //lets just construct the form data here i suppose
-  let form = new FormData()
-  form.append("type", "message")
-  form.append("chat", openChat)
-  form.append("from", uId)
-  form.append("to", toId)
-  form.append("cont_type", "img")
-  form.append("cont", fromForm.files[0])
+let toId = localStorage.getItem('with');
+console.log('img.js file loaded');
+function upload() {
+  console.log('submitted');
+  //so now we wanna do the part where it takes the image and sends it to the temp folder
+  //so here there would be the testing and frontend validation and stuff
+  let fromForm = document.getElementById('fileinput');
+  // just imagine that there is validation
+  // check security using virustotal?
+  //lets just construct the form data here i suppose
+  let form = new FormData();
+  form.append('type', 'message');
+  form.append('chat', openChat);
+  form.append('from', uId);
+  form.append('to', toId);
+  form.append('cont_type', 'img');
+  form.append('cont', fromForm.files[0]);
   //so now that we have the data all nice and pretty we should be able to send it to the backend
-  upImg(form)
+  upImg(form);
 }
 
 function upImg(toUp) {
@@ -33,15 +32,15 @@ function upImg(toUp) {
 
   //ok so firstly we need to set the token in the headers and for that we need to do 2 things
   // 1 declare an empty object as the headers
-  let headers = {}
+  let headers = {};
   //2 add the token to the headers which this nifty little code should do
   if (token) {
-    headers["Authorization"] = "Bearer " + token;
+    headers['Authorization'] = 'Bearer ' + token;
   }
 
-  fetch("/api/images/send", {
-    method: "POST",
+  fetch('/api/images/send', {
+    method: 'POST',
     headers: headers,
-    body: toUp
-  })
+    body: toUp,
+  });
 }
