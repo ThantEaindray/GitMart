@@ -164,6 +164,72 @@ describe('Listing API baseline', () => {
         message: 'Listing not found.',
       });
     });
+
+    // Invalid partition: non-numeric id fails the integer cast in Postgres
+    test('returns 500 for a non-numeric listing id', async () => {
+      const response = await request(app).get('/api/listings/not-a-number');
+
+      expect(response.status).toBe(500);
+    });
+
+    // optionalAuth treats a garbage/expired token as anonymous rather than
+    // rejecting the request — this route is the one that actually uses it.
+    test('still loads the listing when the token is invalid (treated as anonymous)', async () => {
+      const listing = await insertListing({ ownerId: owner.id });
+      const response = await request(app)
+        .get(`/api/listings/${listing.id}`)
+        .set('Authorization', 'Bearer garbage.token.here');
+
+      expect(response.status).toBe(200);
+    });
+
+    // optionalAuth falls back through decoded.userId ?? decoded.user_id ??
+    // decoded.id ?? decoded.sub — every other test on this route signs
+    // { userId }, so these cover the rest of that same chain.
+    test('records a view when the token claim is user_id instead of userId', async () => {
+      const listing = await insertListing({ ownerId: owner.id });
+      const token = jwt.sign({ user_id: otherUser.id }, process.env.JWT_SECRET_KEY, {
+        algorithm: JWT_ALGORITHM,
+        expiresIn: '1h',
+      });
+
+      await request(app).get(`/api/listings/${listing.id}`).set('Authorization', `Bearer ${token}`);
+
+      const response = await request(app)
+        .get('/api/listings/recently-viewed')
+        .set('Authorization', `Bearer ${otherUserToken}`);
+      expect(response.body.map((l) => l.id)).toContain(listing.id);
+    });
+
+    test('records a view when the token claim is id instead of userId', async () => {
+      const listing = await insertListing({ ownerId: owner.id });
+      const token = jwt.sign({ id: otherUser.id }, process.env.JWT_SECRET_KEY, {
+        algorithm: JWT_ALGORITHM,
+        expiresIn: '1h',
+      });
+
+      await request(app).get(`/api/listings/${listing.id}`).set('Authorization', `Bearer ${token}`);
+
+      const response = await request(app)
+        .get('/api/listings/recently-viewed')
+        .set('Authorization', `Bearer ${otherUserToken}`);
+      expect(response.body.map((l) => l.id)).toContain(listing.id);
+    });
+
+    test('records a view when the token claim is sub instead of userId', async () => {
+      const listing = await insertListing({ ownerId: owner.id });
+      const token = jwt.sign({ sub: otherUser.id }, process.env.JWT_SECRET_KEY, {
+        algorithm: JWT_ALGORITHM,
+        expiresIn: '1h',
+      });
+
+      await request(app).get(`/api/listings/${listing.id}`).set('Authorization', `Bearer ${token}`);
+
+      const response = await request(app)
+        .get('/api/listings/recently-viewed')
+        .set('Authorization', `Bearer ${otherUserToken}`);
+      expect(response.body.map((l) => l.id)).toContain(listing.id);
+    });
   });
 
   describe('POST /api/listings', () => {
@@ -182,6 +248,19 @@ describe('Listing API baseline', () => {
       expect(response.body).toEqual({
         error: 'No token provided',
       });
+    });
+
+    // Boundary: category is optional at both the controller and model layer;
+    // every other test provides one, so the 'Others' default is never exercised.
+    test('defaults category to Others when omitted', async () => {
+      const { category: _category, ...listingWithoutCategory } = validListing;
+      const response = await request(app)
+        .post('/api/listings')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send(listingWithoutCategory);
+
+      expect(response.status).toBe(201);
+      expect(response.body.listing.category).toBe('Others');
     });
 
     test('returns 400 when a required field is missing', async () => {
@@ -258,9 +337,76 @@ WHERE id = $1
       expect(databaseResult.rows[0].title).toBe(validListing.title);
       expect(databaseResult.rows[0].status).toBe('AVAILABLE');
     });
+
+    test('returns 500 when the token userId claim is not numeric', async () => {
+      const badToken = createAccessToken('not-a-number');
+      const response = await request(app)
+        .post('/api/listings')
+        .set('Authorization', `Bearer ${badToken}`)
+        .send(validListing);
+
+      expect(response.status).toBe(500);
+    });
+
+    // Invalid partition: no body at all (as opposed to an empty JSON object)
+    // covers the `req.body || {}` fallback rather than destructuring `{}` itself.
+    test('returns 400 when no body is sent at all', async () => {
+      const response = await request(app)
+        .post('/api/listings')
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(400);
+    });
   });
 
   describe('PATCH /api/listings/:id', () => {
+    test('returns 400 when a required field is missing', async () => {
+      const listing = await insertListing({ ownerId: owner.id });
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ title: 'Incomplete', price: 50 });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        message: 'Title, description and price are required.',
+      });
+    });
+
+    test('returns 400 when the price is not positive', async () => {
+      const listing = await insertListing({ ownerId: owner.id });
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ title: 'Free Camera', description: 'Should not be allowed', price: 0 });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        message: 'Price must be more than 0.',
+      });
+    });
+
+    // Invalid partition: non-numeric id fails the integer cast in Postgres
+    test('returns 500 for a non-numeric listing id', async () => {
+      const response = await request(app)
+        .patch('/api/listings/not-a-number')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ title: 'Ghost', description: 'Ghost listing', price: 10 });
+
+      expect(response.status).toBe(500);
+    });
+
+    // Invalid partition: no body at all (as opposed to an empty JSON object)
+    // covers the `req.body || {}` fallback rather than destructuring `{}` itself.
+    test('returns 400 when no body is sent at all', async () => {
+      const listing = await insertListing({ ownerId: owner.id });
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}`)
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(400);
+    });
+
     test('allows the owner to update their listing', async () => {
       const listing = await insertListing({
         ownerId: owner.id,
@@ -418,6 +564,18 @@ WHERE id = $1
       });
     });
 
+    // Invalid partition: passes validateListingStatusInput's own
+    // Number.isInteger check but overflows Postgres's integer column when
+    // loadListingForStatusUpdate queries by id.
+    test('returns 500 when the listing id overflows a Postgres integer', async () => {
+      const response = await request(app)
+        .patch('/api/listings/99999999999999/status')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ status: 'RESERVED' });
+
+      expect(response.status).toBe(500);
+    });
+
     test('returns 400 when status is missing', async () => {
       const listing = await insertListing({
         ownerId: owner.id,
@@ -433,6 +591,20 @@ WHERE id = $1
       expect(response.body).toEqual({
         message: 'Status is required.',
       });
+    });
+
+    // Invalid partition: no body at all (as opposed to an empty JSON object)
+    // covers the `req.body || {}` fallback rather than destructuring `{}` itself.
+    test('returns 400 when no body is sent at all', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(400);
     });
 
     test('returns 400 when status is unsupported', async () => {
@@ -624,6 +796,29 @@ WHERE id = $1
       });
     });
 
+    // Invalid partition: requesting the listing's current status as the next
+    // status hits canTransitionListingStatus's `current === next` check,
+    // distinct from the invalid-status-value and disallowed-transition checks
+    // covered elsewhere.
+    test("rejects a transition to the listing's current status", async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: 'AVAILABLE',
+        });
+
+      expect(response.status).toBe(409);
+
+      expect(response.body).toEqual({
+        message: 'Cannot change listing status from AVAILABLE to AVAILABLE.',
+      });
+    });
+
     test('rejects an invalid transition from SOLD to AVAILABLE', async () => {
       const listing = await insertListing({
         ownerId: owner.id,
@@ -672,9 +867,59 @@ WHERE id = $1
         isClosed: false,
       });
     });
+
+    // Boundary: the update is optimistically locked on the status read during
+    // loadListingForStatusUpdate (`WHERE id = $1 AND owner_id = $2 AND status
+    // = $3`), guarding against the listing's status changing between that read
+    // and this write. Racing real concurrent HTTP requests to reach this
+    // window reliably is inherently timing-dependent (it passed locally but
+    // failed on a slower CI runner), so instead the race is simulated
+    // directly: the DB row is moved on first, then updateListingStatus is
+    // invoked with the stale statusUpdateData loadListingForStatusUpdate would
+    // have produced if it had read the listing just before that happened.
+    test('returns 409 when the listing status changed since it was read', async () => {
+      const listingController = require('../../src/controllers/Listing.controller');
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      await pool.query(`UPDATE listings SET status = 'RESERVED' WHERE id = $1`, [listing.id]);
+
+      const res = {
+        locals: {
+          statusUpdateData: {
+            id: listing.id,
+            owner_id: owner.id,
+            current_status: 'AVAILABLE',
+            status: 'SOLD',
+            isSold: true,
+            isClosed: false,
+          },
+        },
+      };
+
+      const result = await new Promise((resolve) => {
+        res.status = (code) => ({ json: (body) => resolve({ code, body }) });
+        listingController.updateListingStatus({}, res);
+      });
+
+      expect(result.code).toBe(409);
+      expect(result.body).toEqual({
+        message: 'The listing status changed before this request was completed. Please try again.',
+      });
+    });
   });
 
   describe('DELETE /api/listings/:id', () => {
+    // Invalid partition: non-numeric id fails the integer cast in Postgres
+    test('returns 500 for a non-numeric listing id', async () => {
+      const response = await request(app)
+        .delete('/api/listings/not-a-number')
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(500);
+    });
+
     test('does not allow another user to delete the listing', async () => {
       const listing = await insertListing({
         ownerId: owner.id,
