@@ -134,12 +134,52 @@ Node.js, `npm`, `pm2`, nor a full application checkout.
   standalone `docker-compose`)
 - `curl`, for the deploy script's health check
 - a shallow git checkout at `~/gitmart` — only used to fetch
-  `docker-compose.prod.yml` at the tagged version, not to run the app from
+  `docker-compose.prod.yml` and the [`Caddyfile`](../Caddyfile) it
+  bind-mounts at the tagged version, not to run the app from
 - a `.env` file at `~/gitmart/.env` holding the runtime secrets
   (`DATABASE_URL`, the JWT secrets, `BCRYPT_PEPPER`, and optionally the
-  `SMTP_*` values) — never committed, created once by hand on the host
+  `SMTP_*` values and `APP_URL`) — never committed, created once by hand on
+  the host
 - a reachable PostgreSQL instance — **not** containerised alongside the app;
   see below
+- the domain's DNS pointed at the instance, and inbound TCP 80/443 open in
+  its security group — see "Domain and HTTPS" below
+
+## Domain and HTTPS (Caddy)
+
+`docker-compose.prod.yml` runs a [Caddy](https://caddyserver.com/) reverse
+proxy alongside the app, configured via the [`Caddyfile`](../Caddyfile) at the
+repo root. Caddy terminates TLS with a free certificate it obtains and
+renews automatically (no certbot, no manual renewal cron), and forwards
+everything to the app over the compose network — plain HTTP traffic to the
+main app port, WebSocket upgrade requests (matched by the `Connection`/
+`Upgrade` headers) to the `ws` server's port. **Caddy is the only way in from
+the internet**: the app's ports are bound to `127.0.0.1` rather than
+published publicly, so all traffic goes through TLS termination rather than
+being able to bypass it by hitting the app directly on `:3000`/`:3001`. The
+`127.0.0.1` binding still lets the deploy script's own health check
+(`curl http://localhost:3000/api/health`, run directly on the host after
+`up -d`) and manual debugging over an SSH tunnel reach the app — it just
+isn't reachable from anywhere else.
+
+One-time setup on a fresh host, once the DNS records below are in place:
+
+1. At the domain registrar, add two DNS records pointing at the instance's
+   public/Elastic IP:
+   - `A    @      <elastic-ip>`
+   - `A    www    <elastic-ip>`
+2. In the EC2 instance's security group, allow inbound TCP 80 and 443 from
+   anywhere (Caddy needs 80 for the ACME HTTP-01 challenge, 443 to serve).
+   If 3000/3001 were opened previously for direct testing, close them again
+   now — Caddy is meant to be the only public entry point.
+3. Update `~/gitmart/.env` to set `APP_URL` to the `https://` domain, so
+   links built into outgoing notification emails point at it.
+4. Bring the stack up as usual — `docker compose -f docker-compose.prod.yml
+up -d` — Caddy requests its certificate on first start.
+
+If the domain's DNS hasn't propagated yet, or port 80 isn't reachable from
+the internet, Caddy's certificate request fails and it retries with backoff
+— check `docker compose logs caddy` on the host if `https://` isn't coming up.
 
 First-time setup, roughly:
 
@@ -151,9 +191,9 @@ cd ~/gitmart
 docker run --rm --env-file .env ghcr.io/<owner>/ay2627s1-project-git-5-1:latest node scripts/migrate.js
 ```
 
-No `docker-compose.prod.yml` checkout is needed for that first run — it is a
-one-off container from the published image, run directly. The first tagged
-deploy afterwards brings `docker-compose.prod.yml` in via the normal flow.
+No `docker-compose.prod.yml`/`Caddyfile` checkout is needed for that first
+run — it is a one-off container from the published image, run directly. The
+first tagged deploy afterwards brings both files in via the normal flow.
 
 ## Why Postgres is not containerised
 
@@ -241,19 +281,30 @@ migrations.
 
 ## Health check and rollback
 
-After bringing the new container up, the deploy waits five seconds then
-calls `GET /api/health`. That endpoint runs `SELECT 1` rather than simply
-returning 200, because a process that is up but cannot reach Postgres is not
-actually serving — and that is exactly the state worth catching.
+After bringing the new container up, the deploy waits five seconds then runs
+two checks:
 
-If the health check fails, the deploy switches `docker-compose.prod.yml`
-back to the previous image tag and brings that up instead, then exits
-non-zero. "Previous" here is tracked by hand: `IMAGE_TAG` has no equivalent
-of `git rev-parse HEAD`, so the deploy script writes the tag it just
-deployed to `.last-good-tag` on the host once the health check passes, and
-reads that file back on the next deploy. The rollback restores **code**,
-not data: because migrations are additive, the previous image runs fine
-against the newer schema.
+1. `GET /api/health`, hit directly on `localhost` since the app's port is not
+   published publicly (see "Domain and HTTPS" above). That endpoint runs
+   `SELECT 1` rather than simply returning 200, because a process that is up
+   but cannot reach Postgres is not actually serving — and that is exactly
+   the state worth catching.
+2. `caddy validate` against the running Caddy container's config. The app
+   check alone talks straight to the app over localhost, entirely bypassing
+   Caddy, so a broken `Caddyfile` (bad syntax, a bad directive) could
+   otherwise pass as a "successful" deploy while the actual public entry
+   point is down.
+
+If either check fails, the deploy checks out **both** `docker-compose.prod.yml`
+and the `Caddyfile` from the previous tag — not just the image — before
+bringing that back up, then exits non-zero. Restoring only the image would
+leave a config-level regression (a bad compose or Caddyfile change) in place
+even though the "rollback" reported success. "Previous" here is tracked by
+hand: `IMAGE_TAG` has no equivalent of `git rev-parse HEAD`, so the deploy
+script writes the tag it just deployed to `.last-good-tag` on the host once
+both checks pass, and reads that file back on the next deploy. The rollback
+restores **code**, not data: because migrations are additive, the previous
+image runs fine against the newer schema.
 
 ## Known gaps
 
