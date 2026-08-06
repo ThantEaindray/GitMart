@@ -42,6 +42,15 @@ COPY migrations ./migrations
 # for a file that was never copied in.
 COPY scripts ./scripts
 
+# image.router.js's multer config saves uploads to ./src/tmp, creating the
+# directory on first use (fs.mkdirSync with recursive: true — a no-op if it
+# already exists). src/ was just copied in as root, so without this the
+# gitmart user below has no permission to create anything inside it and the
+# app crashes on startup the moment image.router.js is required. Pre-create
+# it here, while still root, and hand it to gitmart so multer's own mkdir
+# finds it already there.
+RUN mkdir -p src/tmp && chown gitmart:gitmart src/tmp
+
 USER gitmart
 
 # 3000 is the HTTP app; 3001 is the chat WebSocket server (WS_PORT). The code
