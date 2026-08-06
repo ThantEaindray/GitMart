@@ -80,7 +80,6 @@ function parseResponse(response) {
 }
 
 let selectedListingImageUrl = null;
-let pendingCoverImageUrl = null;
 let wishlistedIds = new Set();
 
 function getCurrentUserId() {
@@ -1024,7 +1023,6 @@ function onImagePicked() {
   const coverImageStatus = document.getElementById('coverImageStatus');
 
   selectedListingImageUrl = null;
-  pendingCoverImageUrl = null;
 
   if (coverImageStatus) {
     coverImageStatus.textContent = 'No cover image selected yet.';
@@ -1046,17 +1044,7 @@ function onImagePicked() {
 
   if (!file.type.startsWith('image/')) {
     showToast('Please choose a valid image file.');
-
-    return;
   }
-
-  const reader = new FileReader();
-
-  reader.onload = function () {
-    pendingCoverImageUrl = reader.result;
-  };
-
-  reader.readAsDataURL(file);
 }
 
 function openCoverImageModal() {
@@ -1070,8 +1058,8 @@ function openCoverImageModal() {
     return;
   }
 
-  if (!pendingCoverImageUrl) {
-    showToast('Please wait for the image to finish loading.');
+  if (!imageInput.files[0].type.startsWith('image/')) {
+    showToast('Please choose a valid image file.');
 
     return;
   }
@@ -1089,24 +1077,71 @@ function closeCoverImageModal() {
   }
 }
 
+// Uploads the chosen file to the same image host chat images use (multer ->
+// node-scp, see listingImage.controller.js) and uses the returned URL as
+// the listing's image_url — replaces the old approach of embedding the
+// photo as a base64 data URL directly in the database.
 function confirmCoverImage() {
+  const imageInput = document.getElementById('imageInput');
   const coverImageStatus = document.getElementById('coverImageStatus');
+  const confirmBtn = document.getElementById('btnConfirmCoverImage');
 
-  if (!pendingCoverImageUrl) {
+  if (!imageInput || !imageInput.files || !imageInput.files[0]) {
     showToast('Please choose a photo first.');
 
     return;
   }
 
-  selectedListingImageUrl = pendingCoverImageUrl;
+  const token = localStorage.getItem('token');
 
-  if (coverImageStatus) {
-    coverImageStatus.textContent = 'This photo will be used as the listing cover image.';
+  if (!token) {
+    showToast('You must be logged in to upload a photo.');
+    closeCoverImageModal();
+
+    return;
   }
 
-  closeCoverImageModal();
+  const form = new FormData();
+  form.append('cont', imageInput.files[0]);
 
-  showToast('Cover image selected.');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Uploading…';
+  }
+
+  fetch('/api/listings/upload-image', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token },
+    body: form,
+  })
+    .then(function (response) {
+      return response.json().then(function (data) {
+        return { status: response.status, data };
+      });
+    })
+    .then(function (result) {
+      if (result.status !== 201 || !result.data.url) {
+        throw new Error('upload failed');
+      }
+
+      selectedListingImageUrl = result.data.url;
+
+      if (coverImageStatus) {
+        coverImageStatus.textContent = 'This photo will be used as the listing cover image.';
+      }
+
+      closeCoverImageModal();
+      showToast('Cover image uploaded.');
+    })
+    .catch(function () {
+      showToast('Could not upload the photo, please try again.');
+    })
+    .finally(function () {
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Yes, Use Image';
+      }
+    });
 }
 
 // ── INIT CREATE LISTING PAGE ──────────────────────────────────────────────

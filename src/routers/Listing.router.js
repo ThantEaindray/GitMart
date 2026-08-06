@@ -1,11 +1,39 @@
 const express = require('express');
 const router = express.Router();
+const path = require('node:path');
+const multer = require('multer');
 
 const listingController = require('../controllers/Listing.controller');
+const listingImageController = require('../controllers/listingImage.controller');
 const jwtMiddleware = require('../middleware/jwtMiddleware');
+
+// Own multer instance rather than sharing image.router.js's — that file's
+// config carries a "DO NOT MOVE" warning about a past bug, so this stays
+// independent instead of risking whatever fragility that referred to.
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: './src/tmp',
+    filename: function (req, file, cb) {
+      cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+    },
+  }),
+});
 
 // AI image analysis (protected — costs API credits)
 router.post('/listings/analyse-image', jwtMiddleware.verifyToken, listingController.analyseImage);
+
+// Cover image upload — uploads to the same image host chat images use, and
+// returns the resulting URL for the create/edit listing form to submit as
+// image_url. Deliberately separate from POST /listings itself: the form
+// picks/previews a photo before the listing exists, same two-step shape as
+// the AI analysis above.
+router.post(
+  '/listings/upload-image',
+  jwtMiddleware.verifyToken,
+  upload.single('cont'),
+  listingImageController.uploadCoverImage,
+  listingImageController.respondWithUrl,
+);
 
 // Public listing routes
 router.get('/listings', listingController.getAllListings);
