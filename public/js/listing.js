@@ -858,6 +858,10 @@ function renderListing(listing) {
     </div>
   `;
 
+  if (listing.owner_id) {
+    loadSellerInfo(listing.owner_id);
+  }
+
   if (owner) {
     loadOwnerReservationRequests();
   }
@@ -1003,7 +1007,6 @@ function renderLoadedListing(listing) {
   renderListing(listing);
   loadDetailWishlistState();
   loadRelatedListings(listing.category);
-  if (listing.owner_id) loadSellerInfo(listing.owner_id);
   if (typeof initReviews === 'function') initReviews(listing.id, listing.owner_id);
 }
 

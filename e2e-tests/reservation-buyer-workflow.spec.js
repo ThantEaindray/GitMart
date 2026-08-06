@@ -117,6 +117,10 @@ test.describe('Buyer reservation workflow', () => {
     await expect(button).toContainText('Cancel Reservation Request', {
       timeout: 8000,
     });
+
+    await expect(page.locator('#seller-name-link')).toHaveText(SELLER.username, {
+      timeout: 8000,
+    });
   });
 
   test('pending cancellation state survives page refresh', async ({ page }) => {
