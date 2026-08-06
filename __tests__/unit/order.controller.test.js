@@ -502,6 +502,56 @@ describe('getAllOrders', () => {
   });
 });
 
+// ── getOrderById ───────────────────────────────────────────────────────────
+
+describe('getOrderById', () => {
+  it('sets statusCode 200 and the order on success', async () => {
+    const req = { params: { id: '1' } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+    model.getOrderById.mockResolvedValue(fakeOrder);
+    controller.getOrderById(req, res, next);
+    await Promise.resolve();
+    expect(res.locals.statusCode).toBe(200);
+    expect(res.locals.results).toEqual(fakeOrder);
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('calls model with id and userId', async () => {
+    const req = { params: { id: '5' } };
+    const res = makeRes({ userId: 42 });
+    const next = jest.fn();
+    model.getOrderById.mockResolvedValue(fakeOrder);
+    controller.getOrderById(req, res, next);
+    await Promise.resolve();
+    expect(model.getOrderById).toHaveBeenCalledWith('5', 42);
+  });
+
+  it('returns 404 when the order does not exist', async () => {
+    const req = { params: { id: '999' } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+    model.getOrderById.mockResolvedValue(null);
+    controller.getOrderById(req, res, next);
+    await Promise.resolve();
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Order not found.' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('calls next with error when model rejects', async () => {
+    const req = { params: { id: '1' } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+    const err = new Error('DB failure');
+    model.getOrderById.mockRejectedValue(err);
+    controller.getOrderById(req, res, next);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(next).toHaveBeenCalledWith(err);
+  });
+});
+
 // ── updateOrderStatus — validation ───────────────────────────────────────────
 
 describe('updateOrderStatus - validation', () => {
@@ -542,12 +592,13 @@ describe('updateOrderStatus - validation', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
-  it('accepts status "Pending"', async () => {
+  it('accepts status "Pending" (same-status no-op)', async () => {
     const req = { body: { status: 'Pending' }, params: { id: '1' } };
     const res = makeRes({ userId: 7 });
     const next = jest.fn();
-    model.updateOrderStatus.mockResolvedValue({ ...fakeOrder, status: 'Pending' });
+    model.getOrderById.mockResolvedValue({ ...fakeOrder, status: 'Pending' });
     controller.updateOrderStatus(req, res, next);
+    await Promise.resolve();
     await Promise.resolve();
     expect(res.status).not.toHaveBeenCalledWith(400);
   });
@@ -556,18 +607,22 @@ describe('updateOrderStatus - validation', () => {
     const req = { body: { status: 'Processing' }, params: { id: '1' } };
     const res = makeRes({ userId: 7 });
     const next = jest.fn();
+    model.getOrderById.mockResolvedValue({ ...fakeOrder, status: 'Pending' });
     model.updateOrderStatus.mockResolvedValue({ ...fakeOrder, status: 'Processing' });
     controller.updateOrderStatus(req, res, next);
+    await Promise.resolve();
     await Promise.resolve();
     expect(res.status).not.toHaveBeenCalledWith(400);
   });
 
-  it('accepts status "Delivered"', async () => {
+  it('accepts status "Delivered" (from Processing)', async () => {
     const req = { body: { status: 'Delivered' }, params: { id: '1' } };
     const res = makeRes({ userId: 7 });
     const next = jest.fn();
+    model.getOrderById.mockResolvedValue({ ...fakeOrder, status: 'Processing' });
     model.updateOrderStatus.mockResolvedValue({ ...fakeOrder, status: 'Delivered' });
     controller.updateOrderStatus(req, res, next);
+    await Promise.resolve();
     await Promise.resolve();
     expect(res.status).not.toHaveBeenCalledWith(400);
   });
@@ -576,10 +631,31 @@ describe('updateOrderStatus - validation', () => {
     const req = { body: { status: 'Cancelled' }, params: { id: '1' } };
     const res = makeRes({ userId: 7 });
     const next = jest.fn();
+    model.getOrderById.mockResolvedValue({ ...fakeOrder, status: 'Pending' });
     model.updateOrderStatus.mockResolvedValue({ ...fakeOrder, status: 'Cancelled' });
     controller.updateOrderStatus(req, res, next);
     await Promise.resolve();
+    await Promise.resolve();
     expect(res.status).not.toHaveBeenCalledWith(400);
+  });
+});
+
+// ── updateOrderStatus — invalid transition ────────────────────────────────────
+
+describe('updateOrderStatus - invalid transition', () => {
+  it('returns 400 when the order cannot move from its current status', async () => {
+    const req = { body: { status: 'Processing' }, params: { id: '1' } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+    model.getOrderById.mockResolvedValue({ ...fakeOrder, status: 'Delivered' });
+    controller.updateOrderStatus(req, res, next);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Order status cannot change from Delivered to Processing.',
+    });
+    expect(model.updateOrderStatus).not.toHaveBeenCalled();
   });
 });
 
@@ -590,7 +666,7 @@ describe('updateOrderStatus - not found', () => {
     const req = { body: { status: 'Pending' }, params: { id: '999' } };
     const res = makeRes({ userId: 7 });
     const next = jest.fn();
-    model.updateOrderStatus.mockResolvedValue(null);
+    model.getOrderById.mockResolvedValue(null);
     controller.updateOrderStatus(req, res, next);
     await Promise.resolve();
     expect(res.status).toHaveBeenCalledWith(404);
@@ -601,7 +677,7 @@ describe('updateOrderStatus - not found', () => {
     const req = { body: { status: 'Pending' }, params: { id: '999' } };
     const res = makeRes({ userId: 7 });
     const next = jest.fn();
-    model.updateOrderStatus.mockResolvedValue(null);
+    model.getOrderById.mockResolvedValue(null);
     controller.updateOrderStatus(req, res, next);
     await Promise.resolve();
     expect(next).not.toHaveBeenCalled();
@@ -615,9 +691,10 @@ describe('updateOrderStatus - success', () => {
     const req = { body: { status: 'Delivered' }, params: { id: '1' } };
     const res = makeRes({ userId: 7 });
     const next = jest.fn();
-    const updated = { ...fakeOrder, status: 'Delivered' };
-    model.updateOrderStatus.mockResolvedValue(updated);
+    model.getOrderById.mockResolvedValue({ ...fakeOrder, status: 'Processing' });
+    model.updateOrderStatus.mockResolvedValue({ ...fakeOrder, status: 'Delivered' });
     controller.updateOrderStatus(req, res, next);
+    await Promise.resolve();
     await Promise.resolve();
     expect(res.locals.statusCode).toBe(200);
     expect(next).toHaveBeenCalled();
@@ -628,8 +705,10 @@ describe('updateOrderStatus - success', () => {
     const res = makeRes({ userId: 7 });
     const next = jest.fn();
     const updated = { ...fakeOrder, status: 'Delivered' };
+    model.getOrderById.mockResolvedValue({ ...fakeOrder, status: 'Processing' });
     model.updateOrderStatus.mockResolvedValue(updated);
     controller.updateOrderStatus(req, res, next);
+    await Promise.resolve();
     await Promise.resolve();
     expect(res.locals.results).toEqual(updated);
   });
@@ -638,20 +717,25 @@ describe('updateOrderStatus - success', () => {
     const req = { body: { status: 'Processing' }, params: { id: '5' } };
     const res = makeRes({ userId: 7 });
     const next = jest.fn();
-    model.updateOrderStatus.mockResolvedValue({ ...fakeOrder, id: 5 });
+    model.getOrderById.mockResolvedValue({ ...fakeOrder, id: 5, status: 'Pending' });
+    model.updateOrderStatus.mockResolvedValue({ ...fakeOrder, id: 5, status: 'Processing' });
     controller.updateOrderStatus(req, res, next);
     await Promise.resolve();
+    await Promise.resolve();
+    expect(model.getOrderById).toHaveBeenCalledWith('5', 7);
     expect(model.updateOrderStatus).toHaveBeenCalledWith('5', 'Processing', 7);
   });
 
   it('passes userId from res.locals to the model', async () => {
-    const req = { body: { status: 'Pending' }, params: { id: '1' } };
+    const req = { body: { status: 'Processing' }, params: { id: '1' } };
     const res = makeRes({ userId: 99 });
     const next = jest.fn();
-    model.updateOrderStatus.mockResolvedValue(fakeOrder);
+    model.getOrderById.mockResolvedValue({ ...fakeOrder, status: 'Pending' });
+    model.updateOrderStatus.mockResolvedValue({ ...fakeOrder, status: 'Processing' });
     controller.updateOrderStatus(req, res, next);
     await Promise.resolve();
-    expect(model.updateOrderStatus).toHaveBeenCalledWith('1', 'Pending', 99);
+    await Promise.resolve();
+    expect(model.updateOrderStatus).toHaveBeenCalledWith('1', 'Processing', 99);
   });
 });
 
@@ -659,11 +743,25 @@ describe('updateOrderStatus - success', () => {
 
 describe('updateOrderStatus - model error', () => {
   it('calls next with error when model rejects', async () => {
-    const req = { body: { status: 'Pending' }, params: { id: '1' } };
+    const req = { body: { status: 'Processing' }, params: { id: '1' } };
     const res = makeRes({ userId: 7 });
     const next = jest.fn();
     const err = new Error('DB failure');
+    model.getOrderById.mockResolvedValue({ ...fakeOrder, status: 'Pending' });
     model.updateOrderStatus.mockRejectedValue(err);
+    controller.updateOrderStatus(req, res, next);
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(next).toHaveBeenCalledWith(err);
+  });
+
+  it('calls next with error when the initial lookup rejects', async () => {
+    const req = { body: { status: 'Processing' }, params: { id: '1' } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+    const err = new Error('DB failure');
+    model.getOrderById.mockRejectedValue(err);
     controller.updateOrderStatus(req, res, next);
     await Promise.resolve();
     await Promise.resolve();

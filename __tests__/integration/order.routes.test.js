@@ -481,12 +481,44 @@ describe('PUT /api/orders/:id', () => {
 
   test('returns 200 when updating to "Delivered"', async () => {
     const order = await createOrder();
+    await request(app)
+      .put(`/api/orders/${order.id}`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ status: 'Processing' });
     const res = await request(app)
       .put(`/api/orders/${order.id}`)
       .set('Authorization', `Bearer ${tokenA}`)
       .send({ status: 'Delivered' });
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('Delivered');
+  });
+
+  test('returns 400 when skipping "Processing" straight to "Delivered"', async () => {
+    const order = await createOrder();
+    const res = await request(app)
+      .put(`/api/orders/${order.id}`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ status: 'Delivered' });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Order status cannot change from Pending to Delivered.');
+  });
+
+  test('returns 400 when changing a "Delivered" order to any other status', async () => {
+    const order = await createOrder();
+    await request(app)
+      .put(`/api/orders/${order.id}`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ status: 'Processing' });
+    await request(app)
+      .put(`/api/orders/${order.id}`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ status: 'Delivered' });
+
+    const res = await request(app)
+      .put(`/api/orders/${order.id}`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ status: 'Cancelled' });
+    expect(res.status).toBe(400);
   });
 
   test('returns 200 when updating to "Cancelled"', async () => {
@@ -528,6 +560,10 @@ describe('PUT /api/orders/:id', () => {
 
   test('updated order response includes the new status', async () => {
     const order = await createOrder();
+    await request(app)
+      .put(`/api/orders/${order.id}`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ status: 'Processing' });
     const res = await request(app)
       .put(`/api/orders/${order.id}`)
       .set('Authorization', `Bearer ${tokenA}`)
@@ -549,11 +585,66 @@ describe('PUT /api/orders/:id', () => {
     await request(app)
       .put(`/api/orders/${order.id}`)
       .set('Authorization', `Bearer ${tokenA}`)
+      .send({ status: 'Processing' });
+    await request(app)
+      .put(`/api/orders/${order.id}`)
+      .set('Authorization', `Bearer ${tokenA}`)
       .send({ status: 'Delivered' });
 
     const getRes = await request(app).get('/api/orders').set('Authorization', `Bearer ${tokenA}`);
     const updated = getRes.body.find((o) => o.id === order.id);
     expect(updated).toBeDefined();
     expect(updated.status).toBe('Delivered');
+  });
+});
+
+// ── GET /api/orders/:id ──────────────────────────────────────────────────────
+
+describe('GET /api/orders/:id', () => {
+  async function createOrder(token = tokenA, body = validOrderBody) {
+    const res = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${token}`)
+      .send(body);
+    return res.body;
+  }
+
+  test('returns 401 when no token is provided', async () => {
+    const order = await createOrder();
+    const res = await request(app).get(`/api/orders/${order.id}`);
+    expect(res.status).toBe(401);
+  });
+
+  test('returns 200 and the order for its owner', async () => {
+    const order = await createOrder();
+    const res = await request(app)
+      .get(`/api/orders/${order.id}`)
+      .set('Authorization', `Bearer ${tokenA}`);
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(order.id);
+  });
+
+  test('includes the status history timeline', async () => {
+    const order = await createOrder();
+    const res = await request(app)
+      .get(`/api/orders/${order.id}`)
+      .set('Authorization', `Bearer ${tokenA}`);
+    expect(Array.isArray(res.body.statusHistory)).toBe(true);
+    expect(res.body.statusHistory[0]).toMatchObject({ status: 'Pending' });
+  });
+
+  test('returns 404 for an order that does not belong to the user', async () => {
+    const order = await createOrder(tokenA);
+    const res = await request(app)
+      .get(`/api/orders/${order.id}`)
+      .set('Authorization', `Bearer ${tokenB}`);
+    expect(res.status).toBe(404);
+  });
+
+  test('returns 404 for a non-existent order id', async () => {
+    const res = await request(app)
+      .get('/api/orders/9999999')
+      .set('Authorization', `Bearer ${tokenA}`);
+    expect(res.status).toBe(404);
   });
 });

@@ -2,7 +2,8 @@
 const ordersList = document.getElementById('ordersList');
 const ordersCount = document.getElementById('ordersCount');
 const ordersPending = document.getElementById('ordersPending');
-const ordersSpend = document.getElementById('ordersSpend');
+const ordersProcessing = document.getElementById('ordersProcessing');
+const ordersDelivered = document.getElementById('ordersDelivered');
 const refreshOrdersButton = document.getElementById('refreshOrders');
 
 // Current orders shown on the page
@@ -28,6 +29,14 @@ function formatMoney(value) {
 function normalizeStatus(status) {
   return String(status || 'Pending').toLowerCase();
 }
+
+// Frontend options mirror the backend fulfilment rules.
+const STATUS_TRANSITIONS = Object.freeze({
+  Pending: ['Processing', 'Cancelled'],
+  Processing: ['Delivered', 'Cancelled'],
+  Delivered: [],
+  Cancelled: [],
+});
 
 // Show dates in Singapore time.
 function formatDate(value) {
@@ -62,13 +71,66 @@ function renderItems(items = []) {
 
 // Build the status dropdown choices.
 function createStatusOptions(currentStatus) {
-  const options = ['Pending', 'Processing', 'Delivered', 'Cancelled'];
+  const safeCurrentStatus = currentStatus || 'Pending';
+  const options = [safeCurrentStatus, ...(STATUS_TRANSITIONS[safeCurrentStatus] || [])];
   return options
     .map(
       (status) =>
-        `<option value="${status}" ${status === currentStatus ? 'selected' : ''}>${status}</option>`,
+        `<option value="${status}" ${status === safeCurrentStatus ? 'selected' : ''}>${status}</option>`,
     )
     .join('');
+}
+
+function getStatusControlHelp(currentStatus) {
+  if (currentStatus === 'Delivered') {
+    return 'This order is completed and cannot be changed.';
+  }
+
+  if (currentStatus === 'Cancelled') {
+    return 'This order has been cancelled and cannot be changed.';
+  }
+
+  return 'Select the next valid fulfilment status.';
+}
+
+function getFallbackStatusHistory(order) {
+  return [
+    {
+      status: order.status || 'Pending',
+      note: 'Tracking started from the current order status.',
+      createdAt: order.createdAt,
+    },
+  ];
+}
+
+// Render timestamped fulfilment updates for buyer tracking.
+function renderStatusTimeline(order) {
+  const statusHistory =
+    Array.isArray(order.statusHistory) && order.statusHistory.length > 0
+      ? order.statusHistory
+      : getFallbackStatusHistory(order);
+
+  return `
+    <div class="order-timeline" aria-label="Order tracking timeline">
+      ${statusHistory
+        .map((entry) => {
+          const status = normalizeStatus(entry.status);
+          return `
+            <div class="timeline-entry">
+              <span class="timeline-dot ${status}" aria-hidden="true"></span>
+              <div class="timeline-copy">
+                <div class="timeline-row">
+                  <span class="timeline-status">${entry.status || 'Pending'}</span>
+                  <span class="timeline-date">${formatDate(entry.createdAt)}</span>
+                </div>
+                <p class="timeline-note">${entry.note || 'Order tracking was updated.'}</p>
+              </div>
+            </div>
+          `;
+        })
+        .join('')}
+    </div>
+  `;
 }
 
 // Render one expandable order card.
@@ -116,12 +178,18 @@ function renderOrder(order) {
           </div>
         </div>
 
+        <section class="order-tracking-panel" aria-label="Order tracking updates">
+          <p class="order-detail-title">Tracking Timeline</p>
+          ${renderStatusTimeline(order)}
+        </section>
+
         <div class="order-actions">
           <div class="status-control">
             <label for="status-${order.id}">Status</label>
             <select class="status-dropdown" id="status-${order.id}" data-id="${order.id}">
               ${createStatusOptions(order.status || 'Pending')}
             </select>
+            <p class="status-help">${getStatusControlHelp(order.status || 'Pending')}</p>
           </div>
 
           <div class="order-price-summary">
@@ -169,9 +237,14 @@ function renderOrder(order) {
         method: 'PUT',
         body: JSON.stringify({ status: statusDropdown.value }),
       });
+      const updatedOrder = await response.json();
 
-      if (!response.ok) throw new Error('Failed to update order status.');
-      order.status = statusDropdown.value;
+      if (!response.ok) {
+        throw new Error(updatedOrder.message || 'Failed to update order status.');
+      }
+
+      order.status = updatedOrder.status;
+      order.statusHistory = updatedOrder.statusHistory;
       showToast('Order status updated.');
       renderOrders();
     } catch (error) {
@@ -189,19 +262,58 @@ function updateSummary() {
   const pendingCount = allOrders.filter(
     (order) => normalizeStatus(order.status) === 'pending',
   ).length;
-  const spend = allOrders.reduce(
-    (sum, order) => sum + Number(order.totalAmount || order.total || 0),
-    0,
-  );
+  const processingCount = allOrders.filter(
+    (order) => normalizeStatus(order.status) === 'processing',
+  ).length;
+  const deliveredCount = allOrders.filter(
+    (order) => normalizeStatus(order.status) === 'delivered',
+  ).length;
 
   ordersCount.textContent = allOrders.length;
   ordersPending.textContent = pendingCount;
-  ordersSpend.textContent = formatMoney(spend);
+  ordersProcessing.textContent = processingCount;
+  ordersDelivered.textContent = deliveredCount;
+}
+
+// Update filter tab counts so buyers know each view's size before opening it.
+function updateFilterCounts() {
+  const counts = allOrders.reduce(
+    (totals, order) => {
+      const status = normalizeStatus(order.status);
+      totals.all += 1;
+      totals[status] = (totals[status] || 0) + 1;
+      return totals;
+    },
+    {
+      all: 0,
+      pending: 0,
+      processing: 0,
+      delivered: 0,
+      cancelled: 0,
+    },
+  );
+
+  document.querySelectorAll('[data-count]').forEach((countBadge) => {
+    countBadge.textContent = counts[countBadge.dataset.count] || 0;
+  });
+}
+
+function getEmptyOrdersMessage(filter) {
+  const messages = {
+    all: 'No orders have been placed yet.',
+    pending: 'No pending orders right now.',
+    processing: 'No processing orders at the moment.',
+    delivered: 'No delivered orders yet.',
+    cancelled: 'No cancelled orders right now.',
+  };
+
+  return messages[filter] || 'No orders match this view.';
 }
 
 // Render the order list using the active filter.
 function renderOrders() {
   updateSummary();
+  updateFilterCounts();
   const filtered =
     activeFilter === 'all'
       ? allOrders
@@ -210,7 +322,7 @@ function renderOrders() {
   ordersList.innerHTML = '';
 
   if (filtered.length === 0) {
-    ordersList.innerHTML = '<p class="orders-status">No orders match this view.</p>';
+    ordersList.innerHTML = `<p class="orders-status">${getEmptyOrdersMessage(activeFilter)}</p>`;
     return;
   }
 

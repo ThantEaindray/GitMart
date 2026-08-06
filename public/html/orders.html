@@ -83,8 +83,12 @@
             <span class="orders-stat-label">Pending</span>
           </div>
           <div class="orders-stat">
-            <span class="orders-stat-value" id="ordersSpend">$0</span>
-            <span class="orders-stat-label">Spend</span>
+            <span class="orders-stat-value" id="ordersProcessing">0</span>
+            <span class="orders-stat-label">Processing</span>
+          </div>
+          <div class="orders-stat">
+            <span class="orders-stat-value" id="ordersDelivered">0</span>
+            <span class="orders-stat-label">Delivered</span>
           </div>
         </div>
       </header>
@@ -92,11 +96,21 @@
       <!-- Filter buttons for order statuses -->
       <div class="orders-toolbar">
         <div class="orders-tabs" aria-label="Filter orders">
-          <button class="orders-tab active" data-filter="all" type="button">All</button>
-          <button class="orders-tab" data-filter="pending" type="button">Pending</button>
-          <button class="orders-tab" data-filter="processing" type="button">Processing</button>
-          <button class="orders-tab" data-filter="delivered" type="button">Delivered</button>
-          <button class="orders-tab" data-filter="cancelled" type="button">Cancelled</button>
+          <button class="orders-tab active" data-filter="all" type="button">
+            All <span class="orders-tab-count" data-count="all">0</span>
+          </button>
+          <button class="orders-tab" data-filter="pending" type="button">
+            Pending <span class="orders-tab-count" data-count="pending">0</span>
+          </button>
+          <button class="orders-tab" data-filter="processing" type="button">
+            Processing <span class="orders-tab-count" data-count="processing">0</span>
+          </button>
+          <button class="orders-tab" data-filter="delivered" type="button">
+            Delivered <span class="orders-tab-count" data-count="delivered">0</span>
+          </button>
+          <button class="orders-tab" data-filter="cancelled" type="button">
+            Cancelled <span class="orders-tab-count" data-count="cancelled">0</span>
+          </button>
         </div>
         <button class="orders-refresh" id="refreshOrders" type="button" title="Refresh orders">
           <i class="bi bi-arrow-clockwise"></i>
