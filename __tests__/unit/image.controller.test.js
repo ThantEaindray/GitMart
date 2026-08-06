@@ -96,6 +96,25 @@ describe('image.controller - uploadImg', () => {
   });
 });
 
+// ── buildPublicImageUrl ────────────────────────────────────────────────────
+
+describe('image.controller - buildPublicImageUrl', () => {
+  afterEach(() => {
+    delete process.env.PUBLIC_IMAGE_BASE_URL;
+  });
+
+  test('falls back to the SCP host directly over http when unset', () => {
+    expect(controller.buildPublicImageUrl('cont-123.png')).toBe('http://203.0.113.10/cont-123.png');
+  });
+
+  test('uses PUBLIC_IMAGE_BASE_URL when set, instead of the SCP host', () => {
+    process.env.PUBLIC_IMAGE_BASE_URL = 'https://kab1oiee.com/imgs';
+    expect(controller.buildPublicImageUrl('cont-123.png')).toBe(
+      'https://kab1oiee.com/imgs/cont-123.png',
+    );
+  });
+});
+
 // ── writeDB ──────────────────────────────────────────────────────────────
 
 describe('image.controller - writeDB', () => {
