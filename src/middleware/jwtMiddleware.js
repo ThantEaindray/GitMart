@@ -1,13 +1,14 @@
 require('dotenv').config();
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const model = require('../models/User.model');
 
-const accessSecret   = process.env.JWT_SECRET_KEY;
-const refreshSecret  = process.env.JWT_REFRESH_SECRET;
-const accessTTL      = process.env.JWT_ACCESS_TTL      || '15m';
-const refreshRemember    = process.env.JWT_REFRESH_REMEMBER_TTL    || '7d';
-const refreshNoRemember  = process.env.JWT_REFRESH_NO_REMEMBER_TTL || '1d';
-const algorithm      = process.env.JWT_ALGORITHM        || 'HS256';
+const accessSecret = process.env.JWT_SECRET_KEY;
+const refreshSecret = process.env.JWT_REFRESH_SECRET;
+const accessTTL = process.env.JWT_ACCESS_TTL || '15m';
+const refreshRemember = process.env.JWT_REFRESH_REMEMBER_TTL || '7d';
+const refreshNoRemember = process.env.JWT_REFRESH_NO_REMEMBER_TTL || '1d';
+const algorithm = process.env.JWT_ALGORITHM || 'HS256';
 
 // ── Access token ───────────────────────────────────────────────────────────
 
@@ -24,11 +25,16 @@ module.exports.generateToken = (req, res, next) => {
 
 module.exports.verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  // EventSource cannot send custom headers, so accept token via query param as fallback
+  const token =
+    authHeader && authHeader.startsWith('Bearer ')
+      ? authHeader.substring(7)
+      : req.query.token || null;
+
+  if (!token) {
     return res.status(401).json({ error: 'No token provided' });
   }
 
-  const token = authHeader.substring(7);
   jwt.verify(token, accessSecret, (err, decoded) => {
     if (err) return res.status(401).json({ error: 'Invalid token' });
     res.locals.userId = decoded.user_id ?? decoded.userId ?? decoded.id ?? decoded.sub;
@@ -39,11 +45,11 @@ module.exports.verifyToken = (req, res, next) => {
 
 module.exports.sendToken = (req, res) => {
   return res.status(200).json({
-    message:  res.locals.message || 'Login successful.',
-    token:    res.locals.token,
-    userId:   res.locals.userId,
+    message: res.locals.message || 'Login successful.',
+    token: res.locals.token,
+    userId: res.locals.userId,
     username: res.locals.username,
-    isStaff:  res.locals.isStaff,
+    isStaff: res.locals.isStaff,
   });
 };
 
@@ -51,9 +57,15 @@ module.exports.sendToken = (req, res) => {
 
 module.exports.generateRefreshToken = (req, res, next) => {
   const rememberMe = res.locals.rememberMe || false;
-  const ttlString  = rememberMe ? refreshRemember : refreshNoRemember;
-  const payload    = { userId: res.locals.userId, rememberMe };
-  const options    = { algorithm, expiresIn: ttlString };
+  const ttlString = rememberMe ? refreshRemember : refreshNoRemember;
+  // jti makes every issued token unique. Without it the payload is just
+  // { userId, rememberMe } plus iat/exp, and those have one-second resolution —
+  // so two refreshes within the same second produced byte-identical tokens.
+  // Rotation then replaced a token with itself, and the reuse detection in
+  // verifyRefreshToken below could never fire because the "old" token still
+  // matched the stored row.
+  const payload = { userId: res.locals.userId, rememberMe, jti: crypto.randomUUID() };
+  const options = { algorithm, expiresIn: ttlString };
 
   jwt.sign(payload, refreshSecret, options, (err, token) => {
     if (err) return res.status(500).json(err);
@@ -92,9 +104,16 @@ module.exports.verifyRefreshToken = (req, res, next) => {
     model.getRefreshToken({ token }, (dbErr, result) => {
       if (dbErr) return res.status(500).json({ message: 'Internal server error' });
       if (result.rows.length === 0) {
-        // Token was already rotated or revoked — possible theft. Nuke all sessions for this user.
-        model.deleteAllRefreshTokensForUser({ userId: decoded.userId }, function () {});
-        return res.status(401).json({ error: 'Session invalidated. Please log in again.' });
+        // Token was already rotated or revoked — possible theft. Nuke all
+        // sessions for this user, and respond only once that has actually
+        // happened, rather than firing it and responding immediately: the
+        // previous fire-and-forget version returned 401 "Session invalidated"
+        // before the deletion query had necessarily completed, so a request
+        // racing right behind this one could still find a live row.
+        return model.deleteAllRefreshTokensForUser({ userId: decoded.userId }, (deleteErr) => {
+          if (deleteErr) return res.status(500).json({ message: 'Internal server error' });
+          return res.status(401).json({ error: 'Session invalidated. Please log in again.' });
+        });
       }
 
       const row = result.rows[0];
@@ -102,8 +121,8 @@ module.exports.verifyRefreshToken = (req, res, next) => {
         return res.status(401).json({ error: 'Refresh token expired' });
       }
 
-      res.locals.userId       = decoded.userId;
-      res.locals.rememberMe   = decoded.rememberMe || false;
+      res.locals.userId = decoded.userId;
+      res.locals.rememberMe = decoded.rememberMe || false;
       res.locals.refreshToken = token;
       next();
     });
@@ -119,7 +138,9 @@ module.exports.optionalAuth = (req, res, next) => {
   }
   const token = authHeader.substring(7);
   jwt.verify(token, accessSecret, (err, decoded) => {
-    res.locals.userId = err ? null : (decoded.userId ?? decoded.user_id ?? decoded.id ?? decoded.sub);
+    res.locals.userId = err
+      ? null
+      : (decoded.userId ?? decoded.user_id ?? decoded.id ?? decoded.sub);
     next();
   });
 };

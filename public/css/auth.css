@@ -28,9 +28,58 @@
   border-color: var(--accent);
 }
 
-.search-filter-input { flex: 1; min-width: 180px; }
-.search-filter-price  { width: 100px; }
-.search-filter-select { cursor: pointer; }
+.search-filter-input {
+  flex: 1;
+  min-width: 180px;
+}
+.search-filter-price {
+  width: 100px;
+}
+.search-filter-select {
+  cursor: pointer;
+}
+
+.search-filter-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.search-filter-clear:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* Count of active filters. Hidden via the [hidden] attribute when zero, so the
+   button reads simply "Clear" until a filter is actually applied. */
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.filter-count[hidden] {
+  display: none;
+}
 
 /* ── AUTH PAGES: LOGIN / REGISTER / PROFILE ── */
 
@@ -317,7 +366,9 @@
   font-size: 0.88rem;
   color: var(--muted);
   margin-bottom: 0.6rem;
-  transition: border-color 0.2s, color 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
 }
 
 .upload-zone:hover {
@@ -330,7 +381,7 @@
   flex-shrink: 0;
 }
 
-.upload-zone input[type="file"] {
+.upload-zone input[type='file'] {
   display: none;
 }
 

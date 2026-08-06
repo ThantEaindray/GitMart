@@ -1,0 +1,28 @@
+node_modules
+npm-debug.log
+
+# Env files hold secrets and are supplied at runtime via compose, never baked
+# into the image.
+.env*
+!.env.example
+
+.git
+.github
+
+# Tests, tooling and generated reports — none of it is needed to run the app,
+# and skipping it keeps the build context small and the layer cache stable.
+__tests__
+e2e-tests
+tests-examples
+coverage
+coverage-report
+playwright-report
+test-results
+reports
+configs
+
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+*.md

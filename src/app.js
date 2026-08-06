@@ -2,10 +2,10 @@ const express = require('express');
 const createError = require('http-errors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+const pool = require('./models/db');
 
 // Import route handlers
 const somethingRouter = require('./routers/Something.router');
-const personRouter = require('./routers/Person.router');
 const productRouter = require('./routers/product.router');
 
 // Import checkout order routes.
@@ -21,8 +21,13 @@ const orderRouter = require('./routers/orderRouter');
 // GET  /api/me
 const userRouter = require('./routers/User.router');
 const listingRouter = require('./routers/Listing.router');
+const wishlistRouter = require('./routers/Wishlist.router');
+const reviewRouter = require('./routers/Review.router');
+const reservationRouter = require('./routers/Reservation.router');
 
-const chatrouter = require('./routers/chats.router')
+const chatrouter = require('./routers/chats.router');
+const notificationRouter = require('./routers/Notification.router');
+const imagerouter = require('./routers/image.router');
 
 const app = express();
 
@@ -39,9 +44,21 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Browsers automatically request /favicon.ico — return 204 (no content) to avoid 404 noise.
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
+// Health check for the deploy pipeline. Queries the database rather than just
+// returning 200, because a process that is up but cannot reach Postgres is not
+// actually serving — and that is exactly the state a rollback needs to catch.
+app.get('/api/health', (req, res) => {
+  pool.query('SELECT 1', (error) => {
+    if (error) {
+      console.error('Health check failed:', error.message);
+      return res.status(503).json({ status: 'unhealthy', database: 'unreachable' });
+    }
+    return res.status(200).json({ status: 'ok', database: 'reachable' });
+  });
+});
+
 // Existing backend routes
 app.use('/somethings', somethingRouter);
-app.use('/persons', personRouter);
 app.use('/products', productRouter);
 
 // Checkout order API routes.
@@ -56,7 +73,13 @@ app.use('/api/orders', orderRouter);
 // router.post('/register') becomes POST /api/register
 app.use('/api', userRouter);
 app.use('/api', listingRouter);
-app.use('/api/chats',chatrouter)
+app.use('/api', wishlistRouter);
+app.use('/api', reviewRouter);
+app.use('/api', reservationRouter);
+app.use('/api/chats', chatrouter);
+app.use('/api/notifications', notificationRouter);
+app.use('/api/images', imagerouter);
+
 // 404 handler — if no route above matched the request,
 // create a 404 error and pass it to the error handler below.
 app.use((req, res, next) => {

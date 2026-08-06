@@ -9,15 +9,25 @@ describe('order status transition rules', () => {
   });
 
   test('allows Processing orders to move to Delivered or Cancelled', () => {
-    expect(canTransitionOrderStatus(ORDER_STATUSES.PROCESSING, ORDER_STATUSES.DELIVERED)).toBe(true);
-    expect(canTransitionOrderStatus(ORDER_STATUSES.PROCESSING, ORDER_STATUSES.CANCELLED)).toBe(true);
+    expect(canTransitionOrderStatus(ORDER_STATUSES.PROCESSING, ORDER_STATUSES.DELIVERED)).toBe(
+      true,
+    );
+    expect(canTransitionOrderStatus(ORDER_STATUSES.PROCESSING, ORDER_STATUSES.CANCELLED)).toBe(
+      true,
+    );
   });
 
   test('keeps Delivered and Cancelled orders as final statuses', () => {
     expect(canTransitionOrderStatus(ORDER_STATUSES.DELIVERED, ORDER_STATUSES.PENDING)).toBe(false);
-    expect(canTransitionOrderStatus(ORDER_STATUSES.DELIVERED, ORDER_STATUSES.PROCESSING)).toBe(false);
-    expect(canTransitionOrderStatus(ORDER_STATUSES.CANCELLED, ORDER_STATUSES.PROCESSING)).toBe(false);
-    expect(canTransitionOrderStatus(ORDER_STATUSES.CANCELLED, ORDER_STATUSES.DELIVERED)).toBe(false);
+    expect(canTransitionOrderStatus(ORDER_STATUSES.DELIVERED, ORDER_STATUSES.PROCESSING)).toBe(
+      false,
+    );
+    expect(canTransitionOrderStatus(ORDER_STATUSES.CANCELLED, ORDER_STATUSES.PROCESSING)).toBe(
+      false,
+    );
+    expect(canTransitionOrderStatus(ORDER_STATUSES.CANCELLED, ORDER_STATUSES.DELIVERED)).toBe(
+      false,
+    );
   });
 
   test('allows submitting the same status without creating an invalid transition', () => {

@@ -1,5 +1,3 @@
-
-
 const GST_RATE = 0.09;
 const CART_STORAGE_KEYS = ['cart', 'checkoutCart', 'cartItems'];
 

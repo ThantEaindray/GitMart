@@ -1,0 +1,15 @@
+# Reverse proxy for the production deploy. Caddy terminates TLS (automatic,
+# free certs via Let's Encrypt — no manual cert management) and forwards to
+# the app container over the internal compose network.
+#
+# WebSocket upgrade requests go to the raw `ws` server (WS_PORT, see
+# server.js); everything else goes to the main Express app. Both live behind
+# the same domain so the browser only ever talks to one origin.
+kab1oiee.com, www.kab1oiee.com {
+	@websockets {
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+	reverse_proxy @websockets app:3001
+	reverse_proxy app:3000
+}

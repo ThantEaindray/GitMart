@@ -1,73 +1,136 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GitMart — Chats</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitMart — Chats</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link rel="stylesheet" href="../css/noir.css" />
-  <link rel="stylesheet" href="../css/auth.css" />
-  <script>
-    var t = localStorage.getItem('theme');
-    var f = localStorage.getItem('font');
-    var m = localStorage.getItem('motion');
-    if (t) document.documentElement.setAttribute('data-theme', t);
-    if (f) document.documentElement.setAttribute('data-font', f);
-    if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
-  </script>
-</head>
-<body>
-  <nav class="nav">
-    <div class="logo">GitMart</div>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="../css/noir.css" />
+    <link rel="stylesheet" href="../css/auth.css" />
+    <script>
+      var t = localStorage.getItem('theme');
+      var f = localStorage.getItem('font');
+      var m = localStorage.getItem('motion');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+      if (f) document.documentElement.setAttribute('data-font', f);
+      if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
+    </script>
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="logo">GitMart</div>
 
-    <ul class="nav-links">
-      <li><a href="noir.html">Home</a></li>
-      <li><a href="products.html">Products</a></li>
-      <li><a href="listings.html">Listings</a></li>
-      <li><a href="listing-create.html">Create Listing</a></li>
-    </ul>
+      <ul class="nav-links">
+        <li><a href="noir.html">Home</a></li>
+        <li><a href="products.html">Products</a></li>
+        <li><a href="listings.html">Listings</a></li>
+        <li><a href="listing-create.html">Create Listing</a></li>
+      </ul>
 
-    <div class="nav-right">
-      <a class="icon-btn" id="btn-account" href="login.html" title="Login"><i class="bi bi-person"></i></a>
-      <button class="icon-btn" id="btn-wishlist" title="Wishlist"><i class="bi bi-heart"></i></button>
-      <a class="icon-btn" href="checkout.html" title="Cart"><i class="bi bi-bag"></i></a>
-      <a class="icon-btn active" href="chats.html" title="Chats"><i class="bi bi-chat-left-dots"></i></a>
-      <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
-    </div>
-  </nav>
-
-  <div class="chat-page">
-    <div class="chat-sidebar">
-      <div class="chat-sidebar-header">
-        <h2>Chats</h2>
+      <div class="nav-right">
+        <a class="icon-btn" id="btn-account" href="login.html" title="Login"
+          ><i class="bi bi-person"></i
+        ></a>
+        <button class="icon-btn" id="btn-wishlist" title="Wishlist">
+          <i class="bi bi-heart"></i>
+        </button>
+        <a class="icon-btn" href="checkout.html" title="Cart"><i class="bi bi-bag"></i></a>
+        <a class="icon-btn active" href="chats.html" title="Chats"
+          ><i class="bi bi-chat-left-dots"></i
+        ></a>
+        <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
       </div>
-      <div id="chats">
-          
+    </nav>
+
+    <div class="chat-page">
+      <div class="chat-sidebar">
+        <div class="chat-sidebar-header">
+          <h2>Chats</h2>
+        </div>
+        <div id="chats"></div>
+      </div>
+
+      <div class="chat-window">
+        <div class="chat-window-header" id="chatwith">
+          <p class="chat-placeholder">Select a conversation</p>
+        </div>
+
+        <div class="chat-messages" id="messages"></div>
+
+        <form class="chat-input-bar" id="input-form">
+          <button
+            type="button"
+            class="btn-primary chat-send-btn"
+            data-bs-toggle="modal"
+            data-bs-target="#imgmodal"
+          >
+            <i class="bi bi-file-earmark-arrow-up"></i>
+          </button>
+          <input
+            class="chat-input"
+            type="text"
+            id="message"
+            placeholder="Type a message…"
+            autocomplete="off"
+            required
+          />
+          <button type="submit" class="btn-primary chat-send-btn">Send</button>
+        </form>
       </div>
     </div>
 
-    <div class="chat-window">
-      <div class="chat-window-header" id="chatwith">
-        <p class="chat-placeholder">Select a conversation</p>
+    <div class="toast" id="toast"></div>
+    <div class="modal" tabindex="-1" id="imgmodal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Send an image</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <form class="image-uploads" id="imageuploads" enctype="multipart/form-data">
+            <div class="modal-body">
+              <p>Select a file to upload</p>
+              <input id="fileinput" type="file" required />
+            </div>
+            <div class="modal-footer">
+              <div class="btn btn-primary" id="imgsub" onclick="upload()" data-bs-dismiss="modal">
+                Send!
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
-
-      <div class="chat-messages" id="messages"></div>
-
-      <form class="chat-input-bar" id="input-form">
-        <input class="chat-input" type="text" id="message" placeholder="Type a message…" autocomplete="off" required/>
-        <button type="submit" class="btn-primary chat-send-btn">Send</button>
-      </form>
     </div>
-  </div>
 
-  <div class="toast" id="toast"></div>
-
-  <script src="../js/prefs.js"></script>
-  <script src="../js/api.js"></script>
-  <script src="../js/queryCmds.js"></script>
-  <script src="../js/chats.js"></script>
-  <script src="../js/WS.js"></script>
-</body>
+    <script src="../js/prefs.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/queryCmds.js"></script>
+    <script src="../js/chats.js"></script>
+    <script src="../js/WS.js"></script>
+    <script src="../js/images.js"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+      crossorigin="anonymous"
+    ></script>
+  </body>
 </html>

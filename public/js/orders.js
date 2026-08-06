@@ -1,5 +1,3 @@
-
-
 // Order history page elements
 const ordersList = document.getElementById('ordersList');
 const ordersCount = document.getElementById('ordersCount');

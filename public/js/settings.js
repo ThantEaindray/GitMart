@@ -29,6 +29,10 @@ function loadFromBackend() {
         const el = document.getElementById('toggle-notify-promotions');
         if (el) el.checked = data.notify_promotions;
       }
+      if (data.notify_email !== undefined) {
+        const el = document.getElementById('toggle-notify-email');
+        if (el) el.checked = data.notify_email;
+      }
     })
     .catch(() => {});
 }
@@ -184,11 +188,16 @@ function initDisplayName() {
     })
       .then((res) => res.json())
       .then((data) => {
-        const msg = data.message === 'Display name updated.' ? 'Display name saved.' : (data.message || 'Failed to save.');
+        const msg =
+          data.message === 'Display name updated.'
+            ? 'Display name saved.'
+            : data.message || 'Failed to save.';
         showToast(msg);
       })
       .catch(() => showToast('Failed to save display name.'))
-      .finally(() => { btn.disabled = false; });
+      .finally(() => {
+        btn.disabled = false;
+      });
   });
 }
 
@@ -201,6 +210,7 @@ function saveNotifications() {
     body: JSON.stringify({
       notifyOrders: document.getElementById('toggle-notify-orders').checked,
       notifyPromotions: document.getElementById('toggle-notify-promotions').checked,
+      notifyEmail: document.getElementById('toggle-notify-email').checked,
     }),
   })
     .then(() => showToast('Notification preference saved'))
@@ -210,6 +220,7 @@ function saveNotifications() {
 function initNotifications() {
   document.getElementById('toggle-notify-orders').addEventListener('change', saveNotifications);
   document.getElementById('toggle-notify-promotions').addEventListener('change', saveNotifications);
+  document.getElementById('toggle-notify-email').addEventListener('change', saveNotifications);
 }
 
 // ── Init: Password change ─────────────────────────────────────────────────────
@@ -252,7 +263,9 @@ function initPasswordChange() {
         }
       })
       .catch(() => showToast('Failed to update password.'))
-      .finally(() => { btn.disabled = false; });
+      .finally(() => {
+        btn.disabled = false;
+      });
   });
 }
 

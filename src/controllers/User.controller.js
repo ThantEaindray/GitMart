@@ -70,7 +70,6 @@ module.exports.register = (req, res, next) => {
 };
 
 module.exports.login = (req, res, next) => {
-  console.log('login')
   if (req.body.username === undefined || req.body.password === undefined) {
     return res.status(400).json({ message: 'Username or password is missing.' });
   }
@@ -78,7 +77,6 @@ module.exports.login = (req, res, next) => {
   const data = { username: req.body.username };
 
   const callback = (error, result) => {
-    console.log('callback')
     if (error) {
       console.log(error);
       return res.status(500).json({ message: 'Internal server error' });
@@ -179,11 +177,27 @@ module.exports.updateProfileImage = (req, res) => {
   model.updateProfileImage(data, callback);
 };
 
+module.exports.clearProfileImage = (req, res) => {
+  const data = { id: res.locals.userId };
+
+  const callback = (error) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    return res.status(200).json({ message: 'Profile image removed.' });
+  };
+
+  model.clearProfileImage(data, callback);
+};
+
 module.exports.updateNotifications = (req, res) => {
   const data = {
     id: res.locals.userId,
     notifyOrders: req.body.notifyOrders !== false,
     notifyPromotions: req.body.notifyPromotions === true,
+    // Defaults on, matching notifyOrders — opting out is the deliberate action.
+    notifyEmail: req.body.notifyEmail !== false,
   };
 
   const callback = (error) => {
@@ -292,23 +306,56 @@ module.exports.getCurrentUser = (req, res) => {
 
 //this function is for the chats but it only really calls the users
 // get the names & pfps of every user who has an open chat with the open user (array of ids)
+// GET /api/users/:userId/public
+module.exports.getPublicProfile = (req, res) => {
+  const data = { userId: req.params.userId };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    return res.status(200).json(result.rows[0]);
+  };
+
+  model.getPublicProfile(data, callback);
+};
+
+// GET /api/users/:userId/reviews
+module.exports.getSellerReviews = (req, res) => {
+  const data = { userId: req.params.userId };
+
+  const callback = (error, result) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    return res.status(200).json(result.rows);
+  };
+
+  model.getSellerReviews(data, callback);
+};
+
 module.exports.namesPictures = (req, res, next) => {
   const data = {
-    ids: res.locals.toLoad
-  }
-  res.locals.namesImgs = new Array
+    ids: res.locals.toLoad,
+  };
+  res.locals.namesImgs = new Array();
   const callback = (err, results, _fields) => {
     if (err) {
-      console.error("problem getting chat user info", err)
-      return res.status(500).json(err)
+      console.error('problem getting chat user info', err);
+      return res.status(500).json(err);
     }
-    res.locals.namesImgs.push(results.rows)
+    res.locals.namesImgs.push(results.rows);
     //now we wanna see if the result length is the same as the tolaod and if it is then we next since that means its done but if it isnt then we dont since its still going
     if (res.locals.namesImgs.length == data.ids.length) {
-      next()
+      next();
     }
-  }
+  };
   data.ids.forEach((e) => {
-    model.namesPictures(e, callback)
-  })
-}
+    model.namesPictures(e, callback);
+  });
+};

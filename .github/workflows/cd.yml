@@ -1,0 +1,339 @@
+name: CD Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # ── Lint & Format ──────────────────────────────────────────────────────
+  # Split from Tests, same as ci.yml, so the two show as distinct stages
+  # rather than one long job — a lint failure on a tagged commit is visible
+  # at a glance instead of buried partway through a combined log.
+  lint-and-format:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the tagged commit
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+  # ── Tests ────────────────────────────────────────────────────────────────
+  # Nothing is released, built or deployed until the full suite passes
+  # against the tagged commit. Kept as its own job so release/build cannot
+  # start unless this succeeds, and so a deploy failure is distinguishable
+  # from a test failure at a glance.
+  tests:
+    name: Tests
+    needs: lint-and-format
+    runs-on: ubuntu-latest
+    # See ci.yml's Tests job for why this exists — without it a genuine hang
+    # runs up to the platform default of 360 minutes before anyone notices.
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cicd-test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout the tagged commit
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create test environment file
+        run: |
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cicd-test" > .env.test
+          echo "PORT=3001" >> .env.test
+          echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY || 'ci-test-access-secret' }}" >> .env.test
+          echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET || 'ci-test-refresh-secret' }}" >> .env.test
+          echo "BCRYPT_PEPPER=${{ secrets.BCRYPT_PEPPER || 'ci-test-pepper' }}" >> .env.test
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Integration tests
+        run: npm run test:integration
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  # ── Release ─────────────────────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    needs: tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout the tagged commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build the changelog from commits since the previous tag
+        id: changelog
+        run: |
+          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 "${CURRENT_TAG}^" 2>/dev/null || echo "")
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            RANGE="$CURRENT_TAG"
+          else
+            RANGE="$PREVIOUS_TAG..$CURRENT_TAG"
+          fi
+
+          {
+            echo 'notes<<CHANGELOG_EOF'
+            git log --no-merges --pretty=format:'- %s (%h)' "$RANGE"
+            echo ''
+            echo 'CHANGELOG_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: actions/github-script@v7
+        env:
+          RELEASE_NOTES: ${{ steps.changelog.outputs.notes }}
+        with:
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tag,
+              name: `GitMart ${tag}`,
+              body: ['## Changes in this release', '', process.env.RELEASE_NOTES].join('\n'),
+              draft: false,
+              prerelease: tag.includes('-'),
+            });
+
+  # ── Build image ────────────────────────────────────────────────────────
+  # Builds the image already proven buildable by ci.yml's docker-build job,
+  # this time from the tagged commit, and pushes it to GHCR. Runs alongside
+  # `release` rather than after it — the two do not depend on each other, and
+  # there is no reason to make one wait for the other.
+  build:
+    name: Build and push image
+    needs: tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout the tagged commit
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # GHCR requires a lowercase image name; github.repository is not
+      # guaranteed to be, even though this repo's happens to be already.
+      - name: Compute the lowercase image name
+        id: image
+        run: echo "name=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runtime
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:${{ github.ref_name }}
+            ${{ steps.image.outputs.name }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── Deploy ──────────────────────────────────────────────────────────────
+  # Skipped when the EC2 secrets are absent, so the workflow stays green on a
+  # fork or before a host has been provisioned, rather than failing on a step
+  # nobody can act on.
+  deploy:
+    name: Deploy to EC2
+    needs: [release, build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check the deploy secrets are present
+        id: guard
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          if [ -z "$EC2_HOST" ]; then
+            echo "EC2_HOST is not set — skipping deploy."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy the tagged release
+        if: steps.guard.outputs.ready == 'true'
+        uses: appleboy/ssh-action@v1
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          # Passed through even when unset — the deploy script treats an empty
+          # value as "package is public, skip login" rather than failing.
+          GHCR_PAT: ${{ secrets.GHCR_PAT }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: RELEASE_TAG,GHCR_PAT
+          script: |
+            set -euo pipefail
+            cd ~/gitmart
+
+            # Only docker-compose.prod.yml and the Caddyfile it bind-mounts
+            # need to come from the tag — the app itself now ships as a
+            # pre-built image, so the host no longer needs Node, npm or the
+            # application source at all. `checkout --force` replaces the
+            # whole working tree in one atomic step, so both files always
+            # land from the exact same commit — there is no window where one
+            # is newer than the other.
+            git fetch --all --tags --prune
+            git checkout --force "$RELEASE_TAG"
+
+            # Computed the same way as the build job's "Compute the lowercase
+            # image name" step, from the same source (github.repository), so
+            # the name pushed to and the name pulled from can never diverge.
+            export GHCR_IMAGE=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')
+            export IMAGE_TAG="$RELEASE_TAG"
+
+            # Only needed if the GHCR package is private. Left unset, the
+            # package must be public for `docker compose pull` to succeed.
+            if [ -n "${GHCR_PAT:-}" ]; then
+              echo "$GHCR_PAT" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            fi
+
+            # Record what is running so the deploy can be undone. Docker has no
+            # equivalent of `git rev-parse HEAD` for "what tag is live", so
+            # this is tracked by hand in a file on the host.
+            PREVIOUS_TAG=$(cat .last-good-tag 2>/dev/null || echo "")
+            echo "Currently deployed: ${PREVIOUS_TAG:-none}"
+
+            docker compose -f docker-compose.prod.yml pull
+
+            # Additive migrations only — migrate:prod never drops a table.
+            # Runs as a one-off container from the new image, before that
+            # image is brought up as the running service.
+            docker compose -f docker-compose.prod.yml run --rm app npm run migrate:prod
+
+            docker compose -f docker-compose.prod.yml up -d
+
+            # Confirm the app is actually serving, and that Caddy's config is
+            # valid. The app check alone would miss a broken Caddyfile: the
+            # app is only reachable on localhost (see docker-compose.prod.yml),
+            # entirely bypassing Caddy, so a syntax error or bad directive
+            # there could otherwise slip through as a "successful" deploy.
+            sleep 5
+            DEPLOY_OK=true
+
+            if ! curl --fail --silent --max-time 10 http://localhost:3000/api/health > /dev/null; then
+              echo "App health check FAILED"
+              DEPLOY_OK=false
+            fi
+
+            if ! docker compose -f docker-compose.prod.yml exec -T caddy \
+              caddy validate \
+              --config /etc/caddy/Caddyfile \
+              --adapter caddyfile; then
+              echo "Caddy config validation FAILED"
+              DEPLOY_OK=false
+            elif ! docker compose -f docker-compose.prod.yml exec -T caddy \
+              caddy reload \
+              --config /etc/caddy/Caddyfile \
+              --adapter caddyfile; then
+              echo "Caddy config reload FAILED"
+              DEPLOY_OK=false
+            fi
+
+            if [ "$DEPLOY_OK" = false ]; then
+              echo "Deployment failed - rolling back to ${PREVIOUS_TAG:-the previous image}"
+
+              if [ -n "$PREVIOUS_TAG" ]; then
+                # Restore the previous release's image, Compose configuration,
+                # and Caddyfile together.
+                git checkout --force "$PREVIOUS_TAG"
+                export IMAGE_TAG="$PREVIOUS_TAG"
+
+                docker compose -f docker-compose.prod.yml pull
+                docker compose -f docker-compose.prod.yml up -d
+                sleep 5
+
+                if ! docker compose -f docker-compose.prod.yml exec -T caddy \
+                  caddy validate \
+                  --config /etc/caddy/Caddyfile \
+                  --adapter caddyfile; then
+                  echo "Rollback Caddy config validation FAILED"
+                  exit 1
+                fi
+
+                if ! docker compose -f docker-compose.prod.yml exec -T caddy \
+                  caddy reload \
+                  --config /etc/caddy/Caddyfile \
+                  --adapter caddyfile; then
+                  echo "Rollback Caddy config reload FAILED"
+                  exit 1
+                fi
+              else
+                echo "No previous release tag is available for rollback."
+              fi
+
+              exit 1
+            fi
+
+            echo "$RELEASE_TAG" > .last-good-tag
+            echo "Deployed $RELEASE_TAG successfully."

@@ -50,6 +50,7 @@ router.post(
 router.put('/me/profile', jwtMiddleware.verifyToken, userController.updateDisplayName);
 
 router.put('/me/profile-image', jwtMiddleware.verifyToken, userController.updateProfileImage);
+router.delete('/me/profile-image', jwtMiddleware.verifyToken, userController.clearProfileImage);
 
 // Update Notification Preferences
 router.put('/me/notifications', jwtMiddleware.verifyToken, userController.updateNotifications);
@@ -58,9 +59,20 @@ router.put('/me/notifications', jwtMiddleware.verifyToken, userController.update
 router.delete('/me', jwtMiddleware.verifyToken, userController.deleteAccount);
 
 // Change Password
-router.put('/me/password', jwtMiddleware.verifyToken, userController.getPasswordHash,  bcryptMiddleware.compareCurrentPassword, bcryptMiddleware.hashNewPassword, userController.updatePassword,);
+router.put(
+  '/me/password',
+  jwtMiddleware.verifyToken,
+  userController.getPasswordHash,
+  bcryptMiddleware.compareCurrentPassword,
+  bcryptMiddleware.hashNewPassword,
+  userController.updatePassword,
+);
 
 // Logout — revoke refresh token from DB and clear cookie
 router.post('/logout', userController.logout);
+
+// Public seller profile — no auth required
+router.get('/users/:userId/public', userController.getPublicProfile);
+router.get('/users/:userId/reviews', userController.getSellerReviews);
 
 module.exports = router;

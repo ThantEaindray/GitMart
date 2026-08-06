@@ -16,6 +16,8 @@
     <link rel="stylesheet" href="../css/noir.css" />
     <link rel="stylesheet" href="../css/auth.css" />
     <link rel="stylesheet" href="../css/listings.css" />
+    <link rel="stylesheet" href="../css/compare.css" />
+    <link rel="stylesheet" href="../css/notifications.css" />
     <script>
       var t = localStorage.getItem('theme');
       var f = localStorage.getItem('font');
@@ -30,12 +32,24 @@
     <nav class="nav">
       <div class="logo">GitMart</div>
 
-      <ul class="nav-links">
-        <li><a href="noir.html">Home</a></li>
-        <li><a href="products.html">Products</a></li>
-        <li><a href="listings.html">Listings</a></li>
-        <li><a href="listing-create.html">Create Listing</a></li>
-      </ul>
+      <button
+        class="nav-hamburger"
+        type="button"
+        aria-label="Toggle navigation"
+        aria-expanded="false"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="nav-collapse" id="nav-menu">
+        <ul class="nav-links">
+          <li><a href="noir.html">Home</a></li>
+          <li><a href="products.html">Products</a></li>
+          <li><a href="listings.html">Listings</a></li>
+          <li><a href="listing-create.html">Create Listing</a></li>
+        </ul>
+      </div>
 
       <div class="nav-right">
         <a class="icon-btn" id="btn-account" href="login.html" title="Login"
@@ -81,11 +95,23 @@
           placeholder="Max $"
           min="0"
         />
-        <select class="search-filter-select" id="sort-select">
+        <select class="search-filter-select" id="category-select" aria-label="Filter by category">
+          <option value="">All categories</option>
+          <option value="Collectibles">Collectibles</option>
+          <option value="Fashion">Fashion</option>
+          <option value="Books">Books</option>
+          <option value="Others">Others</option>
+        </select>
+        <select class="search-filter-select" id="sort-select" aria-label="Sort listings">
           <option value="newest">Newest</option>
           <option value="cheapest">Cheapest</option>
           <option value="expensive">Most Expensive</option>
+          <option value="most_viewed">Most Viewed</option>
         </select>
+        <button class="search-filter-clear" type="button" id="clear-filters">
+          Clear
+          <span class="filter-count" id="filter-count" hidden>0</span>
+        </button>
       </div>
 
       <div id="warningCard" class="auth-alert d-none">
@@ -94,6 +120,24 @@
 
       <div class="products" id="listingsGrid">
         <p class="status-text">Loading listings...</p>
+      </div>
+
+      <div id="recently-viewed-section" style="margin-top: 36px; display: none">
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 24px 0" />
+        <div class="hero-tag" style="margin-bottom: 8px">History</div>
+        <h3
+          style="
+            font-size: 1rem;
+            margin-bottom: 16px;
+            color: var(--muted);
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+          "
+        >
+          Recently Viewed
+        </h3>
+        <div class="products" id="recentlyViewedGrid"></div>
       </div>
 
       <div id="most-viewed-section" style="margin-top: 36px">
@@ -147,8 +191,13 @@
 
     <div class="toast" id="toast"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+    <script src="../js/gsap-animations.js"></script>
     <script src="../js/prefs.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/listings.js"></script>
+    <script src="../js/compare-tray.js"></script>
+    <script src="../js/notif-badge.js"></script>
   </body>
 </html>

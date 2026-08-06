@@ -1,5 +1,5 @@
 const model = require('../models/product.model');
-const { isProductSold } = require('../models/purchaseState');
+const { isProductSold } = require('../utils/purchaseState');
 
 function applyRuntimeSoldState(product) {
   return {

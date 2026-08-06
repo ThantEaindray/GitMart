@@ -244,6 +244,14 @@
   margin-bottom: 24px;
 }
 
+/* .d-none lives in base.css with the same (0,1,0) specificity as the rule
+   above, and this file loads later — so display:flex would win and the delete
+   confirmation would show the edit form. Same compound-selector fix already
+   used for .listing-modal.d-none. */
+.listing-modal-fields.d-none {
+  display: none;
+}
+
 .listing-modal-fields input {
   width: 100%;
   border: 1px solid var(--border);
@@ -343,4 +351,298 @@
   line-height: 1.5;
   margin: 10px 0 0;
   text-align: center;
+}
+
+/* ── LISTING LIFECYCLE CONTROLS ─────────────────────── */
+
+.owner-lifecycle-controls {
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.owner-lifecycle-controls .status-text {
+  margin: 0 0 16px;
+  padding: 0;
+  line-height: 1.6;
+}
+
+.owner-lifecycle-controls .product-actions {
+  align-items: stretch;
+}
+
+.owner-lifecycle-controls .btn-primary,
+.owner-lifecycle-controls .btn-outline {
+  flex: 1 1 160px;
+  min-height: 48px;
+  margin-left: 0;
+}
+
+.owner-lifecycle-controls [data-listing-status-action]:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+/* ── LISTING LIFECYCLE STATUS BADGES ────────────────── */
+
+.listing-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid currentColor;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.listing-status-available {
+  color: var(--accent);
+}
+
+.listing-status-reserved {
+  color: var(--accent2);
+}
+
+.listing-status-sold {
+  color: #d06b6b;
+}
+
+.listing-status-archived {
+  color: var(--muted);
+}
+
+/* ── WISHLIST HEART BUTTON ───────────────────────────── */
+
+.btn-wishlist-heart {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 4px 6px;
+  margin-left: auto;
+  transition:
+    color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.btn-wishlist-heart:hover {
+  color: #c96b6b;
+  transform: scale(1.2);
+}
+
+.btn-wishlist-heart.wishlisted {
+  color: #c96b6b;
+}
+
+/* ── WISHLIST CARD ACTIONS ──────────────────────────── */
+
+.wishlist-card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.wishlist-card-actions .btn-secondary {
+  flex: 1;
+  min-height: 40px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.wishlist-card-actions .btn-secondary:hover {
+  color: #c96b6b;
+  border-color: #c96b6b;
+}
+
+.wishlist-card-actions .btn-primary {
+  flex: 1;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* ── OWNER RESERVATION REQUESTS ─────────────────────── */
+
+.owner-reservation-panel {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.owner-reservation-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.owner-reservation-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.owner-reservation-help {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.owner-reservation-refresh {
+  flex: 0 0 auto;
+  min-height: 40px;
+  margin-left: 0;
+  padding: 0 18px;
+}
+
+.owner-reservation-list {
+  display: grid;
+  gap: 12px;
+}
+
+.owner-reservation-list .status-text {
+  margin: 0;
+  padding: 12px 0;
+  line-height: 1.5;
+}
+
+.owner-reservation-card {
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.owner-reservation-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.owner-reservation-card-header > div {
+  min-width: 0;
+}
+
+.owner-reservation-requester {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.owner-reservation-date {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.owner-reservation-status {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid currentColor;
+  font-size: 0.64rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.owner-reservation-status-pending {
+  color: var(--accent2);
+}
+
+.owner-reservation-status-accepted {
+  color: var(--accent);
+}
+
+.owner-reservation-status-rejected {
+  color: #d06b6b;
+}
+
+.owner-reservation-status-cancelled {
+  color: var(--muted);
+}
+
+.owner-reservation-message {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.owner-reservation-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.owner-reservation-actions .btn-primary,
+.owner-reservation-actions .btn-outline {
+  flex: 1 1 140px;
+  min-height: 42px;
+  margin-left: 0;
+}
+
+.owner-reservation-actions button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+/* ── OWNER RESERVATION RESPONSIVE STYLES ────────────── */
+
+@media (max-width: 640px) {
+  .owner-reservation-header {
+    flex-direction: column;
+  }
+
+  .owner-reservation-refresh {
+    width: 100%;
+  }
+
+  .owner-reservation-card-header {
+    flex-direction: column;
+  }
+
+  .owner-reservation-actions {
+    flex-direction: column;
+  }
+
+  .owner-reservation-actions .btn-primary,
+  .owner-reservation-actions .btn-outline {
+    width: 100%;
+    flex-basis: auto;
+  }
 }

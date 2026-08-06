@@ -1,9 +1,14 @@
 node_modules
 .claude
+CA3.md
+CA4.md
 # Keep environment variables out of version control
 .env*
+# ...except the template, which holds names only and never values
+!.env.example
 /test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
 /coverage-report/
+/pages-dist/

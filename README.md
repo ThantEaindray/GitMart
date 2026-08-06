@@ -1,5 +1,8 @@
 # ST0526 CI/CD Project
 
+[![CI](https://github.com/soc-cicd/ay2627s1-project-git-5-1/actions/workflows/ci.yml/badge.svg)](https://github.com/soc-cicd/ay2627s1-project-git-5-1/actions/workflows/ci.yml)
+[![Security Scan](https://github.com/soc-cicd/ay2627s1-project-git-5-1/actions/workflows/codeql.yml/badge.svg)](https://github.com/soc-cicd/ay2627s1-project-git-5-1/actions/workflows/codeql.yml)
+
 A Node.js + Express web application with a full CI/CD pipeline, automated testing, and report publishing to GitHub Pages.
 
 ---
@@ -46,12 +49,12 @@ delivered, or cancelled.
 
 ### Planned Scope
 
-| Layer | Planned Work |
-| ----- | ------------ |
-| Frontend | Show order status badges, filters, and a clear progress timeline on the order history page |
-| Backend | Keep order status validation consistent before allowing status updates |
-| Data | Store each order's current status first, then extend it with status history in later commits |
-| Testing | Add backend validation tests and Playwright tests for checkout-to-order tracking workflows |
+| Layer    | Planned Work                                                                                 |
+| -------- | -------------------------------------------------------------------------------------------- |
+| Frontend | Show order status badges, filters, and a clear progress timeline on the order history page   |
+| Backend  | Keep order status validation consistent before allowing status updates                       |
+| Data     | Store each order's current status first, then extend it with status history in later commits |
+| Testing  | Add backend validation tests and Playwright tests for checkout-to-order tracking workflows   |
 
 ### Acceptance Criteria
 
@@ -88,19 +91,19 @@ backend validation, status history support, and automated test coverage.
 
 ### Unit Test Evidence
 
-| Test File | Coverage |
-| --------- | -------- |
-| `__tests__/unit/orderStatusTransitions.test.js` | Valid and invalid order status transition rules |
-| `__tests__/unit/orderModelStatusHistory.test.js` | Initial status history, appended updates, and user-owned order checks |
+| Test File                                            | Coverage                                                                                 |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `__tests__/unit/orderStatusTransitions.test.js`      | Valid and invalid order status transition rules                                          |
+| `__tests__/unit/orderModelStatusHistory.test.js`     | Initial status history, appended updates, and user-owned order checks                    |
 | `__tests__/unit/orderControllerStatusUpdate.test.js` | Missing status, invalid status, not found orders, invalid transitions, and valid updates |
 
 ### Playwright Test Evidence
 
-| Test File | Workflow Covered |
-| --------- | ---------------- |
-| `e2e-tests/order-history-filters.spec.js` | Status filter counts and filtering visible orders |
-| `e2e-tests/order-tracking-timeline.spec.js` | Expanding an order to view tracking timeline entries and order details |
-| `e2e-tests/order-status-update.spec.js` | Updating a pending order to processing and refreshing the timeline |
+| Test File                                         | Workflow Covered                                                             |
+| ------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `e2e-tests/order-history-filters.spec.js`         | Status filter counts and filtering visible orders                            |
+| `e2e-tests/order-tracking-timeline.spec.js`       | Expanding an order to view tracking timeline entries and order details       |
+| `e2e-tests/order-status-update.spec.js`           | Updating a pending order to processing and refreshing the timeline           |
 | `e2e-tests/order-status-history-fallback.spec.js` | Showing fallback tracking content for orders without detailed status history |
 
 ### Useful Test Commands
@@ -390,10 +393,13 @@ Push / PR to main
 
 Set these in **Settings → Secrets and variables → Actions**:
 
-| Secret         | Example Value                                            |
-| -------------- | -------------------------------------------------------- |
-| `DATABASE_URL` | `postgresql://user:password@host/dbname?sslmode=require` |
-| `APP_PORT`     | `3001`                                                   |
+| Secret               | Example Value                                            |
+| -------------------- | -------------------------------------------------------- |
+| `DATABASE_URL`       | `postgresql://user:password@host/dbname?sslmode=require` |
+| `APP_PORT`           | `3001`                                                   |
+| `JWT_SECRET_KEY`     | any long random string                                   |
+| `JWT_REFRESH_SECRET` | any long random string (different from above)            |
+| `BCRYPT_PEPPER`      | any long random string                                   |
 
 ### GitHub Pages Setup
 
