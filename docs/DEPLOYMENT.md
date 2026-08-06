@@ -197,9 +197,9 @@ first tagged deploy afterwards brings both files in via the normal flow.
 
 ## Why Postgres is not containerised
 
-`docker-compose.prod.yml` runs the app only. Production Postgres stays an
-external, already-running instance, so the app container is stateless and
-disposable — replacing it on every deploy loses nothing, and there is
+`docker-compose.prod.yml` runs the application and Caddy reverse proxy, while
+production PostgreSQL remains an external, already-running instance. The app
+container is therefore stateless and disposable — replacing it on every deploy loses nothing, and there is
 nothing to back up on the EC2 box itself.
 
 Containerising a stateful database on a single instance is a real option,
@@ -279,32 +279,30 @@ the migrations against a schema-built database, which catches a migration that
 conflicts with the schema, though not a schema that has drifted from the
 migrations.
 
-## Health check and rollback
+## Health check, Caddy reload and rollback
 
-After bringing the new container up, the deploy waits five seconds then runs
-two checks:
+After bringing the new containers up, the deployment performs three verification
+and activation steps:
 
-1. `GET /api/health`, hit directly on `localhost` since the app's port is not
-   published publicly (see "Domain and HTTPS" above). That endpoint runs
-   `SELECT 1` rather than simply returning 200, because a process that is up
-   but cannot reach Postgres is not actually serving — and that is exactly
-   the state worth catching.
-2. `caddy validate` against the running Caddy container's config. The app
-   check alone talks straight to the app over localhost, entirely bypassing
-   Caddy, so a broken `Caddyfile` (bad syntax, a bad directive) could
-   otherwise pass as a "successful" deploy while the actual public entry
-   point is down.
+1. `GET /api/health` verifies that the Express process can communicate with
+   PostgreSQL.
+2. `caddy validate` verifies that the selected release's bind-mounted
+   `Caddyfile` is valid.
+3. `caddy reload` gracefully applies the validated configuration to the active
+   Caddy process.
 
-If either check fails, the deploy checks out **both** `docker-compose.prod.yml`
-and the `Caddyfile` from the previous tag — not just the image — before
-bringing that back up, then exits non-zero. Restoring only the image would
-leave a config-level regression (a bad compose or Caddyfile change) in place
-even though the "rollback" reported success. "Previous" here is tracked by
-hand: `IMAGE_TAG` has no equivalent of `git rev-parse HEAD`, so the deploy
-script writes the tag it just deployed to `.last-good-tag` on the host once
-both checks pass, and reads that file back on the next deploy. The rollback
-restores **code**, not data: because migrations are additive, the previous
-image runs fine against the newer schema.
+The explicit reload is required because changing a bind-mounted Caddyfile does
+not guarantee that Docker Compose will recreate the existing Caddy container.
+
+If the application health check, Caddy validation or Caddy reload fails, the
+deployment enters the rollback path. The workflow checks out the previous
+release tag so that the application image, `docker-compose.prod.yml` and
+`Caddyfile` are restored together. It then starts the previous stack, validates
+the restored Caddyfile and reloads it into the active Caddy process.
+
+The last successfully deployed release tag is stored in `.last-good-tag` on
+the EC2 host. Production migrations remain additive so that the previous
+application image can continue operating with the newer compatible schema.
 
 ## Known gaps
 
