@@ -1,6 +1,6 @@
-function loadOrderModel() {
+function loadOrderStore() {
   jest.resetModules();
-  return require('../../src/models/orderModel');
+  return require('../../src/utils/orderStore');
 }
 
 function buildOrderData(overrides = {}) {
@@ -13,11 +13,11 @@ function buildOrderData(overrides = {}) {
   };
 }
 
-describe('orderModel status history', () => {
+describe('orderStore status history', () => {
   test('creates new checkout orders with Pending status and initial history', async () => {
-    const orderModel = loadOrderModel();
+    const orderStore = loadOrderStore();
 
-    const order = await orderModel.createOrder(buildOrderData());
+    const order = await orderStore.createOrder(buildOrderData());
 
     expect(order.status).toBe('Pending');
     expect(order.statusHistory).toHaveLength(1);
@@ -31,10 +31,10 @@ describe('orderModel status history', () => {
   });
 
   test('appends a timestamped history entry when status is updated', async () => {
-    const orderModel = loadOrderModel();
-    const order = await orderModel.createOrder(buildOrderData());
+    const orderStore = loadOrderStore();
+    const order = await orderStore.createOrder(buildOrderData());
 
-    const updatedOrder = await orderModel.updateOrderStatus(order.id, 'Processing', 7);
+    const updatedOrder = await orderStore.updateOrderStatus(order.id, 'Processing', 7);
 
     expect(updatedOrder.status).toBe('Processing');
     expect(updatedOrder.statusHistory).toHaveLength(2);
@@ -48,22 +48,22 @@ describe('orderModel status history', () => {
   });
 
   test('returns only orders that belong to the logged-in user', async () => {
-    const orderModel = loadOrderModel();
-    await orderModel.createOrder(buildOrderData({ userId: 7 }));
-    await orderModel.createOrder(buildOrderData({ userId: 8 }));
+    const orderStore = loadOrderStore();
+    await orderStore.createOrder(buildOrderData({ userId: 7 }));
+    await orderStore.createOrder(buildOrderData({ userId: 8 }));
 
-    const userOrders = await orderModel.getAllOrders(7);
+    const userOrders = await orderStore.getAllOrders(7);
 
     expect(userOrders).toHaveLength(1);
     expect(userOrders[0].userId).toBe(7);
   });
 
   test('does not update an order owned by another user', async () => {
-    const orderModel = loadOrderModel();
-    const order = await orderModel.createOrder(buildOrderData({ userId: 7 }));
+    const orderStore = loadOrderStore();
+    const order = await orderStore.createOrder(buildOrderData({ userId: 7 }));
 
-    const updatedOrder = await orderModel.updateOrderStatus(order.id, 'Cancelled', 8);
-    const originalOrder = await orderModel.getOrderById(order.id, 7);
+    const updatedOrder = await orderStore.updateOrderStatus(order.id, 'Cancelled', 8);
+    const originalOrder = await orderStore.getOrderById(order.id, 7);
 
     expect(updatedOrder).toBeNull();
     expect(originalOrder.status).toBe('Pending');
