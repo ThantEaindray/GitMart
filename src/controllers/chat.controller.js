@@ -1,5 +1,10 @@
 const model = require('../models/chats.model.js');
-const svr = require('../server.js');
+// Required lazily (inside the functions that use it, not here at module load
+// time) because server.js requires app.js right back — app.js -> this
+// router -> this controller -> server.js -> app.js. Requiring it up front
+// crashes anything that loads app.js before server.js has run (every
+// integration test does exactly that), since app.js's module.exports is
+// still incomplete partway through its own require chain.
 
 module.exports.loadChats = (req, res, next) => {
   const data = {
@@ -142,7 +147,7 @@ module.exports.uploadCont = (req, res, _next) => {
       return res.status(500).json(err);
     }
     //we call the ws directly from here now idk why but its gotta be done
-    svr.send(data);
+    require('../server.js').send(data);
     res.status(201).json({});
   };
   model.uploadCont(data, callback);

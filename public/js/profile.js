@@ -160,8 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
   }
-<<<<<<< HEAD
-=======
 
   if (removeProfileImageBtn) {
     removeProfileImageBtn.addEventListener('click', () => {
@@ -182,5 +180,4 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(() => showWarning('Something went wrong while removing profile image.'));
     });
   }
->>>>>>> 436c33a987150538f166522fbe928301c9327498
 });

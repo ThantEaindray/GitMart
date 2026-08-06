@@ -160,290 +160,820 @@ describe('Listing API baseline', () => {
 
       expect(response.status).toBe(404);
 
-    expect(found).toBeDefined();
-  });
-});
+      expect(response.body).toEqual({
+        message: 'Listing not found.',
+      });
+    });
 
-// ─────────────────────────────────────────────────────────
-// DELETE /api/listings/:id (protected)
-// ─────────────────────────────────────────────────────────
-describe('DELETE /api/listings/:id', () => {
-  // Invalid partition: no token → 401
-  test('should return 401 when no auth token is provided', async () => {
-    const id = await seedListing();
+    // Invalid partition: non-numeric id fails the integer cast in Postgres
+    test('returns 500 for a non-numeric listing id', async () => {
+      const response = await request(app).get('/api/listings/not-a-number');
 
-    const res = await request(app).delete(`/api/listings/${id}`);
+      expect(response.status).toBe(500);
+    });
 
-    expect(res.status).toBe(401);
-  });
+    // optionalAuth treats a garbage/expired token as anonymous rather than
+    // rejecting the request — this route is the one that actually uses it.
+    test('still loads the listing when the token is invalid (treated as anonymous)', async () => {
+      const listing = await insertListing({ ownerId: owner.id });
+      const response = await request(app)
+        .get(`/api/listings/${listing.id}`)
+        .set('Authorization', 'Bearer garbage.token.here');
 
-  // Boundary: non-existent id → 404
-  test('should return 404 when listing does not exist', async () => {
-    const res = await request(app)
-      .delete('/api/listings/999999')
-      .set('Authorization', `Bearer ${authToken}`);
+      expect(response.status).toBe(200);
+    });
 
-    expect(res.status).toBe(404);
-    expect(res.body).toHaveProperty('message');
-  });
+    // optionalAuth falls back through decoded.userId ?? decoded.user_id ??
+    // decoded.id ?? decoded.sub — every other test on this route signs
+    // { userId }, so these cover the rest of that same chain.
+    test('records a view when the token claim is user_id instead of userId', async () => {
+      const listing = await insertListing({ ownerId: owner.id });
+      const token = jwt.sign({ user_id: otherUser.id }, process.env.JWT_SECRET_KEY, {
+        algorithm: JWT_ALGORITHM,
+        expiresIn: '1h',
+      });
 
-  // Valid partition: owner deletes their own listing → 200
-  test('should return 200 and success message when owner deletes listing', async () => {
-    const id = await seedListing({ title: 'To Be Deleted' });
+      await request(app).get(`/api/listings/${listing.id}`).set('Authorization', `Bearer ${token}`);
 
-    const res = await request(app)
-      .delete(`/api/listings/${id}`)
-      .set('Authorization', `Bearer ${authToken}`);
+      const response = await request(app)
+        .get('/api/listings/recently-viewed')
+        .set('Authorization', `Bearer ${otherUserToken}`);
+      expect(response.body.map((l) => l.id)).toContain(listing.id);
+    });
 
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe('Listing deleted successfully.');
-  });
+    test('records a view when the token claim is id instead of userId', async () => {
+      const listing = await insertListing({ ownerId: owner.id });
+      const token = jwt.sign({ id: otherUser.id }, process.env.JWT_SECRET_KEY, {
+        algorithm: JWT_ALGORITHM,
+        expiresIn: '1h',
+      });
 
-  // Valid partition: deleted listing is no longer retrievable
-  test('deleted listing should return 404 on subsequent GET', async () => {
-    const id = await seedListing({ title: 'Gone Soon' });
+      await request(app).get(`/api/listings/${listing.id}`).set('Authorization', `Bearer ${token}`);
 
-    await request(app).delete(`/api/listings/${id}`).set('Authorization', `Bearer ${authToken}`);
+      const response = await request(app)
+        .get('/api/listings/recently-viewed')
+        .set('Authorization', `Bearer ${otherUserToken}`);
+      expect(response.body.map((l) => l.id)).toContain(listing.id);
+    });
 
-    const getRes = await request(app).get(`/api/listings/${id}`);
+    test('records a view when the token claim is sub instead of userId', async () => {
+      const listing = await insertListing({ ownerId: owner.id });
+      const token = jwt.sign({ sub: otherUser.id }, process.env.JWT_SECRET_KEY, {
+        algorithm: JWT_ALGORITHM,
+        expiresIn: '1h',
+      });
 
-    expect(getRes.status).toBe(404);
-  });
-});
+      await request(app).get(`/api/listings/${listing.id}`).set('Authorization', `Bearer ${token}`);
 
-// ─────────────────────────────────────────────────────────
-// PATCH /api/listings/:id (protected)
-// ─────────────────────────────────────────────────────────
-describe('PATCH /api/listings/:id', () => {
-  // Invalid partition: no token → 401
-  test('should return 401 when no auth token is provided', async () => {
-    const id = await seedListing();
-
-    const res = await request(app)
-      .patch(`/api/listings/${id}`)
-      .send({ title: 'Updated', description: 'desc', price: 50 });
-
-    expect(res.status).toBe(401);
-  });
-
-  // Invalid partition: missing required fields → 400
-  test('should return 400 when required fields are missing', async () => {
-    const id = await seedListing();
-
-    const res = await request(app)
-      .patch(`/api/listings/${id}`)
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({ title: 'No desc or price' });
-
-    expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('message');
+      const response = await request(app)
+        .get('/api/listings/recently-viewed')
+        .set('Authorization', `Bearer ${otherUserToken}`);
+      expect(response.body.map((l) => l.id)).toContain(listing.id);
+    });
   });
 
-  // Invalid partition: price <= 0 → 400
-  test('should return 400 when price is 0 or negative', async () => {
-    const id = await seedListing();
+  describe('POST /api/listings', () => {
+    const validListing = {
+      title: 'Mechanical Keyboard',
+      description: 'A lightly used mechanical keyboard.',
+      price: 120,
+      category: 'Electronics',
+    };
 
-    const res = await request(app)
-      .patch(`/api/listings/${id}`)
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({ title: 'Bad Price', description: 'desc', price: 0 });
+    test('returns 401 when no access token is provided', async () => {
+      const response = await request(app).post('/api/listings').send(validListing);
 
-    expect(res.status).toBe(400);
+      expect(response.status).toBe(401);
+
+      expect(response.body).toEqual({
+        error: 'No token provided',
+      });
+    });
+
+    // Boundary: category is optional at both the controller and model layer;
+    // every other test provides one, so the 'Others' default is never exercised.
+    test('defaults category to Others when omitted', async () => {
+      const { category: _category, ...listingWithoutCategory } = validListing;
+      const response = await request(app)
+        .post('/api/listings')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send(listingWithoutCategory);
+
+      expect(response.status).toBe(201);
+      expect(response.body.listing.category).toBe('Others');
+    });
+
+    test('returns 400 when a required field is missing', async () => {
+      const response = await request(app)
+        .post('/api/listings')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          title: 'Incomplete Listing',
+          price: 50,
+        });
+
+      expect(response.status).toBe(400);
+
+      expect(response.body).toEqual({
+        message: 'Title, description and price are required.',
+      });
+    });
+
+    test('returns 400 when the price is zero', async () => {
+      const response = await request(app)
+        .post('/api/listings')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          ...validListing,
+          price: 0,
+        });
+
+      expect(response.status).toBe(400);
+
+      expect(response.body).toEqual({
+        message: 'Price must be more than 0.',
+      });
+    });
+
+    test('allows an authenticated owner to create a listing', async () => {
+      const response = await request(app)
+        .post('/api/listings')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send(validListing);
+
+      expect(response.status).toBe(201);
+
+      expect(response.body.message).toBe('Listing created successfully.');
+
+      expect(response.body.listing).toMatchObject({
+        owner_id: owner.id,
+        title: validListing.title,
+        description: validListing.description,
+        category: validListing.category,
+        isSold: false,
+        isClosed: false,
+      });
+
+      expect(Number(response.body.listing.price)).toBe(validListing.price);
+
+      // Confirm that the API really persisted the listing.
+      const databaseResult = await pool.query(
+        `
+          SELECT
+  owner_id,
+  title,
+  description,
+  price,
+  category,
+  status
+FROM listings
+WHERE id = $1
+        `,
+        [response.body.listing.id],
+      );
+
+      expect(databaseResult.rows).toHaveLength(1);
+      expect(databaseResult.rows[0].owner_id).toBe(owner.id);
+      expect(databaseResult.rows[0].title).toBe(validListing.title);
+      expect(databaseResult.rows[0].status).toBe('AVAILABLE');
+    });
+
+    test('returns 500 when the token userId claim is not numeric', async () => {
+      const badToken = createAccessToken('not-a-number');
+      const response = await request(app)
+        .post('/api/listings')
+        .set('Authorization', `Bearer ${badToken}`)
+        .send(validListing);
+
+      expect(response.status).toBe(500);
+    });
+
+    // Invalid partition: no body at all (as opposed to an empty JSON object)
+    // covers the `req.body || {}` fallback rather than destructuring `{}` itself.
+    test('returns 400 when no body is sent at all', async () => {
+      const response = await request(app)
+        .post('/api/listings')
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(400);
+    });
   });
 
-  // Boundary: non-existent id → 404
-  test('should return 404 when listing does not exist', async () => {
-    const res = await request(app)
-      .patch('/api/listings/999999')
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({ title: 'X', description: 'Y', price: 10 });
+  describe('PATCH /api/listings/:id', () => {
+    test('returns 400 when a required field is missing', async () => {
+      const listing = await insertListing({ ownerId: owner.id });
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ title: 'Incomplete', price: 50 });
 
-    expect(res.status).toBe(404);
-    expect(res.body).toHaveProperty('message');
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        message: 'Title, description and price are required.',
+      });
+    });
+
+    test('returns 400 when the price is not positive', async () => {
+      const listing = await insertListing({ ownerId: owner.id });
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ title: 'Free Camera', description: 'Should not be allowed', price: 0 });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        message: 'Price must be more than 0.',
+      });
+    });
+
+    // Invalid partition: non-numeric id fails the integer cast in Postgres
+    test('returns 500 for a non-numeric listing id', async () => {
+      const response = await request(app)
+        .patch('/api/listings/not-a-number')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ title: 'Ghost', description: 'Ghost listing', price: 10 });
+
+      expect(response.status).toBe(500);
+    });
+
+    // Invalid partition: no body at all (as opposed to an empty JSON object)
+    // covers the `req.body || {}` fallback rather than destructuring `{}` itself.
+    test('returns 400 when no body is sent at all', async () => {
+      const listing = await insertListing({ ownerId: owner.id });
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}`)
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(400);
+    });
+
+    test('allows the owner to update their listing', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const update = {
+        title: 'Updated Camera',
+        description: 'The owner updated this listing.',
+        price: 650,
+      };
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send(update);
+
+      expect(response.status).toBe(200);
+
+      expect(response.body.message).toBe('Listing updated successfully.');
+
+      expect(response.body.listing).toMatchObject({
+        id: listing.id,
+        owner_id: owner.id,
+        title: update.title,
+        description: update.description,
+      });
+
+      expect(Number(response.body.listing.price)).toBe(update.price);
+    });
+
+    test('does not allow another user to update the listing', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}`)
+        .set('Authorization', `Bearer ${otherUserToken}`)
+        .send({
+          title: 'Unauthorised Update',
+          description: 'This change should not be saved.',
+          price: 1,
+        });
+
+      expect(response.status).toBe(404);
+
+      expect(response.body).toEqual({
+        message: 'Listing not found or you are not the owner.',
+      });
+
+      // Confirm that the unauthorised request did not alter the database.
+      const databaseResult = await pool.query(
+        `
+          SELECT title, description, price
+          FROM listings
+          WHERE id = $1
+        `,
+        [listing.id],
+      );
+
+      expect(databaseResult.rows[0].title).toBe('Baseline Camera');
+
+      expect(Number(databaseResult.rows[0].price)).toBe(500);
+    });
   });
 
-  // Valid partition: owner updates their listing → 200 with updated data
-  test('should return 200 and updated listing when owner updates', async () => {
-    const id = await seedListing({ title: 'Original Title', price: 100 });
+  describe('Listing lifecycle database foundation', () => {
+    test('uses AVAILABLE as the default status for a new listing', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
 
-    const res = await request(app)
-      .patch(`/api/listings/${id}`)
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({ title: 'Updated Title', description: 'New desc', price: 200 });
+      expect(listing).toMatchObject({
+        status: 'AVAILABLE',
+        isSold: false,
+        isClosed: false,
+      });
 
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('message');
-    expect(res.body.listing.title).toBe('Updated Title');
-    expect(Number(res.body.listing.price)).toBe(200);
-  });
-});
+      expect(listing.status_updated_on).toBeDefined();
+    });
 
-// ─────────────────────────────────────────────────────────
-// GET /api/listings/most-viewed
-// ─────────────────────────────────────────────────────────
-describe('GET /api/listings/most-viewed', () => {
-  // Valid partition: returns 200 and an array
-  test('should return 200 and an array', async () => {
-    const res = await request(app).get('/api/listings/most-viewed');
+    test('rejects a status outside the supported lifecycle values', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
 
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-  });
+      await expect(
+        pool.query(
+          `
+          UPDATE listings
+          SET status = $1
+          WHERE id = $2
+        `,
+          ['DELETED', listing.id],
+        ),
+      ).rejects.toMatchObject({
+        code: '23514',
+        constraint: 'listings_status_check',
+      });
+    });
 
-  // Valid partition: each item has the required fields
-  test('each item should have id, title, view_count fields', async () => {
-    const id = await seedListing({ title: 'Viewed Item' });
-    // Simulate a view by hitting GET /api/listings/:id with auth
-    await request(app).get(`/api/listings/${id}`).set('Authorization', `Bearer ${authToken}`);
+    test('rejects a status and legacy flags that do not match', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
 
-    const res = await request(app).get('/api/listings/most-viewed');
-
-    expect(res.status).toBe(200);
-    const found = res.body.find((l) => l.id === id);
-    if (found) {
-      expect(found).toHaveProperty('view_count');
-      expect(found).toHaveProperty('title');
-    }
-  });
-});
-
-// ─────────────────────────────────────────────────────────
-// GET /api/listings/recently-viewed (protected)
-// ─────────────────────────────────────────────────────────
-describe('GET /api/listings/recently-viewed', () => {
-  // Invalid partition: no token → 401
-  test('should return 401 when no auth token is provided', async () => {
-    const res = await request(app).get('/api/listings/recently-viewed');
-
-    expect(res.status).toBe(401);
-  });
-
-  // Boundary: no view history returns empty array
-  test('should return 200 and empty array when user has no view history', async () => {
-    const res = await request(app)
-      .get('/api/listings/recently-viewed')
-      .set('Authorization', `Bearer ${authToken}`);
-
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+      await expect(
+        pool.query(
+          `
+          UPDATE listings
+          SET
+            status = $1,
+            "isSold" = $2,
+            "isClosed" = $3
+          WHERE id = $4
+        `,
+          ['SOLD', false, false, listing.id],
+        ),
+      ).rejects.toMatchObject({
+        code: '23514',
+        constraint: 'listings_status_flags_check',
+      });
+    });
   });
 
-  // Valid partition: viewed listing appears in recently-viewed
-  test('should include a listing after the user views it', async () => {
-    const id = await seedListing({ title: 'Recently Viewed Item' });
-    await request(app).get(`/api/listings/${id}`).set('Authorization', `Bearer ${authToken}`);
+  describe('PATCH /api/listings/:id/status', () => {
+    test('returns 401 when no access token is provided', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
 
-    const res = await request(app)
-      .get('/api/listings/recently-viewed')
-      .set('Authorization', `Bearer ${authToken}`);
+      const response = await request(app).patch(`/api/listings/${listing.id}/status`).send({
+        status: 'RESERVED',
+      });
 
-    expect(res.status).toBe(200);
-    const found = res.body.find((l) => l.id === id);
-    expect(found).toBeDefined();
-    expect(found).toHaveProperty('viewed_at');
+      expect(response.status).toBe(401);
+
+      expect(response.body).toEqual({
+        error: 'No token provided',
+      });
+    });
+
+    test('returns 400 when the listing ID is invalid', async () => {
+      const response = await request(app)
+        .patch('/api/listings/not-a-number/status')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: 'RESERVED',
+        });
+
+      expect(response.status).toBe(400);
+
+      expect(response.body).toEqual({
+        message: 'Listing ID must be a positive integer.',
+      });
+    });
+
+    // Invalid partition: passes validateListingStatusInput's own
+    // Number.isInteger check but overflows Postgres's integer column when
+    // loadListingForStatusUpdate queries by id.
+    test('returns 500 when the listing id overflows a Postgres integer', async () => {
+      const response = await request(app)
+        .patch('/api/listings/99999999999999/status')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ status: 'RESERVED' });
+
+      expect(response.status).toBe(500);
+    });
+
+    test('returns 400 when status is missing', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({});
+
+      expect(response.status).toBe(400);
+
+      expect(response.body).toEqual({
+        message: 'Status is required.',
+      });
+    });
+
+    // Invalid partition: no body at all (as opposed to an empty JSON object)
+    // covers the `req.body || {}` fallback rather than destructuring `{}` itself.
+    test('returns 400 when no body is sent at all', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.status).toBe(400);
+    });
+
+    test('returns 400 when status is unsupported', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: 'DELETED',
+        });
+
+      expect(response.status).toBe(400);
+
+      expect(response.body).toEqual({
+        message: 'Status must be AVAILABLE, RESERVED, SOLD or ARCHIVED.',
+      });
+    });
+
+    test('returns 404 when the listing does not exist', async () => {
+      const response = await request(app)
+        .patch('/api/listings/999999/status')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: 'RESERVED',
+        });
+
+      expect(response.status).toBe(404);
+
+      expect(response.body).toEqual({
+        message: 'Listing not found.',
+      });
+    });
+
+    test('returns 403 when another user changes the status', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${otherUserToken}`)
+        .send({
+          status: 'RESERVED',
+        });
+
+      expect(response.status).toBe(403);
+
+      expect(response.body).toEqual({
+        message: 'Only the listing owner can change its status.',
+      });
+
+      const databaseResult = await pool.query(
+        `
+        SELECT status
+        FROM listings
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      expect(databaseResult.rows[0].status).toBe('AVAILABLE');
+    });
+
+    test('allows the owner to reserve an available listing', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: ' reserved ',
+        });
+
+      expect(response.status).toBe(200);
+
+      expect(response.body.message).toBe('Listing status changed from AVAILABLE to RESERVED.');
+
+      expect(response.body.listing).toMatchObject({
+        id: listing.id,
+        owner_id: owner.id,
+        status: 'RESERVED',
+        isSold: false,
+        isClosed: false,
+      });
+
+      expect(response.body.listing.status_updated_on).toBeDefined();
+
+      const databaseResult = await pool.query(
+        `
+        SELECT
+          status,
+          "isSold",
+          "isClosed"
+        FROM listings
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      expect(databaseResult.rows[0]).toMatchObject({
+        status: 'RESERVED',
+        isSold: false,
+        isClosed: false,
+      });
+    });
+
+    test('allows the owner to mark an available listing as sold', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: 'SOLD',
+        });
+
+      expect(response.status).toBe(200);
+
+      expect(response.body.listing).toMatchObject({
+        id: listing.id,
+        status: 'SOLD',
+        isSold: true,
+        isClosed: false,
+      });
+
+      const databaseResult = await pool.query(
+        `
+        SELECT
+          status,
+          "isSold",
+          "isClosed"
+        FROM listings
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      expect(databaseResult.rows[0]).toMatchObject({
+        status: 'SOLD',
+        isSold: true,
+        isClosed: false,
+      });
+    });
+
+    test('allows the owner to archive an available listing', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: 'ARCHIVED',
+        });
+
+      expect(response.status).toBe(200);
+
+      expect(response.body.listing).toMatchObject({
+        id: listing.id,
+        status: 'ARCHIVED',
+        isSold: false,
+        isClosed: true,
+      });
+
+      const databaseResult = await pool.query(
+        `
+        SELECT
+          status,
+          "isSold",
+          "isClosed"
+        FROM listings
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      expect(databaseResult.rows[0]).toMatchObject({
+        status: 'ARCHIVED',
+        isSold: false,
+        isClosed: true,
+      });
+    });
+
+    // Invalid partition: requesting the listing's current status as the next
+    // status hits canTransitionListingStatus's `current === next` check,
+    // distinct from the invalid-status-value and disallowed-transition checks
+    // covered elsewhere.
+    test("rejects a transition to the listing's current status", async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: 'AVAILABLE',
+        });
+
+      expect(response.status).toBe(409);
+
+      expect(response.body).toEqual({
+        message: 'Cannot change listing status from AVAILABLE to AVAILABLE.',
+      });
+    });
+
+    test('rejects an invalid transition from SOLD to AVAILABLE', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      await pool.query(
+        `
+        UPDATE listings
+        SET
+          status = 'SOLD',
+          "isSold" = true,
+          "isClosed" = false
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          status: 'AVAILABLE',
+        });
+
+      expect(response.status).toBe(409);
+
+      expect(response.body).toEqual({
+        message: 'Cannot change listing status from SOLD to AVAILABLE.',
+      });
+
+      const databaseResult = await pool.query(
+        `
+        SELECT
+          status,
+          "isSold",
+          "isClosed"
+        FROM listings
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      expect(databaseResult.rows[0]).toMatchObject({
+        status: 'SOLD',
+        isSold: true,
+        isClosed: false,
+      });
+    });
+
+    // Boundary: the update is optimistically locked on the status read during
+    // loadListingForStatusUpdate (`WHERE id = $1 AND owner_id = $2 AND status
+    // = $3`), guarding against the listing's status changing between that read
+    // and this write. Racing real concurrent HTTP requests to reach this
+    // window reliably is inherently timing-dependent (it passed locally but
+    // failed on a slower CI runner), so instead the race is simulated
+    // directly: the DB row is moved on first, then updateListingStatus is
+    // invoked with the stale statusUpdateData loadListingForStatusUpdate would
+    // have produced if it had read the listing just before that happened.
+    test('returns 409 when the listing status changed since it was read', async () => {
+      const listingController = require('../../src/controllers/Listing.controller');
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      await pool.query(`UPDATE listings SET status = 'RESERVED' WHERE id = $1`, [listing.id]);
+
+      const res = {
+        locals: {
+          statusUpdateData: {
+            id: listing.id,
+            owner_id: owner.id,
+            current_status: 'AVAILABLE',
+            status: 'SOLD',
+            isSold: true,
+            isClosed: false,
+          },
+        },
+      };
+
+      const result = await new Promise((resolve) => {
+        res.status = (code) => ({ json: (body) => resolve({ code, body }) });
+        listingController.updateListingStatus({}, res);
+      });
+
+      expect(result.code).toBe(409);
+      expect(result.body).toEqual({
+        message: 'The listing status changed before this request was completed. Please try again.',
+      });
+    });
   });
-});
 
-// ─────────────────────────────────────────────────────────
-// GET /api/listings/category/:category
-// ─────────────────────────────────────────────────────────
-describe('GET /api/listings/category/:category', () => {
-  // Valid partition: returns only listings matching the category
-  test('should return 200 and listings matching the category', async () => {
-    await seedListing({ title: 'Watch Item', category: 'Watches' });
-    await seedListing({ title: 'Book Item', category: 'Books' });
+  describe('DELETE /api/listings/:id', () => {
+    // Invalid partition: non-numeric id fails the integer cast in Postgres
+    test('returns 500 for a non-numeric listing id', async () => {
+      const response = await request(app)
+        .delete('/api/listings/not-a-number')
+        .set('Authorization', `Bearer ${ownerToken}`);
 
-    const res = await request(app).get('/api/listings/category/Watches');
+      expect(response.status).toBe(500);
+    });
 
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    const titles = res.body.map((l) => l.title);
-    expect(titles).toContain('Watch Item');
-    expect(titles).not.toContain('Book Item');
-  });
+    test('does not allow another user to delete the listing', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
 
-  // Boundary: category with no listings returns empty array
-  test('should return empty array for a category with no listings', async () => {
-    const res = await request(app).get('/api/listings/category/NonExistentCategory');
+      const response = await request(app)
+        .delete(`/api/listings/${listing.id}`)
+        .set('Authorization', `Bearer ${otherUserToken}`);
 
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual([]);
-  });
-});
+      expect(response.status).toBe(404);
 
-// ─────────────────────────────────────────────────────────
-// GET /api/listings/owner/:owner_id
-// ─────────────────────────────────────────────────────────
-describe('GET /api/listings/owner/:owner_id', () => {
-  // Valid partition: returns listings belonging to the given owner
-  test('should return 200 and listings for the given owner', async () => {
-    await seedListing({ title: 'Owner Listing' });
+      expect(response.body).toEqual({
+        message: 'Listing not found or you are not the owner.',
+      });
 
-    const res = await request(app).get(`/api/listings/owner/${testUserId}`);
+      // Confirm that the listing still exists.
+      const databaseResult = await pool.query(
+        `
+          SELECT id
+          FROM listings
+          WHERE id = $1
+        `,
+        [listing.id],
+      );
 
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    const found = res.body.find((l) => l.title === 'Owner Listing');
-    expect(found).toBeDefined();
-    expect(found.owner_id).toBe(testUserId);
-  });
+      expect(databaseResult.rows).toHaveLength(1);
+    });
 
-  // Boundary: owner with no listings returns empty array
-  test('should return empty array when owner has no listings', async () => {
-    const res = await request(app).get('/api/listings/owner/999999');
+    test('allows the owner to delete their listing', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
 
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual([]);
-  });
-});
+      const response = await request(app)
+        .delete(`/api/listings/${listing.id}`)
+        .set('Authorization', `Bearer ${ownerToken}`);
 
-// ─────────────────────────────────────────────────────────
-// GET /api/listings/dashboard (protected)
-// ─────────────────────────────────────────────────────────
-describe('GET /api/listings/dashboard', () => {
-  // Invalid partition: no token → 401
-  test('should return 401 when no auth token is provided', async () => {
-    const res = await request(app).get('/api/listings/dashboard');
+      expect(response.status).toBe(200);
 
-    expect(res.status).toBe(401);
-  });
+      expect(response.body).toEqual({
+        message: 'Listing deleted successfully.',
+      });
 
-  // Valid partition: authenticated user gets dashboard shape
-  test('should return 200 with stats, categories, and viewBreakdown', async () => {
-    const res = await request(app)
-      .get('/api/listings/dashboard')
-      .set('Authorization', `Bearer ${authToken}`);
+      // Confirm that the listing was removed from the database.
+      const databaseResult = await pool.query(
+        `
+          SELECT id
+          FROM listings
+          WHERE id = $1
+        `,
+        [listing.id],
+      );
 
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('stats');
-    expect(res.body).toHaveProperty('categories');
-    expect(res.body).toHaveProperty('viewBreakdown');
-  });
-
-  // Valid partition: stats reflect the listings the test user owns
-  test('should include seeded listings in stats total', async () => {
-    await seedListing({ title: 'Dashboard Item 1' });
-    await seedListing({ title: 'Dashboard Item 2' });
-
-    const res = await request(app)
-      .get('/api/listings/dashboard')
-      .set('Authorization', `Bearer ${authToken}`);
-
-    expect(res.status).toBe(200);
-    expect(Number(res.body.stats.total)).toBeGreaterThanOrEqual(2);
-  });
-
-  // Valid partition: categories array contains entries for seeded listings
-  test('should list categories matching seeded listings', async () => {
-    await seedListing({ title: 'Watch Dash', category: 'Watches' });
-
-    const res = await request(app)
-      .get('/api/listings/dashboard')
-      .set('Authorization', `Bearer ${authToken}`);
-
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body.categories)).toBe(true);
-    const cats = res.body.categories.map((c) => c.category);
-    expect(cats).toContain('Watches');
+      expect(databaseResult.rows).toHaveLength(0);
+    });
   });
 });

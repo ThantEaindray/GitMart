@@ -156,8 +156,6 @@ module.exports.namesPictures = (data, callback) => {
   const VALUES = [data];
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
-<<<<<<< HEAD
-=======
 
 module.exports.getPublicProfile = (data, callback) => {
   const SQLSTATEMENT = `
@@ -193,4 +191,3 @@ module.exports.getSellerReviews = (data, callback) => {
   `;
   pool.query(SQLSTATEMENT, [data.userId], callback);
 };
->>>>>>> 436c33a987150538f166522fbe928301c9327498

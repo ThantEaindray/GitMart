@@ -58,9 +58,6 @@ module.exports.sendToken = (req, res) => {
 module.exports.generateRefreshToken = (req, res, next) => {
   const rememberMe = res.locals.rememberMe || false;
   const ttlString = rememberMe ? refreshRemember : refreshNoRemember;
-<<<<<<< HEAD
-  const payload = { userId: res.locals.userId, rememberMe };
-=======
   // jti makes every issued token unique. Without it the payload is just
   // { userId, rememberMe } plus iat/exp, and those have one-second resolution —
   // so two refreshes within the same second produced byte-identical tokens.
@@ -68,7 +65,6 @@ module.exports.generateRefreshToken = (req, res, next) => {
   // verifyRefreshToken below could never fire because the "old" token still
   // matched the stored row.
   const payload = { userId: res.locals.userId, rememberMe, jti: crypto.randomUUID() };
->>>>>>> 436c33a987150538f166522fbe928301c9327498
   const options = { algorithm, expiresIn: ttlString };
 
   jwt.sign(payload, refreshSecret, options, (err, token) => {

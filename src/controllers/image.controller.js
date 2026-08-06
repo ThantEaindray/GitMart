@@ -3,7 +3,9 @@ const dotenv = require('dotenv');
 const { Client } = require('node-scp');
 const fs = require('fs');
 const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env.dev';
-const svr = require('../server.js');
+// Required lazily inside sendWS below, not here at module load time — see
+// the matching note in chat.controller.js for why requiring it up front
+// crashes anything that loads app.js before server.js has run.
 //set up options for the scp process
 //so firstly we wanna download the image to the local temp file first i think
 // and then pass it on to the thing
@@ -73,7 +75,7 @@ module.exports.sendWS = (req, res, next) => {
     cont: res.locals.path,
   };
 
-  svr.send(data);
+  require('../server.js').send(data);
   next();
 };
 
