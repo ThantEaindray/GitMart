@@ -204,7 +204,7 @@ describe('Chat API', () => {
         .set('Authorization', `Bearer ${aliceToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body).toEqual([{ chat: chat.id, username: bob.username }]);
+      expect(response.body).toEqual([{ chat: chat.id, toId: bob.id, username: bob.username }]);
     });
 
     test('names the other participant when the requester is user_2', async () => {
@@ -217,7 +217,7 @@ describe('Chat API', () => {
         .set('Authorization', `Bearer ${bobToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body).toEqual([{ chat: chat.id, username: alice.username }]);
+      expect(response.body).toEqual([{ chat: chat.id, toId: alice.id, username: alice.username }]);
     });
 
     test('does not list chats the user is not part of', async () => {
@@ -253,13 +253,14 @@ describe('Chat API', () => {
 
       const response = await request(app)
         .post('/api/chats/send')
-        .send({ chat: chat.id, user: alice.id, textcontent: 'Hello Bob' });
+        .send({ chat: chat.id, from: alice.id, cont_type: 'txt', cont: 'Hello Bob' });
 
       expect(response.status).toBe(201);
 
       const stored = await pool.query('SELECT * FROM chatcontent WHERE chat_id = $1', [chat.id]);
       expect(stored.rows).toHaveLength(1);
-      expect(stored.rows[0].textcontent).toBe('Hello Bob');
+      expect(stored.rows[0].cont).toBe('Hello Bob');
+      expect(stored.rows[0].cont_type).toBe('txt');
       expect(stored.rows[0].sender_id).toBe(alice.id);
     });
 
@@ -267,7 +268,7 @@ describe('Chat API', () => {
       // chatcontent.chat_id is a foreign key, so the insert is rejected.
       const response = await request(app)
         .post('/api/chats/send')
-        .send({ chat: 999999, user: alice.id, textcontent: 'Nowhere' });
+        .send({ chat: 999999, from: alice.id, cont_type: 'txt', cont: 'Nowhere' });
 
       expect(response.status).toBe(500);
     });
@@ -289,16 +290,16 @@ describe('Chat API', () => {
 
       await request(app)
         .post('/api/chats/send')
-        .send({ chat: chat.id, user: alice.id, textcontent: 'First' });
+        .send({ chat: chat.id, from: alice.id, cont_type: 'txt', cont: 'First' });
       await request(app)
         .post('/api/chats/send')
-        .send({ chat: chat.id, user: bob.id, textcontent: 'Second' });
+        .send({ chat: chat.id, from: bob.id, cont_type: 'txt', cont: 'Second' });
 
       const response = await request(app).get(`/api/chats/viewChat/${chat.id}`);
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveLength(2);
-      expect(response.body.map((m) => m.textcontent).sort()).toEqual(['First', 'Second']);
+      expect(response.body.map((m) => m.cont).sort()).toEqual(['First', 'Second']);
     });
 
     test('does not return messages belonging to another chat', async () => {
@@ -307,7 +308,7 @@ describe('Chat API', () => {
 
       await request(app)
         .post('/api/chats/send')
-        .send({ chat: chatOne.id, user: alice.id, textcontent: 'Only in chat one' });
+        .send({ chat: chatOne.id, from: alice.id, cont_type: 'txt', cont: 'Only in chat one' });
 
       const response = await request(app).get(`/api/chats/viewChat/${chatTwo.id}`);
 

@@ -1,6 +1,5 @@
 const express = require('express');
 const jwt = require('../middleware/jwtMiddleware.js');
-const chatController = require('../controllers/chat.controller.js');
 const imgController = require('../controllers/image.controller.js');
 const path = require('node:path');
 const multer = require('multer');

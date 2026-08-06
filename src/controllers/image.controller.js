@@ -1,8 +1,6 @@
 const model = require('../models/image.model.js');
-const dotenv = require('dotenv');
 const { Client } = require('node-scp');
 const fs = require('fs');
-const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env.dev';
 // Required lazily inside sendWS below, not here at module load time — see
 // the matching note in chat.controller.js for why requiring it up front
 // crashes anything that loads app.js before server.js has run.
@@ -26,7 +24,7 @@ module.exports.uploadImg = (req, res, next) => {
         `./src/tmp/${req.file.filename}`,
         `${process.env.SCP_DIR}/${req.file.filename}`,
       )
-      .then((response) => {
+      .then((_response) => {
         client.close();
         next();
       })
@@ -50,7 +48,7 @@ module.exports.writeDB = (req, res, next) => {
     cont: path,
   };
 
-  const callback = (err, results, fields) => {
+  const callback = (err, _results, _fields) => {
     if (err) {
       console.log(err);
       return res.status(500).json(err);
@@ -79,7 +77,7 @@ module.exports.sendWS = (req, res, next) => {
   next();
 };
 
-module.exports.cleanup = (req, res, next) => {
+module.exports.cleanup = (req, res, _next) => {
   let file = `./src/tmp/${req.file.filename}`;
   fs.unlink(file, (err) => {
     if (err) {
