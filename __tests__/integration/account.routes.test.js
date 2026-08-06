@@ -114,6 +114,18 @@ describe('Account API', () => {
 
       expect(response.status).toBe(401);
     });
+
+    // A blank stored hash is falsy, so comparePassword's own guard rejects it
+    // before ever calling bcrypt.
+    test('returns 500 when the stored hash is blank', async () => {
+      await pool.query('UPDATE users SET password = $1 WHERE id = $2', ['', userId]);
+
+      const response = await request(app)
+        .post('/api/login')
+        .send({ username: SUITE_USERNAMES[0], password: PASSWORD });
+
+      expect(response.status).toBe(500);
+    });
   });
 
   // ── PUT /api/me/password ────────────────────────────────────────────────
