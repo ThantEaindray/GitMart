@@ -72,10 +72,7 @@ describe('image.controller - uploadImg', () => {
       host: '203.0.113.10',
       port: '22',
     });
-    expect(uploadFile).toHaveBeenCalledWith(
-      './src/tmp/cont-123.png',
-      '/var/www/imgs/cont-123.png',
-    );
+    expect(uploadFile).toHaveBeenCalledWith('./src/tmp/cont-123.png', '/var/www/imgs/cont-123.png');
     expect(close).toHaveBeenCalled();
     expect(next).toHaveBeenCalled();
   });
