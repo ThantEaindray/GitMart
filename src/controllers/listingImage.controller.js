@@ -7,7 +7,7 @@ const imageController = require('./image.controller.js');
 module.exports.uploadCoverImage = imageController.uploadImg;
 
 module.exports.respondWithUrl = (req, res) => {
-  const url = `http://${process.env.SCP_IP}/${req.file.filename}`;
+  const url = imageController.buildPublicImageUrl(req.file.filename);
   const file = `./src/tmp/${req.file.filename}`;
 
   fs.unlink(file, (err) => {

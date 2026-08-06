@@ -9,6 +9,19 @@ const fs = require('fs');
 // and then pass it on to the thing
 
 //now we have the path preset for where we put all our temp files.
+// The SCP host only serves plain HTTP. On production (HTTPS) that means a
+// browser auto-upgrades <img src="http://..."> to https:// and it fails to
+// connect, since the host has nothing listening on 443 — same mixed-content
+// class of bug as the chat WebSocket fix. PUBLIC_IMAGE_BASE_URL points at
+// Caddy's /imgs/* reverse-proxy route instead, so the browser only ever
+// talks to the site's own HTTPS origin. Unset in dev/test, where the app
+// isn't served over HTTPS so the direct SCP host URL is fine.
+function buildPublicImageUrl(filename) {
+  const base = process.env.PUBLIC_IMAGE_BASE_URL || `http://${process.env.SCP_IP}`;
+  return `${base}/${filename}`;
+}
+module.exports.buildPublicImageUrl = buildPublicImageUrl;
+
 module.exports.uploadImg = (req, res, next) => {
   console.log('uploading');
   //so what do we need to do first to  get an image uploaded we need to save it over to the temp folder and from there we can reference it
@@ -39,7 +52,7 @@ module.exports.uploadImg = (req, res, next) => {
 module.exports.writeDB = (req, res, next) => {
   //nice and easy this time we just have to get the info we need about the message and write it into the db
 
-  let path = `http://${process.env.SCP_IP}/${req.file.filename}`;
+  let path = buildPublicImageUrl(req.file.filename);
   res.locals.path = path;
   const data = {
     chat: req.body.chat,

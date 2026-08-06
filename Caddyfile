@@ -11,5 +11,16 @@ kab1oiee.com, www.kab1oiee.com {
 		header Upgrade websocket
 	}
 	reverse_proxy @websockets app:3001
+
+	# The uploaded-image host (SCP_IP) only serves plain HTTP. Proxying it
+	# under our own HTTPS origin means the browser never has to load an
+	# http:// subresource from an https:// page — see the matching comment
+	# on buildPublicImageUrl in image.controller.js. handle_path strips the
+	# /imgs prefix before forwarding, since the image host serves files at
+	# its own root.
+	handle_path /imgs/* {
+		reverse_proxy 152.53.200.138:80
+	}
+
 	reverse_proxy app:3000
 }
