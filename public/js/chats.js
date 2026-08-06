@@ -3,11 +3,7 @@ function loadChat(data) {
   document.getElementById('messages').innerHTML = '';
   data.forEach(function (e) {
     var side = e.sender_id == uId ? 'sent' : 'received';
-<<<<<<< HEAD
     if (e.cont_type == 'txt') {
-=======
-    if (e.textcontent !== undefined) {
->>>>>>> 436c33a987150538f166522fbe928301c9327498
       document.getElementById('messages').innerHTML += `
         <div class="msg ${side}">
           <span class="msg-bubble">${e.cont}</span>
@@ -29,11 +25,8 @@ function viewChat(cId, wUsr) {
   //ok so we need to get the stuff from one specific chat now
   // so the chat id will be pulled from the request in the function and then we get the users id from inside of the thing itself
   //we also wanna pass the chat id into the localStorage for future use
-<<<<<<< HEAD
   // also the id of the user were chatting with
   localStorage.setItem('with', wUsr);
-=======
->>>>>>> 436c33a987150538f166522fbe928301c9327498
   localStorage.setItem('openChat', cId);
   document.getElementById('chatwith').innerHTML = `<h2>Now Chatting</h2>`;
   fetchMethod(
@@ -64,14 +57,8 @@ function renderChats(results) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-<<<<<<< HEAD
-  //so first things first we need to do the most basic of calling the api to get the users chats to load in, first things first\
-  //check for a logged in user
-  let token = localStorage.getItem('token');
-=======
   //check for a logged in user
   const token = localStorage.getItem('token');
->>>>>>> 436c33a987150538f166522fbe928301c9327498
   if (!token) {
     window.location.href = './login.html';
     return;
