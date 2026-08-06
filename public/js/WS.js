@@ -24,7 +24,7 @@ webSocket.onmessage = (event) => {
   //we need to deserialise it since the WS only accepts JSON
   console.log('new ws content incoming', JSON.parse(event.data));
   let data = JSON.parse(event.data);
-  if ((data.type = 'message')) {
+  if (data.type === 'message') {
     if (data.to == uId || data.from == uId) {
       //we need to do basically what we did on the history loading part should be easy enough
       var side = data.from == uId ? 'sent' : 'received';
