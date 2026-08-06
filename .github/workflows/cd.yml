@@ -287,22 +287,51 @@ jobs:
             fi
 
             if ! docker compose -f docker-compose.prod.yml exec -T caddy \
-              caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile; then
+              caddy validate \
+              --config /etc/caddy/Caddyfile \
+              --adapter caddyfile; then
               echo "Caddy config validation FAILED"
+              DEPLOY_OK=false
+            elif ! docker compose -f docker-compose.prod.yml exec -T caddy \
+              caddy reload \
+              --config /etc/caddy/Caddyfile \
+              --adapter caddyfile; then
+              echo "Caddy config reload FAILED"
               DEPLOY_OK=false
             fi
 
             if [ "$DEPLOY_OK" = false ]; then
-              echo "Rolling back to ${PREVIOUS_TAG:-the previous image}"
+              echo "Deployment failed - rolling back to ${PREVIOUS_TAG:-the previous image}"
+
               if [ -n "$PREVIOUS_TAG" ]; then
-                # Restore docker-compose.prod.yml and the Caddyfile from the
-                # previous tag too, not just the app image — otherwise a
-                # config-level regression (a bad Caddyfile edit, say) would
-                # keep running unchanged through the "rollback".
+                # Restore the previous release's image, Compose configuration,
+                # and Caddyfile together.
                 git checkout --force "$PREVIOUS_TAG"
                 export IMAGE_TAG="$PREVIOUS_TAG"
+
+                docker compose -f docker-compose.prod.yml pull
                 docker compose -f docker-compose.prod.yml up -d
+                sleep 5
+
+                if ! docker compose -f docker-compose.prod.yml exec -T caddy \
+                  caddy validate \
+                  --config /etc/caddy/Caddyfile \
+                  --adapter caddyfile; then
+                  echo "Rollback Caddy config validation FAILED"
+                  exit 1
+                fi
+
+                if ! docker compose -f docker-compose.prod.yml exec -T caddy \
+                  caddy reload \
+                  --config /etc/caddy/Caddyfile \
+                  --adapter caddyfile; then
+                  echo "Rollback Caddy config reload FAILED"
+                  exit 1
+                fi
+              else
+                echo "No previous release tag is available for rollback."
               fi
+
               exit 1
             fi
 
