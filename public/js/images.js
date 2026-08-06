@@ -10,7 +10,7 @@ function upload() {
   //lets just construct the form data here i suppose
   let form = new FormData();
   form.append('type', 'message');
-  form.append('chat', openChat);
+  form.append('chat', localStorage.getItem('openChat'));
   form.append('from', uId);
   form.append('to', toId);
   form.append('cont_type', 'img');
