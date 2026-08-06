@@ -12,3 +12,4 @@ CA4.md
 /playwright/.cache/
 /coverage-report/
 /pages-dist/
+/src/tmp/
