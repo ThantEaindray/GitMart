@@ -1,4 +1,10 @@
 const model = require('../models/chats.model.js');
+// Required lazily (inside the functions that use it, not here at module load
+// time) because server.js requires app.js right back — app.js -> this
+// router -> this controller -> server.js -> app.js. Requiring it up front
+// crashes anything that loads app.js before server.js has run (every
+// integration test does exactly that), since app.js's module.exports is
+// still incomplete partway through its own require chain.
 
 module.exports.loadChats = (req, res, next) => {
   const data = {
@@ -64,6 +70,7 @@ module.exports.formatList = (req, res, _next) => {
   for (let x = 0; x < chatIds.length; x++) {
     //so we wanna create a new object
     let data = {
+      toId: res.locals.toLoad[x],
       chat: chatIds[x],
       //pfp: namesicons[x][0].icon,
       //uncomment the pfp part when we add support for that (next sprint probably)
@@ -132,17 +139,18 @@ module.exports.loadMessages = (req, res, _next) => {
   model.loadMessages(data, callback);
 };
 
-module.exports.sendText = (req, res, _next) => {
+module.exports.uploadCont = (req, res, _next) => {
   let data = req.body;
   const callback = (err, _results, _fields) => {
     if (err) {
       console.error('problem sending text', err);
       return res.status(500).json(err);
     }
-    //we dont really even need to return anything for this one the ws will do the rest
+    //we call the ws directly from here now idk why but its gotta be done
+    require('../server.js').send(data);
     res.status(201).json({});
   };
-  model.sendText(data, callback);
+  model.uploadCont(data, callback);
 };
 
 module.exports.hasChat = (req, res, next) => {

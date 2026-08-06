@@ -14,7 +14,7 @@ router.get(
 );
 router.get('/viewChat/:id', chatController.loadMessages);
 router.post('/new', jwt.verifyToken, chatController.hasChat, chatController.newChat);
-router.post('/send', chatController.sendText);
+router.post('/send', chatController.uploadCont);
 //router.post("/sendImg", jwt.verifyToken, chatController.chatExists, chatController.writeImg, chatController.sendMessage)
 //router.put("/{id}", jwt.verifyToken, chatController.chatExists, chatController.closeChat)
 //for saftey reasons wed want the chats to remain on the servers permanantly (prevent scams & abuse etc.)

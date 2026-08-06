@@ -27,6 +27,7 @@ const reservationRouter = require('./routers/Reservation.router');
 
 const chatrouter = require('./routers/chats.router');
 const notificationRouter = require('./routers/Notification.router');
+const imagerouter = require('./routers/image.router');
 
 const app = express();
 
@@ -77,6 +78,7 @@ app.use('/api', reviewRouter);
 app.use('/api', reservationRouter);
 app.use('/api/chats', chatrouter);
 app.use('/api/notifications', notificationRouter);
+app.use('/api/images', imagerouter);
 
 // 404 handler — if no route above matched the request,
 // create a 404 error and pass it to the error handler below.

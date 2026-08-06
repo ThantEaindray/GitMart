@@ -3,16 +3,16 @@ function loadChat(data) {
   document.getElementById('messages').innerHTML = '';
   data.forEach(function (e) {
     var side = e.sender_id == uId ? 'sent' : 'received';
-    if (e.textcontent !== undefined) {
+    if (e.cont_type == 'txt') {
       document.getElementById('messages').innerHTML += `
         <div class="msg ${side}">
-          <span class="msg-bubble">${e.textcontent}</span>
+          <span class="msg-bubble">${e.cont}</span>
         </div>
       `;
     } else {
       document.getElementById('messages').innerHTML += `
         <div class="msg ${side}">
-          <img class="msg-img" src="${e.imagecontent}" />
+          <img class="msg-img" src="${e.cont}" />
         </div>
       `;
     }
@@ -21,10 +21,12 @@ function loadChat(data) {
   el.scrollTop = el.scrollHeight;
 }
 
-function viewChat(cId) {
+function viewChat(cId, wUsr) {
   //ok so we need to get the stuff from one specific chat now
   // so the chat id will be pulled from the request in the function and then we get the users id from inside of the thing itself
   //we also wanna pass the chat id into the localStorage for future use
+  // also the id of the user were chatting with
+  localStorage.setItem('with', wUsr);
   localStorage.setItem('openChat', cId);
   document.getElementById('chatwith').innerHTML = `<h2>Now Chatting</h2>`;
   fetchMethod(
@@ -46,7 +48,7 @@ function renderChats(results) {
   //in a perfect world itd be async but time
   results.forEach(function (e) {
     document.getElementById('chats').innerHTML += `
-      <div class="chat-item" id="chat-${e.chat}" onclick="viewChat(${e.chat})">
+      <div class="chat-item" id="chat-${e.chat}" onclick="viewChat(${e.chat},${e.toId})">
         <i class="bi bi-person-circle chat-item-icon"></i>
         <span class="chat-item-name">${e.username}</span>
       </div>

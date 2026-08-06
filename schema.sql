@@ -210,8 +210,8 @@ CREATE TABLE chatcontent (
   id           SERIAL  PRIMARY KEY,
   chat_id      INTEGER REFERENCES chats(id),
   sender_id    INTEGER REFERENCES users(id),
-  textcontent  TEXT,
-  imagecontent TEXT,
+  cont_type    TEXT,
+  cont         TEXT,
   sentOn       DATE    DEFAULT CURRENT_DATE
 );
 
