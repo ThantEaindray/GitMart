@@ -47,6 +47,39 @@ describe('GET /somethings', () => {
 });
 
 // ─────────────────────────────────────────────────────────
+// GET /somethings/:id
+// ─────────────────────────────────────────────────────────
+describe('GET /somethings/:id', () => {
+  // Valid partition: existing id returns that record
+  test('should return 200 and the matching something', async () => {
+    const createRes = await request(app).post('/somethings').send({ name: 'findme' });
+    const id = createRes.body.id;
+
+    const res = await request(app).get(`/somethings/${id}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(id);
+    expect(res.body.name).toBe('findme');
+  });
+
+  // Boundary: non-existent id – large id that doesn't match any row
+  test('should return 404 for non-existing id (boundary)', async () => {
+    const res = await request(app).get('/somethings/999999');
+
+    expect(res.status).toBe(404);
+    expect(res.body).toHaveProperty('message');
+  });
+
+  // Invalid partition: non-numeric id – the DB itself rejects the cast
+  test('should return 500 for a non-numeric id', async () => {
+    const res = await request(app).get('/somethings/not-a-number');
+
+    expect(res.status).toBe(500);
+    expect(res.body).toHaveProperty('message');
+  });
+});
+
+// ─────────────────────────────────────────────────────────
 // POST /somethings
 // ─────────────────────────────────────────────────────────
 describe('POST /somethings', () => {
@@ -67,6 +100,23 @@ describe('POST /somethings', () => {
 
     expect(res.body).toHaveLength(1);
     expect(res.body[0].name).toBe('milk');
+  });
+
+  // Invalid partition: missing name fails the controller's own validation
+  test('should return 400 when name is missing', async () => {
+    const res = await request(app).post('/somethings').send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('message');
+  });
+
+  // Invalid partition: name explicitly null passes the undefined check but
+  // still violates the column's NOT NULL constraint at the DB level
+  test('should return 500 when name is null', async () => {
+    const res = await request(app).post('/somethings').send({ name: null });
+
+    expect(res.status).toBe(500);
+    expect(res.body).toHaveProperty('message');
   });
 });
 
@@ -105,6 +155,25 @@ describe('PUT /somethings/:id', () => {
     const res = await request(app).put('/somethings/999999').send({ name: 'ghost' });
 
     expect(res.status).toBe(404);
+    expect(res.body).toHaveProperty('message');
+  });
+
+  // Invalid partition: missing name fails the controller's own validation
+  test('should return 400 when name is missing', async () => {
+    const createRes = await request(app).post('/somethings').send({ name: 'needs-name' });
+    const id = createRes.body.id;
+
+    const res = await request(app).put(`/somethings/${id}`).send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('message');
+  });
+
+  // Invalid partition: non-numeric id – the DB itself rejects the cast
+  test('should return 500 for a non-numeric id', async () => {
+    const res = await request(app).put('/somethings/not-a-number').send({ name: 'x' });
+
+    expect(res.status).toBe(500);
     expect(res.body).toHaveProperty('message');
   });
 });
@@ -157,6 +226,14 @@ describe('DELETE /somethings/:id', () => {
     const res = await request(app).delete('/somethings/999999');
 
     expect(res.status).toBe(404);
+    expect(res.body).toHaveProperty('message');
+  });
+
+  // Invalid partition: non-numeric id – the DB itself rejects the cast
+  test('should return 500 for a non-numeric id', async () => {
+    const res = await request(app).delete('/somethings/not-a-number');
+
+    expect(res.status).toBe(500);
     expect(res.body).toHaveProperty('message');
   });
 });
