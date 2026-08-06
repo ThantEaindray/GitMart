@@ -80,6 +80,10 @@ function parseResponse(response) {
 }
 
 let selectedListingImageUrl = null;
+// The SCP upload takes several seconds — without this, submitting the form
+// while it's still in flight creates the listing with imageUrl: null before
+// selectedListingImageUrl is ever set.
+let isUploadingCoverImage = false;
 let wishlistedIds = new Set();
 
 function getCurrentUserId() {
@@ -873,6 +877,12 @@ function handleCreateListingSubmit(event) {
     return;
   }
 
+  if (isUploadingCoverImage) {
+    showToast('Please wait for the photo to finish uploading.');
+
+    return;
+  }
+
   const title = document.getElementById('title').value.trim();
 
   const description = document.getElementById('description').value.trim();
@@ -1104,6 +1114,8 @@ function confirmCoverImage() {
   const form = new FormData();
   form.append('cont', imageInput.files[0]);
 
+  isUploadingCoverImage = true;
+
   if (confirmBtn) {
     confirmBtn.disabled = true;
     confirmBtn.textContent = 'Uploading…';
@@ -1137,6 +1149,8 @@ function confirmCoverImage() {
       showToast('Could not upload the photo, please try again.');
     })
     .finally(function () {
+      isUploadingCoverImage = false;
+
       if (confirmBtn) {
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'Yes, Use Image';
