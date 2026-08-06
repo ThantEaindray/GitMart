@@ -1,6 +1,14 @@
 let token = localStorage.getItem('token');
-let openChat = localStorage.getItem('openChat');
-let webSocket = new WebSocket(`ws://${location.hostname}:3001`);
+// Production is served over HTTPS, and browsers refuse to open a plain ws://
+// connection from an https:// page (mixed content) — it throws synchronously
+// instead of just failing to connect. Caddy terminates TLS and routes
+// WebSocket upgrade requests to the ws server internally (see Caddyfile), on
+// the same domain/port as the page itself, so the secure case connects with
+// no explicit port at all. Local dev has no Caddy in front, so it still
+// talks to the ws server directly on WS_PORT.
+let webSocket = new WebSocket(
+  location.protocol === 'https:' ? `wss://${location.hostname}` : `ws://${location.hostname}:3001`,
+);
 console.log(webSocket.url);
 localStorage.setItem('webSocket', webSocket);
 
@@ -29,7 +37,10 @@ webSocket.onmessage = (event) => {
       //we need to do basically what we did on the history loading part should be easy enough
       var side = data.from == uId ? 'sent' : 'received';
       //so now that we have the positioning we wanna check that its sent to the intended chat
-      if (data.chat == openChat) {
+      // read fresh each time rather than a variable set once at page load — viewChat()
+      // updates this in localStorage without reloading the page when you switch chats,
+      // so a stale copy here would miss messages for whichever chat is actually open.
+      if (data.chat == localStorage.getItem('openChat')) {
         //the part which is gonna call the image functions
         if (data.cont_type === 'img') {
           document.getElementById('messages').innerHTML += `
@@ -57,7 +68,10 @@ webSocket.onmessage = (event) => {
 function sendTxt(content) {
   let cont = {
     type: 'message',
-    chat: openChat,
+    // same live-read reasoning as the onmessage handler above — a stale
+    // value here would attribute the message to whichever chat was open
+    // when the page first loaded, not the one actually on screen.
+    chat: localStorage.getItem('openChat'),
     from: uId,
     to: localStorage.getItem('with'),
     cont_type: 'txt',

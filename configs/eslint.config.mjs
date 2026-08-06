@@ -138,7 +138,6 @@ export default [
         CURRENCIES: 'writable',
         uId: 'writable',
         token: 'writable',
-        openChat: 'writable',
         getProductById: 'writable',
         getProductsByCategory: 'writable',
         showToast: 'writable',
