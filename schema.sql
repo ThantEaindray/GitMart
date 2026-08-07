@@ -163,7 +163,8 @@ CREATE TABLE reservation_requests (
         'PENDING',
         'ACCEPTED',
         'REJECTED',
-        'CANCELLED'
+        'CANCELLED',
+        'EXPIRED'
       )
     ),
 

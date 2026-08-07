@@ -1100,3 +1100,85 @@ describe('POST /api/orders - listing reservation guard', () => {
     expect(response.status).toBe(201);
   });
 });
+
+// ── Reservation.model.releaseExpiredReservations (against a real database) ──
+// Unit tests mock the query results; this exercises the actual SQL — the
+// interval arithmetic and JOIN conditions a mock can't catch a mistake in.
+
+describe('Reservation.model - releaseExpiredReservations', () => {
+  const Reservation = require('../../src/models/Reservation.model');
+
+  test('releases a reservation whose hold has actually expired', async () => {
+    const listing = await insertListing({ status: 'RESERVED' });
+    const reservation = await insertReservationRequest({
+      listingId: listing.id,
+      requesterId: requester.id,
+      status: 'ACCEPTED',
+    });
+
+    // Backdate as if this was accepted 25 hours ago — past the 24h hold used below.
+    await pool.query(
+      `UPDATE listings SET status_updated_on = NOW() - INTERVAL '25 hours' WHERE id = $1`,
+      [listing.id],
+    );
+
+    const expired = await Reservation.releaseExpiredReservations(24);
+
+    expect(expired).toHaveLength(1);
+    expect(expired[0]).toMatchObject({
+      listing_id: listing.id,
+      reservation_id: reservation.id,
+      requester_id: requester.id,
+      owner_id: owner.id,
+    });
+
+    const listingRow = await pool.query('SELECT status FROM listings WHERE id = $1', [listing.id]);
+    expect(listingRow.rows[0].status).toBe('AVAILABLE');
+
+    const reservationRow = await pool.query(
+      'SELECT status FROM reservation_requests WHERE id = $1',
+      [reservation.id],
+    );
+    expect(reservationRow.rows[0].status).toBe('EXPIRED');
+  });
+
+  test('does not release a reservation still within the hold window', async () => {
+    const listing = await insertListing({ status: 'RESERVED' });
+    await insertReservationRequest({
+      listingId: listing.id,
+      requesterId: requester.id,
+      status: 'ACCEPTED',
+    });
+
+    // Only 1 hour old — well inside a 24h hold.
+    await pool.query(
+      `UPDATE listings SET status_updated_on = NOW() - INTERVAL '1 hour' WHERE id = $1`,
+      [listing.id],
+    );
+
+    const expired = await Reservation.releaseExpiredReservations(24);
+
+    expect(expired).toHaveLength(0);
+
+    const listingRow = await pool.query('SELECT status FROM listings WHERE id = $1', [listing.id]);
+    expect(listingRow.rows[0].status).toBe('RESERVED');
+  });
+
+  test('does not touch a PENDING reservation on a listing that never got accepted', async () => {
+    const listing = await insertListing({ status: 'AVAILABLE' });
+    await insertReservationRequest({
+      listingId: listing.id,
+      requesterId: requester.id,
+      status: 'PENDING',
+    });
+
+    await pool.query(
+      `UPDATE listings SET status_updated_on = NOW() - INTERVAL '48 hours' WHERE id = $1`,
+      [listing.id],
+    );
+
+    const expired = await Reservation.releaseExpiredReservations(24);
+
+    expect(expired).toHaveLength(0);
+  });
+});
