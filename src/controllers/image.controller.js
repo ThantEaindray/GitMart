@@ -1,9 +1,12 @@
 const model = require('../models/image.model.js');
 const { Client } = require('node-scp');
 const fs = require('fs');
-// Required lazily inside sendWS below, not here at module load time — see
-// the matching note in chat.controller.js for why requiring it up front
-// crashes anything that loads app.js before server.js has run.
+const { notify } = require('../utils/notifier');
+// server.js is required lazily inside sendWS below, not here at module load
+// time — see the matching note in chat.controller.js for why requiring it
+// up front crashes anything that loads app.js before server.js has run.
+// notifier.js doesn't touch server.js anywhere in its own require chain, so
+// it's safe to import normally up here.
 //set up options for the scp process
 //so firstly we wanna download the image to the local temp file first i think
 // and then pass it on to the thing
@@ -87,6 +90,10 @@ module.exports.sendWS = (req, res, next) => {
   };
 
   require('../server.js').send(data);
+  // Same as chat.controller.js's uploadCont — this is for when the
+  // recipient doesn't have the chat open at all, so the live WS push above
+  // never reaches them.
+  notify(data.to, 'message', 'New message', 'You have a new chat message.');
   next();
 };
 

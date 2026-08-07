@@ -1,10 +1,13 @@
 const model = require('../models/chats.model.js');
-// Required lazily (inside the functions that use it, not here at module load
-// time) because server.js requires app.js right back — app.js -> this
-// router -> this controller -> server.js -> app.js. Requiring it up front
-// crashes anything that loads app.js before server.js has run (every
+const { notify } = require('../utils/notifier');
+// server.js is required lazily (inside the functions that use it, not here
+// at module load time) because server.js requires app.js right back — app.js
+// -> this router -> this controller -> server.js -> app.js. Requiring it up
+// front crashes anything that loads app.js before server.js has run (every
 // integration test does exactly that), since app.js's module.exports is
-// still incomplete partway through its own require chain.
+// still incomplete partway through its own require chain. notifier.js
+// doesn't touch server.js anywhere in its own require chain, so it's safe
+// to import normally up here.
 
 module.exports.loadChats = (req, res, next) => {
   const data = {
@@ -148,6 +151,11 @@ module.exports.uploadCont = (req, res, _next) => {
     }
     //we call the ws directly from here now idk why but its gotta be done
     require('../server.js').send(data);
+    // Best-effort: the recipient's own open WS connection (if any) already
+    // got the message above. This is for when they don't have the chat open
+    // at all — same as every other notify() call, a failure here must never
+    // fail the send itself.
+    notify(data.to, 'message', 'New message', 'You have a new chat message.');
     res.status(201).json({});
   };
   model.uploadCont(data, callback);
