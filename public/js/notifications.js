@@ -55,7 +55,42 @@ function makeMarkReadHandler(n, itemEl) {
   return onItemClick;
 }
 
+// "Go to this page, or just leave it marked as read" — two separate
+// choices, not one click doing both. Clicking the row (or its own View
+// link) only ever marks read; the View link additionally navigates, via
+// its own handler below, rather than the row hijacking every click into a
+// navigation the moment a notification happens to have a link.
+function makeViewLinkHandler(n, itemEl) {
+  function onViewClick(event) {
+    // Let the anchor's href do the navigating; this only needs to also
+    // mark the notification read on the way out, and stop the click from
+    // separately bubbling to the row's own (redundant) mark-read handler.
+    event.stopPropagation();
+    if (!n.isRead) {
+      authFetch('/api/notifications/' + n.id + '/read', { method: 'PATCH' })
+        .then(function handleMarkRead() {
+          onMarkReadSuccess(n, itemEl);
+        })
+        .catch(function noop() {});
+    }
+  }
+  return onViewClick;
+}
+
 // ── Build one notification element ────────────────────────────────────────
+
+// title/message are server-built strings that embed user-controlled text
+// (usernames, listing titles) — e.g. "bob requested to reserve...". Building
+// this via innerHTML string concatenation, as the rest of this function
+// still does for its static (non-user-controlled) parts, would let a
+// crafted username or listing title execute as HTML in every viewer's
+// notification list. textContent assignment keeps it inert.
+function buildNotifTextNode(className, text) {
+  const el = document.createElement('div');
+  el.className = className;
+  el.textContent = text;
+  return el;
+}
 
 function buildNotifItem(n) {
   const item = document.createElement('div');
@@ -65,18 +100,24 @@ function buildNotifItem(n) {
     '<div class="notif-icon"><i class="bi ' +
     n.icon +
     '"></i></div>' +
-    '<div class="notif-body">' +
-    '<div class="notif-title">' +
-    n.title +
-    '</div>' +
-    '<div class="notif-message">' +
-    n.message +
-    '</div>' +
-    '</div>' +
+    '<div class="notif-body"></div>' +
     '<div class="notif-time">' +
     relativeTime(n.createdAt) +
     '</div>' +
     '<div class="notif-dot"></div>';
+
+  const body = item.querySelector('.notif-body');
+  body.appendChild(buildNotifTextNode('notif-title', n.title));
+  body.appendChild(buildNotifTextNode('notif-message', n.message));
+
+  if (n.link) {
+    const viewLink = document.createElement('a');
+    viewLink.className = 'notif-view-link';
+    viewLink.href = n.link;
+    viewLink.textContent = 'View';
+    viewLink.addEventListener('click', makeViewLinkHandler(n, item));
+    body.appendChild(viewLink);
+  }
 
   item.addEventListener('click', makeMarkReadHandler(n, item));
   return item;

@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     (stat, data) => {
       if (stat == 200) {
         renderChats(data);
+        openChatFromQueryParams();
       } else if (stat == 401) {
         window.location.href = './login.html';
         console.error('problem loading chat list');
@@ -85,3 +86,17 @@ document.addEventListener('DOMContentLoaded', () => {
   );
   //and now we wanna make the part where it loads a specific chat based on what someone presses
 });
+
+// A "new message" notification links here as
+// chats.html?chat=<id>&with=<userId> so clicking it opens straight into that
+// conversation, instead of just the chat list — viewChat() needs both to
+// render the right chat (it doesn't look the other participant up itself).
+function openChatFromQueryParams() {
+  const params = new URLSearchParams(window.location.search);
+  const chatId = params.get('chat');
+  const withId = params.get('with');
+
+  if (!chatId || !withId) return;
+
+  viewChat(Number(chatId), Number(withId));
+}

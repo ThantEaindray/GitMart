@@ -185,7 +185,13 @@ describe('image.controller - sendWS', () => {
 
     controller.sendWS(req, res, jest.fn());
 
-    expect(notify).toHaveBeenCalledWith(3, 'message', 'New message', expect.any(String));
+    expect(notify).toHaveBeenCalledWith(
+      3,
+      'message',
+      'New message',
+      expect.any(String),
+      '/html/chats.html?chat=4&with=9',
+    );
   });
 });
 

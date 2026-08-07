@@ -47,12 +47,14 @@ describe('reservationExpirySweep - sweepOnce', () => {
       'reservation_status',
       expect.any(String),
       expect.stringContaining('Vintage Watch'),
+      '/html/listing.html?id=5',
     );
     expect(notify).toHaveBeenCalledWith(
       10,
       'reservation_status',
       expect.any(String),
       expect.stringContaining('Vintage Watch'),
+      '/html/listing.html?id=5',
     );
   });
 

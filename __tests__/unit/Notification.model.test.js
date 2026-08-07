@@ -32,11 +32,23 @@ function flat(sql) {
 describe('Notification.model - create', () => {
   afterEach(() => jest.clearAllMocks());
 
-  test('binds user, type, title and message in order', (done) => {
+  test('binds user, type, title, message and link in order', (done) => {
     mockQuery(null, [{ id: 1 }]);
 
-    model.create({ userId: 7, type: 'reservation', title: 'T', message: 'M' }, () => {
-      expect(lastQuery().values).toEqual([7, 'reservation', 'T', 'M']);
+    model.create(
+      { userId: 7, type: 'reservation', title: 'T', message: 'M', link: '/html/listing.html?id=5' },
+      () => {
+        expect(lastQuery().values).toEqual([7, 'reservation', 'T', 'M', '/html/listing.html?id=5']);
+        done();
+      },
+    );
+  });
+
+  test('binds a null link when none is given', (done) => {
+    mockQuery(null, [{ id: 1 }]);
+
+    model.create({ userId: 7, type: 'system', title: 'T', message: 'M' }, () => {
+      expect(lastQuery().values).toEqual([7, 'system', 'T', 'M', null]);
       done();
     });
   });

@@ -361,6 +361,29 @@ describe('Reservation API', () => {
       });
     });
 
+    test('notifies the owner with a link back to the listing', async () => {
+      const listing = await insertListing();
+
+      const response = await request(app)
+        .post(`/api/listings/${listing.id}/reservations`)
+        .set('Authorization', `Bearer ${requesterToken}`)
+        .send({ message: 'Is this still available?' });
+
+      expect(response.status).toBe(201);
+
+      const stored = await pool.query(
+        `SELECT type, title, link FROM notifications WHERE user_id = $1`,
+        [owner.id],
+      );
+
+      expect(stored.rows).toHaveLength(1);
+      expect(stored.rows[0]).toMatchObject({
+        type: 'reservation',
+        title: 'New reservation request',
+        link: `/html/listing.html?id=${listing.id}`,
+      });
+    });
+
     test('returns 409 when the requester already has a pending request for the listing', async () => {
       const listing = await insertListing();
 

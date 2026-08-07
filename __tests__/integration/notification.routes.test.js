@@ -36,14 +36,20 @@ async function insertUser(username, email) {
   return result.rows[0];
 }
 
-async function insertNotification({ userId, type = 'system', title = 'T', message = 'M' }) {
+async function insertNotification({
+  userId,
+  type = 'system',
+  title = 'T',
+  message = 'M',
+  link = null,
+}) {
   const result = await pool.query(
     `
-      INSERT INTO notifications (user_id, type, title, message)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id, user_id, type, title, message, is_read, created_on
+      INSERT INTO notifications (user_id, type, title, message, link)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id, user_id, type, title, message, link, is_read, created_on
     `,
-    [userId, type, title, message],
+    [userId, type, title, message, link],
   );
   return result.rows[0];
 }
@@ -108,6 +114,26 @@ describe('Notification API', () => {
         }),
       );
       expect(typeof response.body[0].createdAt).toBe('string');
+    });
+
+    test('returns the link when the notification has one', async () => {
+      await insertNotification({ userId: owner.id, link: '/html/listing.html?id=5' });
+
+      const response = await request(app)
+        .get('/api/notifications')
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.body[0].link).toBe('/html/listing.html?id=5');
+    });
+
+    test('returns null for a notification with no link', async () => {
+      await insertNotification({ userId: owner.id });
+
+      const response = await request(app)
+        .get('/api/notifications')
+        .set('Authorization', `Bearer ${ownerToken}`);
+
+      expect(response.body[0].link).toBeNull();
     });
 
     test('never returns another user notifications', async () => {
