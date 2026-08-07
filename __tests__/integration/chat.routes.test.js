@@ -7,6 +7,14 @@ const pool = require('../../src/models/db');
 
 const JWT_ALGORITHM = process.env.JWT_ALGORITHM || 'HS256';
 
+// notify() is deliberately fire-and-forget (a notification failure must never
+// block the chat message it's attached to), so its INSERT can still be in
+// flight when the HTTP response comes back. Give it a moment before asserting
+// on the notifications table, or this races and fails intermittently.
+function flush(ms = 300) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // Declared once and reused for setup and cleanup so the two cannot drift.
 // Scoped deletes rather than TRUNCATE, which deadlocks against the other suites.
 const SUITE_USERNAMES = ['chat_alice', 'chat_bob', 'chat_carol'];
@@ -281,6 +289,8 @@ describe('Chat API', () => {
         .send({ chat: chat.id, from: alice.id, to: bob.id, cont_type: 'txt', cont: 'Hello Bob' });
 
       expect(response.status).toBe(201);
+
+      await flush();
 
       const stored = await pool.query(
         `SELECT type, title, message FROM notifications WHERE user_id = $1`,

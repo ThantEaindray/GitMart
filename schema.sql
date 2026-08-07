@@ -239,6 +239,7 @@ CREATE TABLE notifications (
   type       TEXT      NOT NULL,
   title      TEXT      NOT NULL,
   message    TEXT      NOT NULL,
+  link       TEXT,
   is_read    BOOLEAN   NOT NULL DEFAULT false,
   created_on TIMESTAMP NOT NULL DEFAULT NOW(),
 

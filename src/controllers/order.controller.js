@@ -145,6 +145,7 @@ module.exports.createOrder = async (req, res, next) => {
       'order',
       'Order placed',
       'Your order #' + order.id + ' has been placed and is pending confirmation.',
+      '/html/orders.html',
     );
     res.locals.statusCode = 201;
     res.locals.results = order;
@@ -213,6 +214,7 @@ module.exports.updateOrderStatus = async (req, res, next) => {
         'order_status',
         'Order ' + status.toLowerCase(),
         'Order #' + updatedOrder.id + ' status updated to ' + status + '.',
+        '/html/orders.html',
       );
     }
 

@@ -10,20 +10,22 @@ module.exports.create = (data, callback) => {
       user_id,
       type,
       title,
-      message
+      message,
+      link
     )
-    VALUES ($1, $2, $3, $4)
+    VALUES ($1, $2, $3, $4, $5)
     RETURNING
       id,
       user_id,
       type,
       title,
       message,
+      link,
       is_read,
       created_on
   `;
 
-  const VALUES = [data.userId, data.type, data.title, data.message];
+  const VALUES = [data.userId, data.type, data.title, data.message, data.link || null];
 
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
@@ -36,6 +38,7 @@ module.exports.getByUser = (data, callback) => {
       type,
       title,
       message,
+      link,
       is_read,
       created_on
     FROM notifications
@@ -77,6 +80,7 @@ module.exports.markRead = (data, callback) => {
       type,
       title,
       message,
+      link,
       is_read,
       created_on
   `;

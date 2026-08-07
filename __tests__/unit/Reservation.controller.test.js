@@ -1508,6 +1508,7 @@ describe('Reservation.controller', () => {
         'reservation',
         'New reservation request',
         'buyer_bob requested to reserve "Vintage Watch".',
+        '/html/listing.html?id=5',
       );
     });
 
@@ -1535,6 +1536,7 @@ describe('Reservation.controller', () => {
         'reservation',
         'New reservation request',
         'A buyer requested to reserve "Vintage Watch".',
+        '/html/listing.html?id=5',
       );
     });
 
@@ -1577,6 +1579,7 @@ describe('Reservation.controller', () => {
         'reservation_status',
         'Reservation request accepted',
         'Your reservation request for "Vintage Watch" was accepted. You can now add it to your cart.',
+        '/html/listing.html?id=5',
       );
     });
 
@@ -1623,6 +1626,7 @@ describe('Reservation.controller', () => {
         'reservation_status',
         'Reservation request declined',
         'Your reservation request for "Vintage Watch" was declined.',
+        '/html/listing.html?id=5',
       );
     });
 

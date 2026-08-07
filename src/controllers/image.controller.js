@@ -93,7 +93,13 @@ module.exports.sendWS = (req, res, next) => {
   // Same as chat.controller.js's uploadCont — this is for when the
   // recipient doesn't have the chat open at all, so the live WS push above
   // never reaches them.
-  notify(data.to, 'message', 'New message', 'You have a new chat message.');
+  notify(
+    data.to,
+    'message',
+    'New message',
+    'You have a new chat message.',
+    `/html/chats.html?chat=${data.chat}&with=${data.from}`,
+  );
   next();
 };
 

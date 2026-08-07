@@ -30,6 +30,7 @@ function toClientShape(row) {
     icon: TYPE_ICONS[row.type] || 'bi-bell',
     title: row.title,
     message: row.message,
+    link: row.link || null,
     isRead: row.is_read,
     createdAt: new Date(row.created_on).toISOString(),
   };
@@ -42,10 +43,14 @@ module.exports.toClientShape = toClientShape;
 // notification is never lost just because the recipient has no tab open or the
 // mail provider is unreachable — those two are enhancements on top of a row
 // that is already safely stored.
-module.exports.notify = (userId, type, title, message) => {
+//
+// link is optional — a relative path (e.g. "/html/listing.html?id=12") the
+// notifications page navigates to on click. Omit it (or pass null) for
+// notifications with nowhere sensible to send someone, like 'system'.
+module.exports.notify = (userId, type, title, message, link = null) => {
   if (!userId) return;
 
-  const data = { userId, type, title, message };
+  const data = { userId, type, title, message, link };
 
   const callback = (error, result) => {
     if (error) {

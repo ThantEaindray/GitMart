@@ -34,12 +34,14 @@ async function sweepOnce() {
         'reservation_status',
         'Reservation expired',
         `Your reservation on "${row.title}" expired after ${HOLD_HOURS}h without checkout — it's available to others again.`,
+        `/html/listing.html?id=${row.listing_id}`,
       );
       notify(
         row.owner_id,
         'reservation_status',
         'Reservation released',
         `The accepted reservation on "${row.title}" expired without checkout. It's back to AVAILABLE.`,
+        `/html/listing.html?id=${row.listing_id}`,
       );
     });
   } catch (error) {

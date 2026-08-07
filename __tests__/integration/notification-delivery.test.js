@@ -263,6 +263,32 @@ describe('notifier.notify', () => {
     sseManager.unregister(optIn.id);
   });
 
+  test('persists and pushes the link when one is given', async () => {
+    const stream = fakeStreamFor();
+    sseManager.register(optIn.id, stream);
+
+    notifier.notify(optIn.id, 'reservation', 'New request', 'Body text', '/html/listing.html?id=5');
+    await flush(300);
+
+    const stored = await pool.query('SELECT link FROM notifications WHERE user_id = $1', [
+      optIn.id,
+    ]);
+    expect(stored.rows[0].link).toBe('/html/listing.html?id=5');
+    expect(stream.written[0]).toContain('/html/listing.html?id=5');
+
+    sseManager.unregister(optIn.id);
+  });
+
+  test('persists a null link when none is given', async () => {
+    notifier.notify(optIn.id, 'system', 'No link', 'Body text');
+    await flush(300);
+
+    const stored = await pool.query('SELECT link FROM notifications WHERE user_id = $1', [
+      optIn.id,
+    ]);
+    expect(stored.rows[0].link).toBeNull();
+  });
+
   test('still persists when the recipient has no open stream', async () => {
     notifier.notify(optIn.id, 'system', 'Offline', 'Body text');
     await flush(300);

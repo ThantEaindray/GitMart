@@ -133,6 +133,7 @@ module.exports.createReservationRequest = (req, res) => {
       'reservation',
       'New reservation request',
       `${requesterName} requested to reserve "${listing.title}".`,
+      `/html/listing.html?id=${listing.id}`,
     );
 
     return res.status(201).json({
@@ -321,6 +322,7 @@ module.exports.rejectReservationRequest = (req, res) => {
       'reservation_status',
       'Reservation request declined',
       `Your reservation request for "${reservation.title}" was declined.`,
+      `/html/listing.html?id=${reservation.listing_id}`,
     );
 
     return res.status(200).json({
@@ -376,6 +378,7 @@ module.exports.acceptReservationRequest = async (req, res) => {
     'reservation_status',
     'Reservation request accepted',
     `Your reservation request for "${result.listingTitle}" was accepted. You can now add it to your cart.`,
+    `/html/listing.html?id=${result.reservation.listing_id}`,
   );
 
   return res.status(200).json({

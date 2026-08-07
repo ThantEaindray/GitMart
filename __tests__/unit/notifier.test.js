@@ -36,6 +36,7 @@ const ROW = {
   type: 'reservation',
   title: 'New reservation request',
   message: 'bob requested to reserve "Watch".',
+  link: '/html/listing.html?id=5',
   is_read: false,
   created_on: '2026-08-02T10:00:00.000Z',
 };
@@ -55,9 +56,15 @@ describe('notifier.toClientShape', () => {
       icon: 'bi-calendar-check',
       title: 'New reservation request',
       message: 'bob requested to reserve "Watch".',
+      link: '/html/listing.html?id=5',
       isRead: false,
       createdAt: '2026-08-02T10:00:00.000Z',
     });
+  });
+
+  test('maps a missing link to null rather than undefined', () => {
+    const { link: _link, ...rowWithoutLink } = ROW;
+    expect(notifier.toClientShape(rowWithoutLink).link).toBeNull();
   });
 
   test('derives the icon from the type rather than reading a stored column', () => {
@@ -89,7 +96,19 @@ describe('notifier.notify', () => {
         type: 'reservation',
         title: 'New reservation request',
         message: 'bob wants your Watch.',
+        link: null,
       },
+      expect.any(Function),
+    );
+  });
+
+  test('passes a link through to the model when given one', () => {
+    stubCreateSuccess();
+
+    notifier.notify(7, 'reservation', 'T', 'M', '/html/listing.html?id=5');
+
+    expect(model.create).toHaveBeenCalledWith(
+      expect.objectContaining({ link: '/html/listing.html?id=5' }),
       expect.any(Function),
     );
   });

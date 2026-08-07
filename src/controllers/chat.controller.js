@@ -155,7 +155,13 @@ module.exports.uploadCont = (req, res, _next) => {
     // got the message above. This is for when they don't have the chat open
     // at all — same as every other notify() call, a failure here must never
     // fail the send itself.
-    notify(data.to, 'message', 'New message', 'You have a new chat message.');
+    notify(
+      data.to,
+      'message',
+      'New message',
+      'You have a new chat message.',
+      `/html/chats.html?chat=${data.chat}&with=${data.from}`,
+    );
     res.status(201).json({});
   };
   model.uploadCont(data, callback);
