@@ -371,6 +371,37 @@
   align-items: stretch;
 }
 
+.reservation-request-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.reservation-message-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Jost', sans-serif;
+  font-size: 0.85em;
+  letter-spacing: 0.02em;
+  padding: 10px 14px;
+  outline: none;
+  resize: vertical;
+  min-height: 44px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.reservation-message-input::placeholder {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.reservation-message-input:focus {
+  border-color: var(--accent);
+}
+
 .owner-lifecycle-controls .btn-primary,
 .owner-lifecycle-controls .btn-outline {
   flex: 1 1 160px;
