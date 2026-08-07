@@ -106,6 +106,16 @@ module.exports.getListingsByOwner = (data, callback) => {
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
+module.exports.getListingsByIds = (data, callback) => {
+  const SQLSTATEMENT = `
+    SELECT id, owner_id, title
+    FROM listings
+    WHERE id = ANY($1::integer[])
+  `;
+  const VALUES = [data.ids];
+  pool.query(SQLSTATEMENT, VALUES, callback);
+};
+
 module.exports.updateListing = (data, callback) => {
   const SQLSTATEMENT = `
     UPDATE listings
