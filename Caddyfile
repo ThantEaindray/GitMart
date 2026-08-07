@@ -5,12 +5,25 @@
 # WebSocket upgrade requests go to the raw `ws` server (WS_PORT, see
 # server.js); everything else goes to the main Express app. Both live behind
 # the same domain so the browser only ever talks to one origin.
+#
+# Everything below is wrapped in `handle`/`handle_path` rather than bare
+# `reverse_proxy` directives. Caddy does NOT evaluate a site block in file
+# order by default — it auto-sorts directives by type according to its own
+# fixed priority list, and a bare `reverse_proxy` sorts ahead of
+# `handle_path` regardless of where it's written. That silently swallowed
+# every request (including /imgs/*) into the catch-all app:3000 proxy the
+# first time this was written with a trailing bare `reverse_proxy`.
+# `handle`/`handle_path` blocks are mutually exclusive and evaluated in the
+# literal order they appear, which is the only way to guarantee the
+# catch-all really does run last.
 kab1oiee.com, www.kab1oiee.com {
 	@websockets {
 		header Connection *Upgrade*
 		header Upgrade websocket
 	}
-	reverse_proxy @websockets app:3001
+	handle @websockets {
+		reverse_proxy app:3001
+	}
 
 	# The uploaded-image host (SCP_IP) only serves plain HTTP. Proxying it
 	# under our own HTTPS origin means the browser never has to load an
@@ -22,5 +35,7 @@ kab1oiee.com, www.kab1oiee.com {
 		reverse_proxy 152.53.200.138:80
 	}
 
-	reverse_proxy app:3000
+	handle {
+		reverse_proxy app:3000
+	}
 }
