@@ -135,6 +135,7 @@ export default [
         fetchMethod: 'writable',
         formatPrice: 'writable',
         sendTxt: 'writable',
+        buildMessageElement: 'writable',
         CURRENCIES: 'writable',
         uId: 'writable',
         token: 'writable',

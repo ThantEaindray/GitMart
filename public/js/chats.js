@@ -1,24 +1,63 @@
 var uId = localStorage.getItem('loggedInUserId');
+
+// Chat text is free-typed by whoever sent it, so building the bubble via
+// innerHTML string concatenation (as this used to) would let a message
+// like "<img src=x onerror=...>" execute in the recipient's browser the
+// moment the chat loads. textContent keeps it inert.
+//
+// Chat images are served from a separately-uploaded SCP host (see
+// image.controller.js), and a live WS/notification push can reach the
+// recipient a beat before that file is actually readable there, so the
+// very first <img> load can 404 with nothing to retry it — which is what
+// "images only show up after a refresh" actually was: the refresh's own
+// request just happened to land later, once the file existed. Retrying a
+// few times with backoff turns that into "shows up a moment late" instead.
+const IMAGE_RETRY_DELAYS_MS = [500, 1000, 2000, 4000];
+
+function buildRetryingImage(src) {
+  const img = document.createElement('img');
+  img.className = 'msg-img';
+
+  let attempt = 0;
+  img.addEventListener('error', function onImageError() {
+    if (attempt >= IMAGE_RETRY_DELAYS_MS.length) return;
+    const delay = IMAGE_RETRY_DELAYS_MS[attempt];
+    attempt += 1;
+    setTimeout(function retryLoad() {
+      // A fresh query param, not a reassignment of the same src, since some
+      // browsers won't re-request a URL that just failed unless it changes.
+      img.src = src + (src.indexOf('?') === -1 ? '?' : '&') + 'retry=' + Date.now();
+    }, delay);
+  });
+
+  img.src = src;
+  return img;
+}
+
+function buildMessageElement(side, contType, cont) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'msg ' + side;
+
+  if (contType === 'txt') {
+    const bubble = document.createElement('span');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = cont;
+    wrapper.appendChild(bubble);
+  } else {
+    wrapper.appendChild(buildRetryingImage(cont));
+  }
+
+  return wrapper;
+}
+
 function loadChat(data) {
-  document.getElementById('messages').innerHTML = '';
+  const messages = document.getElementById('messages');
+  messages.innerHTML = '';
   data.forEach(function (e) {
     var side = e.sender_id == uId ? 'sent' : 'received';
-    if (e.cont_type == 'txt') {
-      document.getElementById('messages').innerHTML += `
-        <div class="msg ${side}">
-          <span class="msg-bubble">${e.cont}</span>
-        </div>
-      `;
-    } else {
-      document.getElementById('messages').innerHTML += `
-        <div class="msg ${side}">
-          <img class="msg-img" src="${e.cont}" />
-        </div>
-      `;
-    }
+    messages.appendChild(buildMessageElement(side, e.cont_type, e.cont));
   });
-  var el = document.getElementById('messages');
-  el.scrollTop = el.scrollHeight;
+  messages.scrollTop = messages.scrollHeight;
 }
 
 function viewChat(cId, wUsr) {

@@ -41,21 +41,12 @@ webSocket.onmessage = (event) => {
       // updates this in localStorage without reloading the page when you switch chats,
       // so a stale copy here would miss messages for whichever chat is actually open.
       if (data.chat == localStorage.getItem('openChat')) {
-        //the part which is gonna call the image functions
-        if (data.cont_type === 'img') {
-          document.getElementById('messages').innerHTML += `
-            <div class="msg ${side}">
-              <img class="msg-img" src="${data.cont}"/>
-            </div>
-          `;
-        } else {
-          //if cont type isnt image then it has to be text
-          document.getElementById('messages').innerHTML += `
-            <div class="msg ${side}">
-              <span class="msg-bubble">${data.cont}</span>
-            </div>
-          `;
-        }
+        // buildMessageElement (chats.js, loaded before this file) keeps this
+        // in sync with the history-load rendering path: same safe text
+        // handling, same image-retry behaviour.
+        document
+          .getElementById('messages')
+          .appendChild(buildMessageElement(side, data.cont_type, data.cont));
       } else {
         //for future use this is where we'll put the function that shows your unread chat messages
       }
