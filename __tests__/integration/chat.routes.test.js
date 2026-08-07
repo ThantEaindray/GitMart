@@ -272,6 +272,39 @@ describe('Chat API', () => {
 
       expect(response.status).toBe(500);
     });
+
+    test('notifies the recipient of the new message', async () => {
+      const chat = await insertChat(alice.id, bob.id);
+
+      const response = await request(app)
+        .post('/api/chats/send')
+        .send({ chat: chat.id, from: alice.id, to: bob.id, cont_type: 'txt', cont: 'Hello Bob' });
+
+      expect(response.status).toBe(201);
+
+      const stored = await pool.query(
+        `SELECT type, title, message FROM notifications WHERE user_id = $1`,
+        [bob.id],
+      );
+
+      expect(stored.rows).toHaveLength(1);
+      expect(stored.rows[0]).toMatchObject({ type: 'message', title: 'New message' });
+    });
+
+    test('does not notify anyone when the request has no recipient', async () => {
+      const chat = await insertChat(alice.id, bob.id);
+
+      await request(app)
+        .post('/api/chats/send')
+        .send({ chat: chat.id, from: alice.id, cont_type: 'txt', cont: 'No recipient field' });
+
+      const stored = await pool.query(`SELECT id FROM notifications WHERE user_id IN ($1, $2)`, [
+        alice.id,
+        bob.id,
+      ]);
+
+      expect(stored.rows).toHaveLength(0);
+    });
   });
 
   // ── GET /api/chats/viewChat/:id ─────────────────────────────────────────

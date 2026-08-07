@@ -10,10 +10,15 @@ jest.mock('../../src/server.js', () => ({
   send: jest.fn(),
 }));
 
+jest.mock('../../src/utils/notifier', () => ({
+  notify: jest.fn(),
+}));
+
 const fs = require('fs');
 const model = require('../../src/models/image.model.js');
 const { Client } = require('node-scp');
 const server = require('../../src/server.js');
+const { notify } = require('../../src/utils/notifier');
 const controller = require('../../src/controllers/image.controller.js');
 
 let consoleLogSpy;
@@ -171,6 +176,16 @@ describe('image.controller - sendWS', () => {
       cont: 'http://203.0.113.10/cont-123.png',
     });
     expect(next).toHaveBeenCalled();
+  });
+
+  test('notifies the recipient of the new message', () => {
+    const req = { body: { to: 3, chat: 4 } };
+    const res = createResponse(9);
+    res.locals.path = 'http://203.0.113.10/cont-123.png';
+
+    controller.sendWS(req, res, jest.fn());
+
+    expect(notify).toHaveBeenCalledWith(3, 'message', 'New message', expect.any(String));
   });
 });
 
