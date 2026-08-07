@@ -186,6 +186,37 @@ module.exports.updateListingStatus = (data, callback) => {
   pool.query(SQLSTATEMENT, VALUES, callback);
 };
 
+// Called from order.controller.js when a buyer completes checkout on a
+// one-off listing — not from the owner-facing status route, so unlike
+// updateListingStatus above this deliberately has no owner_id check: the
+// actor here is the buyer, not the owner. WHERE status = 'RESERVED' is the
+// only guard, matching listingLifecycle.js leaving SOLD out of RESERVED's
+// owner-transition table — this is the one path left that can reach SOLD
+// from RESERVED. A no-op (no rows affected) if the listing already isn't
+// RESERVED, rather than an error — that's a race, not a bug in the caller.
+module.exports.markListingSold = (id, callback) => {
+  const SQLSTATEMENT = `
+    UPDATE listings
+    SET
+      status = 'SOLD',
+      status_updated_on = NOW(),
+      "isSold" = true
+    WHERE id = $1
+      AND status = 'RESERVED'
+    RETURNING
+      id,
+      owner_id,
+      status,
+      status_updated_on,
+      "isSold",
+      "isClosed"
+  `;
+
+  const VALUES = [id];
+
+  pool.query(SQLSTATEMENT, VALUES, callback);
+};
+
 // Whitelist, not string interpolation of user input — the chosen value is
 // spliced straight into ORDER BY, so anything outside this map must fall back
 // to the default rather than reach the query.

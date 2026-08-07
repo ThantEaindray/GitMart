@@ -49,9 +49,45 @@ beforeAll(async () => {
   );
 });
 
-// Only removes the two rows this suite created, so it cannot disturb other
-// integration suites running against the same database.
+const createdListingIds = [];
+
+// Reserved listings need an owner distinct from the buyer, and an ACCEPTED
+// reservation_requests row for USER_A — the exact pair
+// verifyListingReservations' getAcceptedListingIdsForUser query requires
+// (reservation ACCEPTED AND listing still RESERVED) before checkout is even
+// reachable for a one-off item.
+async function insertReservedListingForUserA() {
+  const listingResult = await pool.query(
+    `
+      INSERT INTO listings (owner_id, title, description, price, category, status, "isSold", "isClosed")
+      VALUES ($1, 'Order Test Reserved Listing', 'A listing reserved for checkout testing.', 100, 'Electronics', 'RESERVED', false, false)
+      RETURNING id
+    `,
+    [USER_B],
+  );
+  const listingId = listingResult.rows[0].id;
+  createdListingIds.push(listingId);
+
+  await pool.query(
+    `
+      INSERT INTO reservation_requests (listing_id, requester_id, status)
+      VALUES ($1, $2, 'ACCEPTED')
+    `,
+    [listingId, USER_A],
+  );
+
+  return listingId;
+}
+
+// Only removes the rows this suite created, so it cannot disturb other
+// integration suites running against the same database. reservation_requests
+// and listings must go before users — both reference users(id) with no
+// cascade, so deleting users first would fail with a foreign key violation.
 afterAll(async () => {
+  await pool.query('DELETE FROM reservation_requests WHERE listing_id = ANY($1::integer[])', [
+    createdListingIds,
+  ]);
+  await pool.query('DELETE FROM listings WHERE id = ANY($1::integer[])', [createdListingIds]);
   await pool.query('DELETE FROM users WHERE id = ANY($1::integer[])', [[USER_A, USER_B]]);
   await pool.end();
 });
@@ -308,6 +344,66 @@ describe('POST /api/orders - reservation lookup failure', () => {
       .set('Authorization', `Bearer ${tokenA}`)
       .send({ ...validOrderBody, items: [{ listingId: 99999999999999 }] });
     expect(res.status).toBe(500);
+  });
+});
+
+// ── POST /api/orders — marks the reserved listing SOLD for real ──────────────
+
+describe('POST /api/orders - marks the reserved listing sold', () => {
+  test('checkout transitions the real listings.status to SOLD, not just the demo in-memory flag', async () => {
+    const listingId = await insertReservedListingForUserA();
+
+    const res = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ ...validOrderBody, items: [{ listingId }] });
+
+    expect(res.status).toBe(201);
+
+    const databaseResult = await pool.query(`SELECT status, "isSold" FROM listings WHERE id = $1`, [
+      listingId,
+    ]);
+
+    expect(databaseResult.rows[0]).toMatchObject({ status: 'SOLD', isSold: true });
+  });
+
+  test('marks every reserved listing sold when the cart has more than one', async () => {
+    const listingIdOne = await insertReservedListingForUserA();
+    const listingIdTwo = await insertReservedListingForUserA();
+
+    const res = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({
+        ...validOrderBody,
+        items: [{ listingId: listingIdOne }, { listingId: listingIdTwo }],
+      });
+
+    expect(res.status).toBe(201);
+
+    const databaseResult = await pool.query(
+      `SELECT id, status FROM listings WHERE id = ANY($1::integer[])`,
+      [[listingIdOne, listingIdTwo]],
+    );
+
+    expect(databaseResult.rows).toHaveLength(2);
+    databaseResult.rows.forEach((row) => expect(row.status).toBe('SOLD'));
+  });
+
+  test('a SOLD listing can no longer be manually reverted by its owner', async () => {
+    const listingId = await insertReservedListingForUserA();
+
+    await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ ...validOrderBody, items: [{ listingId }] });
+
+    const response = await request(app)
+      .patch(`/api/listings/${listingId}/status`)
+      .set('Authorization', `Bearer ${tokenB}`)
+      .send({ status: 'AVAILABLE' });
+
+    expect(response.status).toBe(409);
   });
 });
 

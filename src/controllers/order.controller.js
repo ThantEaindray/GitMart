@@ -1,7 +1,11 @@
 // order.controller.js
+const { promisify } = require('util');
 const model = require('../utils/orderStore');
 const reservationModel = require('../models/Reservation.model');
+const listingModel = require('../models/Listing.model');
 const { notify } = require('../utils/notifier');
+
+const markListingSold = promisify(listingModel.markListingSold);
 
 // Status values for order tracking. The timeline (order.statusHistory) is
 // built from this same trusted list.
@@ -78,6 +82,22 @@ module.exports.verifyListingReservations = (req, res, next) => {
   reservationModel.getAcceptedListingIdsForUser(data, callback);
 };
 
+// Same item-shape parsing as purchaseState.js's getPurchasedIds — mirrored
+// rather than imported since that one also collects catalogue productIds,
+// which this doesn't need.
+function extractOneOffListingIds(items) {
+  const ids = new Set();
+  // items = [] as a default param wouldn't cover this — items is sent as
+  // explicit null (not omitted) when the cart is empty, same case
+  // purchaseState.js's getPurchasedIds guards against.
+  (items || []).forEach((item) => {
+    const isOneOff = Boolean(item?.isOneOff || item?.listingId);
+    const listingId = item?.listingId ?? (isOneOff ? item?.id : null);
+    if (listingId != null) ids.add(Number(listingId));
+  });
+  return Array.from(ids);
+}
+
 // ── POST /api/orders — step 2: validate details and create ────────────────
 
 module.exports.createOrder = async (req, res, next) => {
@@ -111,6 +131,15 @@ module.exports.createOrder = async (req, res, next) => {
 
   try {
     const order = await model.createOrder(data);
+
+    // verifyListingReservations (above) already guarantees every listingId
+    // here belongs to a RESERVED listing this buyer holds the ACCEPTED
+    // reservation for — this is the one path that can move a listing from
+    // RESERVED to SOLD; the owner can't do it manually (listingLifecycle.js
+    // leaves SOLD out of RESERVED's owner-transition table).
+    const soldListingIds = extractOneOffListingIds(data.items);
+    await Promise.all(soldListingIds.map((listingId) => markListingSold(listingId)));
+
     notify(
       data.userId,
       'order',

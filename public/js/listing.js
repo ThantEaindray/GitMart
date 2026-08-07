@@ -104,7 +104,10 @@ function getOwnerLifecycleActions(status) {
   if (status === 'RESERVED') {
     return `
       <div class="owner-lifecycle-controls">
-        <p class="status-text">Manage your listing status</p>
+        <p class="status-text">
+          Reserved for a buyer. It becomes Sold automatically once they check out —
+          marking it sold yourself isn't available while a reservation is active.
+        </p>
 
         <div class="product-actions">
           <button
@@ -114,15 +117,6 @@ function getOwnerLifecycleActions(status) {
             onclick="updateListingStatus('AVAILABLE')"
           >
             Release Reservation
-          </button>
-
-          <button
-            class="btn-outline"
-            type="button"
-            data-listing-status-action
-            onclick="updateListingStatus('SOLD')"
-          >
-            Mark Sold
           </button>
 
           <button
