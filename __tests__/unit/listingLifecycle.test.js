@@ -38,7 +38,6 @@ describe('listingLifecycle', () => {
       ['AVAILABLE', 'SOLD'],
       ['AVAILABLE', 'ARCHIVED'],
       ['RESERVED', 'AVAILABLE'],
-      ['RESERVED', 'SOLD'],
       ['RESERVED', 'ARCHIVED'],
       ['ARCHIVED', 'AVAILABLE'],
     ])('allows %s to transition to %s', (currentStatus, nextStatus) => {
@@ -51,6 +50,10 @@ describe('listingLifecycle', () => {
       ['SOLD', 'RESERVED'],
       ['ARCHIVED', 'SOLD'],
       ['UNKNOWN', 'AVAILABLE'],
+      // Once RESERVED, only completing checkout can reach SOLD
+      // (Listing.model.js's markListingSold, not this owner-facing table) —
+      // an owner can't shortcut a buyer's pending reservation.
+      ['RESERVED', 'SOLD'],
     ])('rejects %s to %s', (currentStatus, nextStatus) => {
       expect(canTransitionListingStatus(currentStatus, nextStatus)).toBe(false);
     });

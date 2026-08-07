@@ -15,9 +15,25 @@ jest.mock('../../src/utils/purchaseState', () => ({
 jest.mock('../../src/models/Reservation.model', () => ({
   getAcceptedListingIdsForUser: jest.fn(),
 }));
+jest.mock('../../src/models/Listing.model', () => ({
+  markListingSold: jest.fn((id, callback) => callback(null, { id, status: 'SOLD' })),
+}));
+
+const listingModel = require('../../src/models/Listing.model');
 
 afterEach(() => jest.clearAllMocks());
 afterAll(() => jest.restoreAllMocks());
+
+// createOrder now awaits Promise.all() over promisify-wrapped
+// markListingSold calls before calling next() — util.promisify's internal
+// Promise construction takes more microtask ticks to settle than a plain
+// mockResolvedValue await, so a single `await Promise.resolve()` (enough
+// everywhere else in this file) isn't reliably enough here.
+async function flushAsync() {
+  for (let i = 0; i < 5; i++) {
+    await Promise.resolve();
+  }
+}
 
 function makeRes(locals = {}) {
   return {
@@ -364,7 +380,7 @@ describe('createOrder - success', () => {
     const next = jest.fn();
     model.createOrder.mockResolvedValue(fakeOrder);
     controller.createOrder(req, res, next);
-    await Promise.resolve();
+    await flushAsync();
     expect(res.locals.statusCode).toBe(201);
     expect(next).toHaveBeenCalled();
   });
@@ -375,7 +391,7 @@ describe('createOrder - success', () => {
     const next = jest.fn();
     model.createOrder.mockResolvedValue(fakeOrder);
     controller.createOrder(req, res, next);
-    await Promise.resolve();
+    await flushAsync();
     expect(res.locals.results).toEqual(fakeOrder);
   });
 
@@ -407,8 +423,69 @@ describe('createOrder - success', () => {
     const next = jest.fn();
     model.createOrder.mockResolvedValue(fakeOrder);
     controller.createOrder(req, res, next);
-    await Promise.resolve();
+    await flushAsync();
     expect(next).toHaveBeenCalledWith();
+  });
+});
+
+// ── createOrder — marks one-off listings sold ─────────────────────────────────
+
+describe('createOrder - marks one-off listings sold', () => {
+  it('calls markListingSold for a one-off listing item', async () => {
+    const req = { body: { ...validBody, items: [{ listingId: 21 }] } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+    model.createOrder.mockResolvedValue(fakeOrder);
+    controller.createOrder(req, res, next);
+    await flushAsync();
+    expect(listingModel.markListingSold).toHaveBeenCalledWith(21, expect.any(Function));
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('marks every one-off listing when the cart has more than one', async () => {
+    const req = { body: { ...validBody, items: [{ listingId: 21 }, { listingId: 22 }] } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+    model.createOrder.mockResolvedValue(fakeOrder);
+    controller.createOrder(req, res, next);
+    await flushAsync();
+    expect(listingModel.markListingSold).toHaveBeenCalledWith(21, expect.any(Function));
+    expect(listingModel.markListingSold).toHaveBeenCalledWith(22, expect.any(Function));
+  });
+
+  it('does not throw when items is explicitly null', async () => {
+    const req = { body: { ...validBody, items: null } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+    model.createOrder.mockResolvedValue(fakeOrder);
+    controller.createOrder(req, res, next);
+    await flushAsync();
+    expect(listingModel.markListingSold).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('does not call markListingSold for a catalogue product item (no listingId)', async () => {
+    const req = { body: { ...validBody, items: [{ id: 1 }] } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+    model.createOrder.mockResolvedValue(fakeOrder);
+    controller.createOrder(req, res, next);
+    await flushAsync();
+    expect(listingModel.markListingSold).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('calls next with the error when marking a listing sold fails', async () => {
+    const req = { body: { ...validBody, items: [{ listingId: 21 }] } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+    const err = new Error('update failed');
+    listingModel.markListingSold.mockImplementationOnce((id, callback) => callback(err));
+    model.createOrder.mockResolvedValue(fakeOrder);
+    controller.createOrder(req, res, next);
+    await flushAsync();
+    expect(next).toHaveBeenCalledWith(err);
+    expect(res.locals.statusCode).toBeUndefined();
   });
 });
 

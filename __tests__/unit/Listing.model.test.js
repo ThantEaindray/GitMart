@@ -850,6 +850,48 @@ describe('Listing.model - updateListingStatus', () => {
   });
 });
 
+// ── markListingSold (model) ─────────────────────────────────────────────────
+describe('Listing.model - markListingSold', () => {
+  const { markListingSold } = require('../../src/models/Listing.model');
+  afterEach(() => jest.clearAllMocks());
+
+  test('should update status to SOLD, keyed only by id and current RESERVED status', (done) => {
+    const updatedRow = { id: 7, owner_id: 42, status: 'SOLD', isSold: true, isClosed: false };
+    mockQuery(null, [updatedRow]);
+
+    markListingSold(7, (err, result) => {
+      expect(err).toBeNull();
+      expect(pool.query).toHaveBeenCalledTimes(1);
+      const [sql, values] = pool.query.mock.calls[0];
+      expect(sql).toContain("status = 'RESERVED'");
+      expect(sql).not.toMatch(/owner_id\s*=/);
+      expect(values).toEqual([7]);
+      expect(result.rows[0].status).toBe('SOLD');
+      done();
+    });
+  });
+
+  test('should return empty rows when the listing is not currently RESERVED', (done) => {
+    mockQuery(null, []);
+
+    markListingSold(7, (err, result) => {
+      expect(err).toBeNull();
+      expect(result.rows).toEqual([]);
+      done();
+    });
+  });
+
+  test('should propagate database errors to callback', (done) => {
+    const dbError = new Error('update failed');
+    mockQuery(dbError, null);
+
+    markListingSold(7, (err) => {
+      expect(err).toBe(dbError);
+      done();
+    });
+  });
+});
+
 // ── searchListings sort variations ────────────────────────────────────────────
 describe('Listing.model - searchListings sort options', () => {
   afterEach(() => jest.clearAllMocks());

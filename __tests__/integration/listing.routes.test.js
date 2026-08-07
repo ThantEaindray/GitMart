@@ -691,6 +691,43 @@ WHERE id = $1
       });
     });
 
+    test('does not allow the owner to manually mark a reserved listing as sold', async () => {
+      const listing = await insertListing({
+        ownerId: owner.id,
+      });
+
+      await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ status: 'RESERVED' });
+
+      const response = await request(app)
+        .patch(`/api/listings/${listing.id}/status`)
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ status: 'SOLD' });
+
+      expect(response.status).toBe(409);
+
+      expect(response.body).toEqual({
+        message: 'Cannot change listing status from RESERVED to SOLD.',
+      });
+
+      const databaseResult = await pool.query(
+        `
+        SELECT status, "isSold", "isClosed"
+        FROM listings
+        WHERE id = $1
+      `,
+        [listing.id],
+      );
+
+      expect(databaseResult.rows[0]).toMatchObject({
+        status: 'RESERVED',
+        isSold: false,
+        isClosed: false,
+      });
+    });
+
     test('allows the owner to archive an available listing', async () => {
       const listing = await insertListing({
         ownerId: owner.id,
