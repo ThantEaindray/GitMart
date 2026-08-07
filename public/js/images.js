@@ -1,4 +1,3 @@
-let toId = localStorage.getItem('with');
 console.log('img.js file loaded');
 function upload() {
   console.log('submitted');
@@ -12,7 +11,14 @@ function upload() {
   form.append('type', 'message');
   form.append('chat', localStorage.getItem('openChat'));
   form.append('from', uId);
-  form.append('to', toId);
+  // Read fresh, not captured once at script load — this file loads before
+  // the user has opened any chat, so a value cached at the top would still
+  // be whatever (or nothing) was in localStorage from a previous session.
+  // That was sending images with the wrong or a null recipient, which the
+  // WS live-push filter on the other end silently drops — only a full
+  // reload's history re-fetch (which doesn't filter by `to`) ever showed
+  // the image, which is exactly the "images need a refresh" symptom.
+  form.append('to', localStorage.getItem('with'));
   form.append('cont_type', 'img');
   form.append('cont', fromForm.files[0]);
   //so now that we have the data all nice and pretty we should be able to send it to the backend
