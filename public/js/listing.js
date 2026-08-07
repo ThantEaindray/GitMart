@@ -247,15 +247,25 @@ function getReservationButton(listing, status) {
   if (status !== 'AVAILABLE') return '';
 
   return `
-    <button
-      class="btn-outline"
-      id="btn-request-reservation"
-      type="button"
-      onclick="requestReservation()"
-    >
-      <i class="bi bi-calendar-check"></i>
-      Request Reservation
-    </button>
+    <div class="reservation-request-group" id="reservation-request-group">
+      <textarea
+        class="reservation-message-input"
+        id="reservation-message-input"
+        placeholder="Add a message for the seller (optional) — e.g. when you'd like to collect it, or a question."
+        maxlength="500"
+        rows="2"
+      ></textarea>
+
+      <button
+        class="btn-outline"
+        id="btn-request-reservation"
+        type="button"
+        onclick="requestReservation()"
+      >
+        <i class="bi bi-calendar-check"></i>
+        Request Reservation
+      </button>
+    </div>
   `;
 }
 
@@ -432,6 +442,8 @@ function requestReservation() {
   }
 
   const button = document.getElementById('btn-request-reservation');
+  const messageInput = document.getElementById('reservation-message-input');
+  const message = messageInput ? messageInput.value.trim() : '';
 
   if (button) {
     button.disabled = true;
@@ -440,6 +452,7 @@ function requestReservation() {
 
   authFetch(`/api/listings/${currentListing.id}/reservations`, {
     method: 'POST',
+    body: JSON.stringify({ message: message || undefined }),
   })
     .then(parseResponse)
     .then(function (result) {

@@ -94,7 +94,7 @@ test.beforeAll(async ({ request }) => {
 });
 
 test.describe('Buyer reservation workflow', () => {
-  test('buyer can submit a reservation request', async ({ page }) => {
+  test('buyer can submit a reservation request with a message', async ({ page }) => {
     await openListingAsBuyer(page);
 
     const button = page.locator('#btn-request-reservation');
@@ -102,6 +102,12 @@ test.describe('Buyer reservation workflow', () => {
     await expect(button).toContainText('Request Reservation', {
       timeout: 8000,
     });
+
+    // The owner has no other way to know what a request is actually asking
+    // for, so the message field has to actually reach the request body.
+    await page
+      .locator('#reservation-message-input')
+      .fill('Could I collect this on Saturday afternoon?');
 
     const responsePromise = page.waitForResponse(
       (response) =>
@@ -113,6 +119,8 @@ test.describe('Buyer reservation workflow', () => {
     const response = await responsePromise;
 
     expect(response.status()).toBe(201);
+    const body = await response.json();
+    expect(body.reservation.message).toBe('Could I collect this on Saturday afternoon?');
 
     await expect(button).toContainText('Cancel Reservation Request', {
       timeout: 8000,
