@@ -85,10 +85,15 @@ function onSSEInit(e) {
   setBadgeCount(JSON.parse(e.data).unreadCount);
 }
 
-function onSSENotification() {
+function onSSENotification(e) {
   // A new notification arrived — shake the bell and refresh the badge count.
   shakeBell();
   fetchUnreadCount();
+
+  // Also broadcast it on window, so page-specific scripts (e.g. the owner
+  // reservation panel on listing.js) can react live without each opening
+  // their own EventSource connection to the same stream.
+  window.dispatchEvent(new CustomEvent('gitmart:notification', { detail: JSON.parse(e.data) }));
 }
 
 function onSSEBadge(e) {

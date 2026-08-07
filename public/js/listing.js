@@ -656,6 +656,19 @@ function loadOwnerReservationRequests() {
     });
 }
 
+// notif-badge.js rebroadcasts each live notification it gets over SSE as a
+// 'gitmart:notification' window event, so the panel updates the moment a
+// request comes in instead of only on the next manual reload. A fresh
+// fetch (rather than splicing the pushed payload into the list) reuses
+// renderOwnerReservationRequests' existing per-listing filtering, and this
+// panel only exists at all while the owner is on this exact listing page.
+function onOwnerReservationNotification(e) {
+  if (e.detail.type !== 'reservation') return;
+  if (!currentListing || !isListingOwner(currentListing)) return;
+
+  loadOwnerReservationRequests();
+}
+
 function setReservationDecisionDisabled(reservationId, disabled) {
   document
     .querySelectorAll(`[data-reservation-action][data-reservation-id="${reservationId}"]`)
@@ -1130,4 +1143,6 @@ document.addEventListener('DOMContentLoaded', function () {
       window.location.href = 'wishlist.html';
     });
   }
+
+  window.addEventListener('gitmart:notification', onOwnerReservationNotification);
 });
