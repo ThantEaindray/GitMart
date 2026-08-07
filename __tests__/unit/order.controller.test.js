@@ -17,20 +17,22 @@ jest.mock('../../src/models/Reservation.model', () => ({
 }));
 jest.mock('../../src/models/Listing.model', () => ({
   markListingSold: jest.fn((id, callback) => callback(null, { id, status: 'SOLD' })),
+  getListingsByIds: jest.fn((data, callback) => callback(null, { rows: [] })),
 }));
 
 const listingModel = require('../../src/models/Listing.model');
+const { notify } = require('../../src/utils/notifier');
 
 afterEach(() => jest.clearAllMocks());
 afterAll(() => jest.restoreAllMocks());
 
 // createOrder now awaits Promise.all() over promisify-wrapped
-// markListingSold calls before calling next() — util.promisify's internal
-// Promise construction takes more microtask ticks to settle than a plain
-// mockResolvedValue await, so a single `await Promise.resolve()` (enough
-// everywhere else in this file) isn't reliably enough here.
+// markListingSold calls, then a further promisify-wrapped getListingsByIds
+// call, before calling next() — each promisify-wrapped call needs more
+// microtask ticks to settle than a plain mockResolvedValue await, and these
+// two are sequential (not parallel), so the tick count here covers both.
 async function flushAsync() {
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 10; i++) {
     await Promise.resolve();
   }
 }
@@ -489,6 +491,100 @@ describe('createOrder - marks one-off listings sold', () => {
   });
 });
 
+// ── createOrder — notifies the seller of a sale ───────────────────────────────
+
+describe('createOrder - notifies the seller of a sale', () => {
+  it('notifies the listing owner once, naming the listing', async () => {
+    const req = { body: { ...validBody, items: [{ listingId: 21 }] } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+    model.createOrder.mockResolvedValue(fakeOrder);
+    listingModel.getListingsByIds.mockImplementationOnce((data, callback) =>
+      callback(null, { rows: [{ id: 21, owner_id: 99, title: 'Vintage Camera' }] }),
+    );
+    controller.createOrder(req, res, next);
+    await flushAsync();
+    expect(notify).toHaveBeenCalledWith(
+      99,
+      'order',
+      'You made a sale',
+      `Order #${fakeOrder.id} includes "Vintage Camera".`,
+    );
+  });
+
+  it('notifies each distinct owner once when a cart spans two sellers', async () => {
+    const req = {
+      body: { ...validBody, items: [{ listingId: 21 }, { listingId: 22 }] },
+    };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+    model.createOrder.mockResolvedValue(fakeOrder);
+    listingModel.getListingsByIds.mockImplementationOnce((data, callback) =>
+      callback(null, {
+        rows: [
+          { id: 21, owner_id: 99, title: 'Vintage Camera' },
+          { id: 22, owner_id: 100, title: 'Old Radio' },
+        ],
+      }),
+    );
+    controller.createOrder(req, res, next);
+    await flushAsync();
+    expect(notify).toHaveBeenCalledWith(
+      99,
+      'order',
+      'You made a sale',
+      `Order #${fakeOrder.id} includes "Vintage Camera".`,
+    );
+    expect(notify).toHaveBeenCalledWith(
+      100,
+      'order',
+      'You made a sale',
+      `Order #${fakeOrder.id} includes "Old Radio".`,
+    );
+  });
+
+  it('mentions a count instead of listing every title when one owner sold several items', async () => {
+    const req = {
+      body: { ...validBody, items: [{ listingId: 21 }, { listingId: 22 }] },
+    };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+    model.createOrder.mockResolvedValue(fakeOrder);
+    listingModel.getListingsByIds.mockImplementationOnce((data, callback) =>
+      callback(null, {
+        rows: [
+          { id: 21, owner_id: 99, title: 'Vintage Camera' },
+          { id: 22, owner_id: 99, title: 'Old Radio' },
+        ],
+      }),
+    );
+    controller.createOrder(req, res, next);
+    await flushAsync();
+    expect(notify).toHaveBeenCalledWith(
+      99,
+      'order',
+      'You made a sale',
+      `Order #${fakeOrder.id} includes 2 of your listings.`,
+    );
+  });
+
+  it('does not look up listings or notify anyone for a catalogue-only order', async () => {
+    const req = { body: { ...validBody, items: [{ id: 1 }] } };
+    const res = makeRes({ userId: 7 });
+    const next = jest.fn();
+    model.createOrder.mockResolvedValue(fakeOrder);
+    controller.createOrder(req, res, next);
+    await flushAsync();
+    expect(listingModel.getListingsByIds).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalledWith(
+      expect.anything(),
+      'order',
+      'You made a sale',
+      expect.anything(),
+    );
+  });
+});
+
 // ── createOrder — model error ─────────────────────────────────────────────────
 
 describe('createOrder - model error', () => {
@@ -576,6 +672,124 @@ describe('getAllOrders', () => {
     controller.getAllOrders({}, res, next);
     await Promise.resolve();
     expect(model.getAllOrders).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ── getSellerSales ─────────────────────────────────────────────────────────
+
+describe('getSellerSales', () => {
+  function orderWithItems(id, items, overrides = {}) {
+    return { ...fakeOrder, id, items, fullName: 'Buyer Name', ...overrides };
+  }
+
+  it('sets statusCode 200 and calls next when the caller owns no listings', async () => {
+    const res = makeRes({ userId: 99 });
+    const next = jest.fn();
+    model.getAllOrdersRaw.mockResolvedValue([]);
+    controller.getSellerSales({}, res, next);
+    await flushAsync();
+    expect(res.locals.statusCode).toBe(200);
+    expect(res.locals.results).toEqual([]);
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('does not query listings at all when no order has a one-off item', async () => {
+    const res = makeRes({ userId: 99 });
+    const next = jest.fn();
+    model.getAllOrdersRaw.mockResolvedValue([orderWithItems(1, [{ id: 1 }])]);
+    controller.getSellerSales({}, res, next);
+    await flushAsync();
+    expect(listingModel.getListingsByIds).not.toHaveBeenCalled();
+    expect(res.locals.results).toEqual([]);
+  });
+
+  it('includes an order whose item belongs to the caller, with only that item', async () => {
+    const res = makeRes({ userId: 99 });
+    const next = jest.fn();
+    model.getAllOrdersRaw.mockResolvedValue([
+      orderWithItems(1, [{ listingId: 21, name: 'Vintage Camera', price: 180, quantity: 1 }]),
+    ]);
+    listingModel.getListingsByIds.mockImplementationOnce((data, callback) =>
+      callback(null, { rows: [{ id: 21, owner_id: 99, title: 'Vintage Camera' }] }),
+    );
+    controller.getSellerSales({}, res, next);
+    await flushAsync();
+    expect(res.locals.results).toEqual([
+      {
+        orderId: 1,
+        status: fakeOrder.status,
+        createdAt: fakeOrder.createdAt,
+        buyerName: 'Buyer Name',
+        items: [{ listingId: 21, itemName: 'Vintage Camera', quantity: 1, price: 180 }],
+      },
+    ]);
+  });
+
+  it('excludes an order whose items belong to a different owner', async () => {
+    const res = makeRes({ userId: 99 });
+    const next = jest.fn();
+    model.getAllOrdersRaw.mockResolvedValue([orderWithItems(1, [{ listingId: 21 }])]);
+    listingModel.getListingsByIds.mockImplementationOnce((data, callback) =>
+      callback(null, { rows: [{ id: 21, owner_id: 5, title: 'Not Mine' }] }),
+    );
+    controller.getSellerSales({}, res, next);
+    await flushAsync();
+    expect(res.locals.results).toEqual([]);
+  });
+
+  it('only includes the caller-owned items from a multi-seller order', async () => {
+    const res = makeRes({ userId: 99 });
+    const next = jest.fn();
+    model.getAllOrdersRaw.mockResolvedValue([
+      orderWithItems(1, [
+        { listingId: 21, name: 'Mine', price: 10, quantity: 1 },
+        { listingId: 22, name: 'Not Mine', price: 20, quantity: 1 },
+      ]),
+    ]);
+    listingModel.getListingsByIds.mockImplementationOnce((data, callback) =>
+      callback(null, {
+        rows: [
+          { id: 21, owner_id: 99, title: 'Mine' },
+          { id: 22, owner_id: 5, title: 'Not Mine' },
+        ],
+      }),
+    );
+    controller.getSellerSales({}, res, next);
+    await flushAsync();
+    expect(res.locals.results).toEqual([
+      {
+        orderId: 1,
+        status: fakeOrder.status,
+        createdAt: fakeOrder.createdAt,
+        buyerName: 'Buyer Name',
+        items: [{ listingId: 21, itemName: 'Mine', quantity: 1, price: 10 }],
+      },
+    ]);
+  });
+
+  it('sorts sales newest first', async () => {
+    const res = makeRes({ userId: 99 });
+    const next = jest.fn();
+    model.getAllOrdersRaw.mockResolvedValue([
+      orderWithItems(1, [{ listingId: 21 }], { createdAt: '2024-01-01T00:00:00.000Z' }),
+      orderWithItems(2, [{ listingId: 21 }], { createdAt: '2024-06-01T00:00:00.000Z' }),
+    ]);
+    listingModel.getListingsByIds.mockImplementationOnce((data, callback) =>
+      callback(null, { rows: [{ id: 21, owner_id: 99, title: 'Mine' }] }),
+    );
+    controller.getSellerSales({}, res, next);
+    await flushAsync();
+    expect(res.locals.results.map((sale) => sale.orderId)).toEqual([2, 1]);
+  });
+
+  it('calls next with the error when the model rejects', async () => {
+    const res = makeRes({ userId: 99 });
+    const next = jest.fn();
+    const err = new Error('DB failure');
+    model.getAllOrdersRaw.mockRejectedValue(err);
+    controller.getSellerSales({}, res, next);
+    await flushAsync();
+    expect(next).toHaveBeenCalledWith(err);
   });
 });
 

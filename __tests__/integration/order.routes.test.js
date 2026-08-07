@@ -28,9 +28,11 @@ const validOrderBody = {
 
 const USER_A = 1001;
 const USER_B = 1002;
+const USER_C = 1003;
 
 const tokenA = createToken(USER_A);
 const tokenB = createToken(USER_B);
+const tokenC = createToken(USER_C);
 
 // These ids used to be pure fiction: orders live in an in-memory store, so no
 // matching user row was ever needed. Notifications are now a real table with a
@@ -42,10 +44,11 @@ beforeAll(async () => {
       INSERT INTO users (id, username, email, password)
       VALUES
         ($1, 'order_test_user_a', 'order_test_a@example.com', 'not-used-by-these-tests'),
-        ($2, 'order_test_user_b', 'order_test_b@example.com', 'not-used-by-these-tests')
+        ($2, 'order_test_user_b', 'order_test_b@example.com', 'not-used-by-these-tests'),
+        ($3, 'order_test_user_c', 'order_test_c@example.com', 'not-used-by-these-tests')
       ON CONFLICT (id) DO NOTHING
     `,
-    [USER_A, USER_B],
+    [USER_A, USER_B, USER_C],
   );
 });
 
@@ -79,6 +82,31 @@ async function insertReservedListingForUserA() {
   return listingId;
 }
 
+// Generalised version of the helper above, for tests that need a listing
+// owned by someone other than USER_B (e.g. a multi-seller order).
+async function insertReservedListingForOwner(ownerId, title = 'Order Test Reserved Listing') {
+  const listingResult = await pool.query(
+    `
+      INSERT INTO listings (owner_id, title, description, price, category, status, "isSold", "isClosed")
+      VALUES ($1, $2, 'A listing reserved for checkout testing.', 100, 'Electronics', 'RESERVED', false, false)
+      RETURNING id
+    `,
+    [ownerId, title],
+  );
+  const listingId = listingResult.rows[0].id;
+  createdListingIds.push(listingId);
+
+  await pool.query(
+    `
+      INSERT INTO reservation_requests (listing_id, requester_id, status)
+      VALUES ($1, $2, 'ACCEPTED')
+    `,
+    [listingId, USER_A],
+  );
+
+  return listingId;
+}
+
 // Only removes the rows this suite created, so it cannot disturb other
 // integration suites running against the same database. reservation_requests
 // and listings must go before users — both reference users(id) with no
@@ -88,7 +116,7 @@ afterAll(async () => {
     createdListingIds,
   ]);
   await pool.query('DELETE FROM listings WHERE id = ANY($1::integer[])', [createdListingIds]);
-  await pool.query('DELETE FROM users WHERE id = ANY($1::integer[])', [[USER_A, USER_B]]);
+  await pool.query('DELETE FROM users WHERE id = ANY($1::integer[])', [[USER_A, USER_B, USER_C]]);
   await pool.end();
 });
 
@@ -508,6 +536,104 @@ describe('GET /api/orders', () => {
   test('works with /orders route alias', async () => {
     const res = await request(app).get('/orders').set('Authorization', `Bearer ${tokenA}`);
     expect(res.status).toBe(200);
+  });
+});
+
+// ── GET /api/orders/sales ─────────────────────────────────────────────────
+// Orders carry no seller/owner column at all — this endpoint derives "orders
+// that include one of my listings" by cross-referencing every order's items
+// against listing ownership, so these tests focus on that derivation rather
+// than repeating the GET /api/orders coverage above.
+
+describe('GET /api/orders/sales', () => {
+  test('returns 401 when no token is provided', async () => {
+    const res = await request(app).get('/api/orders/sales');
+    expect(res.status).toBe(401);
+  });
+
+  test('returns 200 with an array for an authenticated user', async () => {
+    const res = await request(app)
+      .get('/api/orders/sales')
+      .set('Authorization', `Bearer ${tokenB}`);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  test('the listing owner sees a sale record for an order that included it', async () => {
+    const listingId = await insertReservedListingForOwner(USER_B, 'Sales Test Listing');
+
+    const orderRes = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({
+        ...validOrderBody,
+        fullName: 'Sales Test Buyer',
+        items: [{ listingId, name: 'Sales Test Listing', price: 100, quantity: 1 }],
+      });
+    expect(orderRes.status).toBe(201);
+
+    const salesRes = await request(app)
+      .get('/api/orders/sales')
+      .set('Authorization', `Bearer ${tokenB}`);
+
+    expect(salesRes.status).toBe(200);
+    const sale = salesRes.body.find((s) => s.orderId === orderRes.body.id);
+    expect(sale).toBeDefined();
+    expect(sale.buyerName).toBe('Sales Test Buyer');
+    expect(sale.status).toBe('Pending');
+    expect(sale.items).toEqual([
+      { listingId, itemName: 'Sales Test Listing', quantity: 1, price: 100 },
+    ]);
+  });
+
+  test('the buyer does not see their own purchase in their own sales list', async () => {
+    const listingId = await insertReservedListingForOwner(USER_B, 'Not A Sale For The Buyer');
+
+    const orderRes = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ ...validOrderBody, items: [{ listingId }] });
+    expect(orderRes.status).toBe(201);
+
+    const salesRes = await request(app)
+      .get('/api/orders/sales')
+      .set('Authorization', `Bearer ${tokenA}`);
+
+    expect(salesRes.body.some((s) => s.orderId === orderRes.body.id)).toBe(false);
+  });
+
+  test('an order with listings from two different sellers only shows each seller their own item', async () => {
+    const listingIdB = await insertReservedListingForOwner(USER_B, 'Two Seller Order - B Item');
+    const listingIdC = await insertReservedListingForOwner(USER_C, 'Two Seller Order - C Item');
+
+    const orderRes = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({
+        ...validOrderBody,
+        items: [
+          { listingId: listingIdB, name: 'B Item', price: 40, quantity: 1 },
+          { listingId: listingIdC, name: 'C Item', price: 60, quantity: 2 },
+        ],
+      });
+    expect(orderRes.status).toBe(201);
+
+    const salesResB = await request(app)
+      .get('/api/orders/sales')
+      .set('Authorization', `Bearer ${tokenB}`);
+    const salesResC = await request(app)
+      .get('/api/orders/sales')
+      .set('Authorization', `Bearer ${tokenC}`);
+
+    const saleB = salesResB.body.find((s) => s.orderId === orderRes.body.id);
+    const saleC = salesResC.body.find((s) => s.orderId === orderRes.body.id);
+
+    expect(saleB.items).toEqual([
+      { listingId: listingIdB, itemName: 'B Item', quantity: 1, price: 40 },
+    ]);
+    expect(saleC.items).toEqual([
+      { listingId: listingIdC, itemName: 'C Item', quantity: 2, price: 60 },
+    ]);
   });
 });
 

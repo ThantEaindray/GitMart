@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Sales - GitMart</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="stylesheet" href="../css/noir.css" />
+    <link rel="stylesheet" href="../css/notifications.css" />
+    <link rel="stylesheet" href="../css/orders.css" />
+
+    <!-- Apply saved display settings before the page paints. -->
+    <script>
+      var t = localStorage.getItem('theme');
+      var f = localStorage.getItem('font');
+      var m = localStorage.getItem('motion');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+      if (f) document.documentElement.setAttribute('data-font', f);
+      if (m === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
+    </script>
+  </head>
+
+  <body>
+    <!-- Main site navigation -->
+    <nav class="nav">
+      <div class="logo">GitMart</div>
+      <button
+        class="nav-hamburger"
+        type="button"
+        aria-label="Toggle navigation"
+        aria-expanded="false"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="nav-collapse" id="nav-menu">
+        <ul class="nav-links">
+          <li><a href="noir.html">Home</a></li>
+          <li><a href="products.html">Products</a></li>
+          <li><a href="listings.html">Listings</a></li>
+          <li><a href="listing-create.html">Create Listing</a></li>
+          <li><a href="my-sales.html">My Sales</a></li>
+        </ul>
+      </div>
+      <div class="nav-right">
+        <a class="icon-btn" id="btn-account" href="login.html" title="Login"
+          ><i class="bi bi-person"></i
+        ></a>
+        <button class="icon-btn" title="Wishlist"><i class="bi bi-heart"></i></button>
+        <a class="icon-btn" href="checkout.html" title="Cart"><i class="bi bi-bag"></i></a>
+        <a class="icon-btn" href="chats.html" title="Chats"><i class="bi bi-chat-left-dots"></i></a>
+        <a class="icon-btn" href="settings.html" title="Settings"><i class="bi bi-gear"></i></a>
+      </div>
+    </nav>
+
+    <!-- Seller sales content -->
+    <main class="orders-page">
+      <!-- Page title and sales summary stats -->
+      <header class="orders-header">
+        <div>
+          <p class="orders-kicker">Selling</p>
+          <h1 class="orders-heading">My Sales</h1>
+          <p class="orders-sub">
+            Orders that include one or more of your listings, with the buyer, items sold, and
+            current fulfilment status for each.
+          </p>
+        </div>
+
+        <div class="orders-summary" aria-label="Sales summary">
+          <div class="orders-stat">
+            <span class="orders-stat-value" id="salesOrderCount">0</span>
+            <span class="orders-stat-label">Orders</span>
+          </div>
+          <div class="orders-stat">
+            <span class="orders-stat-value" id="salesItemCount">0</span>
+            <span class="orders-stat-label">Items Sold</span>
+          </div>
+          <div class="orders-stat">
+            <span class="orders-stat-value" id="salesRevenue">$0.00</span>
+            <span class="orders-stat-label">Revenue</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Filter buttons for order statuses -->
+      <div class="orders-toolbar">
+        <div class="orders-tabs" aria-label="Filter sales">
+          <button class="orders-tab active" data-filter="all" type="button">
+            All <span class="orders-tab-count" data-count="all">0</span>
+          </button>
+          <button class="orders-tab" data-filter="pending" type="button">
+            Pending <span class="orders-tab-count" data-count="pending">0</span>
+          </button>
+          <button class="orders-tab" data-filter="processing" type="button">
+            Processing <span class="orders-tab-count" data-count="processing">0</span>
+          </button>
+          <button class="orders-tab" data-filter="delivered" type="button">
+            Delivered <span class="orders-tab-count" data-count="delivered">0</span>
+          </button>
+          <button class="orders-tab" data-filter="cancelled" type="button">
+            Cancelled <span class="orders-tab-count" data-count="cancelled">0</span>
+          </button>
+        </div>
+        <button class="orders-refresh" id="refreshSales" type="button" title="Refresh sales">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+
+      <!-- Sales are rendered here by my-sales.js -->
+      <div class="orders-list" id="salesList">
+        <p class="orders-status">Loading sales...</p>
+      </div>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+    <script src="../js/gsap-animations.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/my-sales.js"></script>
+    <script src="../js/notif-badge.js"></script>
+  </body>
+</html>

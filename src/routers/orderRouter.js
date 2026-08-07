@@ -23,6 +23,15 @@ router.get(
   orderController.sendResponse,
 );
 
+// Read orders that include at least one of the caller's own listings.
+// Must come before /:id, or "sales" would be captured as an order id.
+router.get(
+  '/sales',
+  jwtMiddleware.verifyToken,
+  orderController.getSellerSales,
+  orderController.sendResponse,
+);
+
 // Read one logged-in user's order with tracking details.
 router.get(
   '/:id',

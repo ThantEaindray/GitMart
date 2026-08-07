@@ -6,6 +6,7 @@ const listingModel = require('../models/Listing.model');
 const { notify } = require('../utils/notifier');
 
 const markListingSold = promisify(listingModel.markListingSold);
+const getListingsByIds = promisify(listingModel.getListingsByIds);
 
 // Status values for order tracking. The timeline (order.statusHistory) is
 // built from this same trusted list.
@@ -140,6 +141,20 @@ module.exports.createOrder = async (req, res, next) => {
     const soldListingIds = extractOneOffListingIds(data.items);
     await Promise.all(soldListingIds.map((listingId) => markListingSold(listingId)));
 
+    if (soldListingIds.length > 0) {
+      const soldListings = await getListingsByIds({ ids: soldListingIds });
+      const titlesByOwner = new Map();
+      soldListings.rows.forEach((row) => {
+        if (!titlesByOwner.has(row.owner_id)) titlesByOwner.set(row.owner_id, []);
+        titlesByOwner.get(row.owner_id).push(row.title);
+      });
+      titlesByOwner.forEach((titles, ownerId) => {
+        const summary =
+          titles.length === 1 ? `"${titles[0]}"` : `${titles.length} of your listings`;
+        notify(ownerId, 'order', 'You made a sale', `Order #${order.id} includes ${summary}.`);
+      });
+    }
+
     notify(
       data.userId,
       'order',
@@ -162,6 +177,67 @@ module.exports.getAllOrders = async (req, res, next) => {
     const orders = await model.getAllOrders(res.locals.userId);
     res.locals.statusCode = 200;
     res.locals.results = orders;
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ── GET /api/orders/sales ──────────────────────────────────────────────────
+// Orders carry no seller/owner column - a "sale" is derived by checking
+// every order's one-off items against which listings the caller owns.
+
+function extractSaleItems(order, ownedListingIds) {
+  return (order.items || [])
+    .filter((item) => {
+      const isOneOff = Boolean(item?.isOneOff || item?.listingId);
+      const listingId = item?.listingId ?? (isOneOff ? item?.id : null);
+      return listingId != null && ownedListingIds.has(Number(listingId));
+    })
+    .map((item) => ({
+      listingId: Number(item.listingId ?? item.id),
+      itemName: item.name || item.title || 'Item',
+      quantity: Number(item.quantity || item.qty || 1),
+      price: Number(item.price || item.unitPrice || 0),
+    }));
+}
+
+module.exports.getSellerSales = async (req, res, next) => {
+  try {
+    const allOrders = await model.getAllOrdersRaw();
+
+    const candidateListingIds = new Set();
+    allOrders.forEach((order) => {
+      extractOneOffListingIds(order.items).forEach((id) => candidateListingIds.add(id));
+    });
+
+    let ownedListingIds = new Set();
+    if (candidateListingIds.size > 0) {
+      const result = await getListingsByIds({ ids: Array.from(candidateListingIds) });
+      ownedListingIds = new Set(
+        result.rows
+          .filter((row) => String(row.owner_id) === String(res.locals.userId))
+          .map((row) => Number(row.id)),
+      );
+    }
+
+    const sales = allOrders
+      .map((order) => {
+        const items = extractSaleItems(order, ownedListingIds);
+        if (items.length === 0) return null;
+        return {
+          orderId: order.id,
+          status: order.status,
+          createdAt: order.createdAt,
+          buyerName: order.fullName || 'Buyer',
+          items,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.locals.statusCode = 200;
+    res.locals.results = sales;
     next();
   } catch (error) {
     next(error);

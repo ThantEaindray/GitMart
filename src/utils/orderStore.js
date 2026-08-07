@@ -27,6 +27,14 @@ module.exports.getAllOrders = async (userId) => {
   return orders.filter((order) => String(order.userId) === String(userId));
 };
 
+// Unfiltered by buyer, unlike every other read here — orders carry no
+// seller/owner column at all, so finding "orders that include one of my
+// listings" has to start from every order and filter by listing ownership
+// (a Postgres concern) on the caller's side, not this store's.
+module.exports.getAllOrdersRaw = async () => {
+  return [...orders];
+};
+
 module.exports.getOrderById = async (id, userId) => {
   const order = orders.find(
     (item) => item.id === Number(id) && String(item.userId) === String(userId),
