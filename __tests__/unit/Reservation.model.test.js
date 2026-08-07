@@ -288,3 +288,105 @@ describe('Reservation.model - acceptReservationRequest', () => {
     expect(client.release).toHaveBeenCalled();
   });
 });
+
+// ── releaseExpiredReservations ────────────────────────────────────────────
+
+describe('Reservation.model - releaseExpiredReservations', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  function mockClient(expiredRows, { failOn = null } = {}) {
+    const client = {
+      query: jest.fn((sql) => {
+        if (failOn && sql.includes(failOn)) {
+          return Promise.reject(new Error('write failed'));
+        }
+        if (sql.includes('FOR UPDATE OF listings, reservation_requests')) {
+          return Promise.resolve({ rows: expiredRows });
+        }
+        return Promise.resolve({ rows: [] });
+      }),
+      release: jest.fn(),
+    };
+
+    pool.connect.mockResolvedValue(client);
+    return client;
+  }
+
+  const expiredRow = {
+    reservation_id: 1,
+    requester_id: 20,
+    listing_id: 5,
+    owner_id: 10,
+    title: 'Vintage Watch',
+  };
+
+  test('returns an empty array and commits when nothing has expired', async () => {
+    const client = mockClient([]);
+
+    const result = await model.releaseExpiredReservations(24);
+
+    expect(result).toEqual([]);
+    const executed = client.query.mock.calls.map(([sql]) => sql).join('\n');
+    expect(executed).toMatch(/BEGIN/);
+    expect(executed).toMatch(/COMMIT/);
+    // Nothing to update, so neither write statement should have run.
+    expect(executed).not.toMatch(/SET status = 'AVAILABLE'/);
+    expect(executed).not.toMatch(/SET status = 'EXPIRED'/);
+  });
+
+  test('binds holdHours into the interval lookup', async () => {
+    const client = mockClient([]);
+
+    await model.releaseExpiredReservations(24);
+
+    const [, values] = client.query.mock.calls.find(([sql]) =>
+      sql.includes('FOR UPDATE OF listings, reservation_requests'),
+    );
+    expect(values).toEqual([24]);
+  });
+
+  test('releases the listing and marks the reservation EXPIRED', async () => {
+    const client = mockClient([expiredRow]);
+
+    const result = await model.releaseExpiredReservations(24);
+
+    expect(result).toEqual([expiredRow]);
+
+    const listingsUpdate = client.query.mock.calls.find(([sql]) =>
+      sql.includes("SET status = 'AVAILABLE'"),
+    );
+    expect(listingsUpdate[1]).toEqual([[5]]);
+
+    const reservationsUpdate = client.query.mock.calls.find(([sql]) =>
+      sql.includes("SET status = 'EXPIRED'"),
+    );
+    expect(reservationsUpdate[1]).toEqual([[1]]);
+
+    const executed = client.query.mock.calls.map(([sql]) => sql).join('\n');
+    expect(executed).toMatch(/COMMIT/);
+    expect(client.release).toHaveBeenCalled();
+  });
+
+  test('releases every expired listing in one sweep', async () => {
+    const secondRow = { ...expiredRow, reservation_id: 2, listing_id: 6 };
+    const client = mockClient([expiredRow, secondRow]);
+
+    const result = await model.releaseExpiredReservations(24);
+
+    expect(result).toHaveLength(2);
+
+    const listingsUpdate = client.query.mock.calls.find(([sql]) =>
+      sql.includes("SET status = 'AVAILABLE'"),
+    );
+    expect(listingsUpdate[1]).toEqual([[5, 6]]);
+  });
+
+  test('rolls back and releases the client when a write throws', async () => {
+    const client = mockClient([expiredRow], { failOn: "SET status = 'AVAILABLE'" });
+
+    await expect(model.releaseExpiredReservations(24)).rejects.toThrow('write failed');
+
+    expect(client.query).toHaveBeenCalledWith('ROLLBACK');
+    expect(client.release).toHaveBeenCalled();
+  });
+});

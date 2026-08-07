@@ -324,6 +324,75 @@ module.exports.acceptReservationRequest = async (data) => {
   }
 };
 
+// Called on a timer by reservationExpirySweep.js, not from any HTTP route —
+// there is no buyer or owner making this request, the system is. Finds
+// every listing that's been RESERVED (via an ACCEPTED reservation) for
+// longer than holdHours with nobody having checked out, and releases it:
+// the listing goes back to AVAILABLE, the reservation is marked EXPIRED
+// rather than REJECTED/CANCELLED so it's clear later why it ended. Selects
+// with FOR UPDATE so a checkout racing the sweep for the same listing
+// blocks on this transaction rather than interleaving with it.
+module.exports.releaseExpiredReservations = async (holdHours) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const expiredResult = await client.query(
+      `
+        SELECT
+          reservation_requests.id AS reservation_id,
+          reservation_requests.requester_id,
+          listings.id AS listing_id,
+          listings.owner_id,
+          listings.title
+        FROM listings
+        INNER JOIN reservation_requests
+          ON reservation_requests.listing_id = listings.id
+          AND reservation_requests.status = 'ACCEPTED'
+        WHERE listings.status = 'RESERVED'
+          AND listings.status_updated_on < NOW() - ($1 || ' hours')::interval
+        FOR UPDATE OF listings, reservation_requests
+      `,
+      [holdHours],
+    );
+
+    const expired = expiredResult.rows;
+
+    if (expired.length > 0) {
+      const listingIds = expired.map((row) => row.listing_id);
+      const reservationIds = expired.map((row) => row.reservation_id);
+
+      await client.query(
+        `
+          UPDATE listings
+          SET status = 'AVAILABLE', status_updated_on = NOW()
+          WHERE id = ANY($1::integer[])
+        `,
+        [listingIds],
+      );
+
+      await client.query(
+        `
+          UPDATE reservation_requests
+          SET status = 'EXPIRED', updated_on = NOW()
+          WHERE id = ANY($1::integer[])
+        `,
+        [reservationIds],
+      );
+    }
+
+    await client.query('COMMIT');
+
+    return expired;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 module.exports.rejectReservationRequest = (data, callback) => {
   const SQLSTATEMENT = `
     UPDATE reservation_requests

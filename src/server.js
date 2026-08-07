@@ -32,6 +32,8 @@ if (require.main === module) {
     console.log(`Loaded environment file: ${envFile}`);
   });
 
+  require('./utils/reservationExpirySweep').start();
+
   const { WebSocketServer } = require('ws');
   const WS_PORT = process.env.WS_PORT || 3001;
   ws = new WebSocketServer({ port: WS_PORT });
